@@ -15,7 +15,7 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="{{ form.year.id_for_label }}">年:</label>
-            {{ form.year}}
+            {{ form.year }}
         </div>
         <div class="form-group">
             <label for="{{ form.month.id_for_label }}">月:</label>
@@ -23,10 +23,47 @@
         </div>
         <div class="form-group">
             <label for="{{ form.day.id_for_label }}">日:</label>
-            {{ form.day}}
+            {{ form.day }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.day.id_for_label }}">时:</label>
+            {{ form.hour }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.day.id_for_label }}">分:</label>
+            {{ form.minute }}
         </div>
         <button type="submit" class="btn btn-primary">查看</button>
     </form>
+</div>
+<div class="container mt-5">
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">时柱</th>
+            <th scope="col">日柱</th>
+            <th scope="col">月柱</th>
+            <th scope="col">年柱</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row">天干</th>
+            <td>{{ bazi.getTimeGan }}</td>
+            <td>{{ bazi.getDayGan }}</td>
+            <td>{{ bazi.getMonthGan }}</td>
+            <td>{{ bazi.getYearGan}}</td>
+        </tr>
+        <tr>
+            <th scope="row">地支</th>
+            <td>{{ bazi.getTimeZhi  }}</td>
+            <td>{{ bazi.getDayZhi }}</td>
+            <td>{{ bazi.getMonthZhi }}</td>
+            <td>{{ bazi.getYearZhi }}</td>
+        </tr>
+        </tbody>
+    </table>
 </div>
 
 <!-- Bootstrap JS, Popper.js, and jQuery -->
