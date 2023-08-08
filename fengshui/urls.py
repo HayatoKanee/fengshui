@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from bazi.views import bazi_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', bazi_view, name='home')
 ]
