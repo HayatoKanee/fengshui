@@ -2,27 +2,60 @@ from django.shortcuts import render
 from .forms import BirthTimeForm
 from lunar_python import Lunar, Solar, EightChar, JieQi
 
+relationships = {
+    '生': {
+        '木': '火',
+        '火': '土',
+        '土': '金',
+        '金': '水',
+        '水': '木'
+    },
+    '克': {
+        '火': '金',
+        '水': '火',
+        '土': '水',
+        '木': '土',
+        '金': '木'
+    }
+}
+gan_wuxing = {
+    '甲': '木',
+    '乙': '木',
+    '丙': '火',
+    '丁': '火',
+    '戊': '土',
+    '己': '土',
+    '庚': '金',
+    '辛': '金',
+    '壬': '水',
+    '癸': '水'
+}
+
+wang_xiang_value = {
+    '旺': 1.2,
+    '相': 1.2,
+    '休': 1,
+    '囚': 0.8,
+    '死': 0.8
+}
+
+hidden_gan_ratios = {
+    '子': {'癸': 1},
+    '丑': {'己': 0.5, '癸': 0.3, '辛': 0.2},
+    '寅': {'甲': 0.6, '丙': 0.3, '戊': 0.1},
+    '卯': {'乙': 1},
+    '辰': {'戊': 0.5, '乙': 0.3, '癸': 0.2},
+    '巳': {'丙': 0.6, '戊': 0.3, '庚': 0.1},
+    '午': {'丁': 0.5, '己': 0.5},
+    '未': {'乙': 0.2, '己': 0.5, '丁': 0.3},
+    '申': {'庚': 0.6, '壬': 0.3, '戊': 0.1},
+    '酉': {'辛': 1},
+    '戌': {'戊': 0.5, '辛': 0.3, '丁': 0.2},
+    '亥': {'壬': 0.7, '甲': 0.3}
+}
+
 
 def wuxing_relationship(input_str):
-    # Define the Wuxing relationships
-    relationships = {
-        '生': {
-            '木': '火',
-            '火': '土',
-            '土': '金',
-            '金': '水',
-            '水': '木'
-        },
-        '克': {
-            '火': '金',
-            '水': '火',
-            '土': '水',
-            '木': '土',
-            '金': '木'
-        }
-    }
-
-    # Extract the two elements from the input string
     element1, element2 = input_str[0], input_str[1]
 
     # Check the relationship and return the corresponding values
@@ -38,36 +71,9 @@ def wuxing_relationship(input_str):
         return 8, 6
 
 
-def get_gan_wuxing(gan):
-    gan_wuxing = {
-        '甲': '木',
-        '乙': '木',
-        '丙': '火',
-        '丁': '火',
-        '戊': '土',
-        '己': '土',
-        '庚': '金',
-        '辛': '金',
-        '壬': '水',
-        '癸': '水'
-    }
-    return gan_wuxing.get(gan)
-
-
-def get_wang_xiang_value(wang_xiang):
-    wang_xiang_value = {
-        '旺': 1.2,
-        '相': 1.2,
-        '休': 1,
-        '囚': 0.8,
-        '死': 0.8
-    }
-    return wang_xiang_value.get(wang_xiang)
-
-
 def get_total_gan_value(gan, init_gan_value, sheng_val, hao_val, wang_xiang, sheng_hao_relations):
-    wuxing = get_gan_wuxing(gan)
-    wang_xiang_val = get_wang_xiang_value(wang_xiang.get(wuxing))
+    wuxing = gan_wuxing.get(gan)
+    wang_xiang_val = wang_xiang_value.get(wang_xiang.get(wuxing))
     gan_value = init_gan_value * wang_xiang_val
     if wuxing in sheng_hao_relations['有利']:
         sheng_val += gan_value
@@ -78,25 +84,10 @@ def get_total_gan_value(gan, init_gan_value, sheng_val, hao_val, wang_xiang, she
 
 def get_total_zhi_value(zhi, init_zhi_value, sheng_val, hao_val, wang_xiang,
                         sheng_hao_relations):
-    hidden_gan_ratios = {
-        '子': {'癸': 1},
-        '丑': {'己': 0.5, '癸': 0.3, '辛': 0.2},
-        '寅': {'甲': 0.6, '丙': 0.3, '戊': 0.1},
-        '卯': {'乙': 1},
-        '辰': {'戊': 0.5, '乙': 0.3, '癸': 0.2},
-        '巳': {'丙': 0.6, '戊': 0.3, '庚': 0.1},
-        '午': {'丁': 0.5, '己': 0.5},
-        '未': {'乙': 0.2, '己': 0.5, '丁': 0.3},
-        '申': {'庚': 0.6, '壬': 0.3, '戊': 0.1},
-        '酉': {'辛': 1},
-        '戌': {'戊': 0.5, '辛': 0.3, '丁': 0.2},
-        '亥': {'壬': 0.7, '甲': 0.3}
-    }
-
     hidden_gan = hidden_gan_ratios.get(zhi, {})
     for gan, ratio in hidden_gan.items():
-        wuxing = get_gan_wuxing(gan)
-        wang_xiang_val = get_wang_xiang_value(wang_xiang.get(wuxing))
+        wuxing = gan_wuxing.get(gan)
+        wang_xiang_val = wang_xiang_value.get(wang_xiang.get(wuxing))
         zhi_value = init_zhi_value * ratio * wang_xiang_val
         if wuxing in sheng_hao_relations['有利']:
             sheng_val += zhi_value
@@ -145,7 +136,6 @@ def get_relations(main_wuxing):
 
 
 def bazi_view(request):
-    bazi = None
     if request.method == 'POST':
 
         form = BirthTimeForm(request.POST)
@@ -184,8 +174,28 @@ def bazi_view(request):
             sheng_value, hao_value = get_total_zhi_value(bazi.getYearZhi(), year_zhi_value, sheng_value, hao_value,
                                                          wang_xiang, sheng_hao_relations)
             print(sheng_value, hao_value)
-            print(f"{sheng_value/(sheng_value+hao_value)*100:.2f}%", f"{hao_value/(sheng_value+hao_value)*100:.2f}%")
+            print(f"{sheng_value / (sheng_value + hao_value) * 100:.2f}%",
+                  f"{hao_value / (sheng_value + hao_value) * 100:.2f}%")
+            return render(request, 'bazi.html', {'form': form,
+                                                 'bazi': bazi,
+                                                 'time_gan_value': time_gan_value,
+                                                 'time_zhi_value': time_zhi_value,
+                                                 'day_gan_value': day_gan_value,
+                                                 'day_zhi_value': day_zhi_value,
+                                                 'month_gan_value': month_gan_value,
+                                                 'month_zhi_value': month_zhi_value,
+                                                 'year_gan_value': year_gan_value,
+                                                 'year_zhi_value': year_zhi_value,
+                                                 'sheng_value': sheng_value,
+                                                 'hao_value': hao_value,
+                                                 'sheng_percentage': f"{sheng_value / (sheng_value + hao_value) * 100:.2f}%",
+                                                 'hao_percentage': f"{hao_value / (sheng_value + hao_value) * 100:.2f}%",
+                                                 'wang_xiang': wang_xiang,
+                                                 'gan_wuxing': gan_wuxing,
+                                                 'wang_xiang_value': wang_xiang_value,
+                                                 'hidden_gan_ratios': hidden_gan_ratios
+                                                 })
     else:
         form = BirthTimeForm()
 
-    return render(request, 'bazi.html', {'form': form, 'bazi': bazi})
+    return render(request, 'bazi.html', {'form': form})
