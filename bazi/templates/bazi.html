@@ -341,7 +341,7 @@
                     <tr>
                         <th scope="row"></th>
                         <td>{{ bazi.getTimeZhi }}</td>
-                        <td>{{ time_zhi_first_gan|floatformat:2 }}</td>
+                        <td>{{ time_zhi_first_gan }}</td>
                         {% with x=time_zhi_value %}
                             <td>{{ x |floatformat:2 }}</td>
                             {% with y=time_zhi_gans|lookup:time_zhi_first_gan %}
