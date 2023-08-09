@@ -88,7 +88,7 @@
                 <th scope="row"></th>
                 <td>{{ bazi.getYearGan }}</td>
                 <td>{{ bazi.getYearGan }}</td>
-                <td>{{ year_gan_value }}</td>
+                <td>{{ year_gan_value|floatformat:2  }}</td>
                 <td>1.00</td>
                 {% with year_gan_wuxing=gan_wuxing|lookup:bazi.getYearGan %}
                     {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
