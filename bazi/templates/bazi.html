@@ -388,17 +388,27 @@
     <table class="table">
         <thead>
         <tr>
-        <th scope="row"></th>
-            <td> 生总值 </td>
+            <th scope="col"></th>
+            <th scope="col"></th>
+            <th scope="col">值</th>
+            <th scope="col">占比</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row"></th>
+            <td> 生总值</td>
             <td> {{ sheng_value }}</td>
             <td> {{ sheng_percentage }}</td>
         </tr>
         <tr>
-        <th scope="row"></th>
+            <th scope="row"></th>
             <td>耗总值</td>
             <td> {{ hao_value }}</td>
             <td> {{ hao_percentage }}</td>
         </tr>
+        </tbody>
     </table>
 </div>
 <!-- Bootstrap JS, Popper.js, and jQuery -->
