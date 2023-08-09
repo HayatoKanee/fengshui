@@ -39,6 +39,7 @@
 </div>
 <div class="container mt-5">
     <table class="table">
+        <h3>八字</h3>
         <thead>
         <tr>
             <th scope="col"></th>
@@ -87,12 +88,12 @@
             <td>{{ bazi.getYearGan }}</td>
             <td>{{ bazi.getYearGan }}</td>
             <td>{{ year_gan_value }}</td>
-            <td>1</td>
+            <td>1.00</td>
             {% with year_gan_wuxing=gan_wuxing|lookup:bazi.getYearGan %}
                 {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
                     {% with x=wang_xiang_value|lookup:year_wang_xiang %}
-                        <td>{{ x }}</td>
-                        <td>{{ x|multiply:year_gan_value }}</td>
+                        <td>{{ x |floatformat:2}}</td>
+                        <td>{{ x|multiply:year_gan_value|floatformat:2 }}</td>
                     {% endwith %}
                 {% endwith %}
             {% endwith %}
@@ -104,14 +105,14 @@
                     <td>{{ bazi.getYearZhi }}</td>
                     <td>{{ year_zhi_first_gan }}</td>
                     {% with x=year_zhi_value %}
-                        <td>{{ x }}</td>
+                        <td>{{ x|floatformat:2 }}</td>
                         {% with y=year_zhi_gans|lookup:year_zhi_first_gan %}
-                            <td>{{ y }}</td>
+                            <td>{{ y |floatformat:2}}</td>
                             {% with year_gan_wuxing=gan_wuxing|lookup:year_zhi_first_gan %}
                                 {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
                                     {% with z=wang_xiang_value|lookup:year_wang_xiang %}
-                                        <td>{{ z }}</td>
-                                        <td>{{ x|multiply:y|multiply:z }}</td>
+                                        <td>{{ z|floatformat:2 }}</td>
+                                        <td>{{ x|multiply:y|multiply:z |floatformat:2}}</td>
                                     {% endwith %}
                                 {% endwith %}
                             {% endwith %}
@@ -127,13 +128,13 @@
                         <th scope="row"></th>
                         <td></td>
                         <td>{{ gan }}</td>
-                        <td>{{ year_zhi_value }}</td>
-                        <td>{{ ratio }}</td>
+                        <td>{{ year_zhi_value|floatformat:2 }}</td>
+                        <td>{{ ratio|floatformat:2 }}</td>
                         {% with year_gan_wuxing=gan_wuxing|lookup:gan %}
                             {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
                                 {% with x=wang_xiang_value|lookup:year_wang_xiang %}
-                                    <td>{{ x }}</td>
-                                    <td>{{ x|multiply:year_zhi_value|multiply:ratio }}</td>
+                                    <td>{{ x |floatformat:2}}</td>
+                                    <td>{{ x|multiply:year_zhi_value|multiply:ratio|floatformat:2 }}</td>
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
@@ -165,13 +166,13 @@
             <th scope="row"></th>
             <td>{{ bazi.getMonthGan }}</td>
             <td>{{ bazi.getMonthGan }}</td>
-            <td>{{ month_gan_value }}</td>
-            <td>1</td>
+            <td>{{ month_gan_value|floatformat:2 }}</td>
+            <td>1.00</td>
             {% with month_gan_wuxing=gan_wuxing|lookup:bazi.getMonthGan %}
                 {% with month_wang_xiang=wang_xiang|lookup:month_gan_wuxing %}
                     {% with x=wang_xiang_value|lookup:month_wang_xiang %}
-                        <td>{{ x }}</td>
-                        <td>{{ x|multiply:month_gan_value }}</td>
+                        <td>{{ x|floatformat:2 }}</td>
+                        <td>{{ x|multiply:month_gan_value|floatformat:2 }}</td>
                     {% endwith %}
                 {% endwith %}
             {% endwith %}
@@ -183,14 +184,14 @@
                     <td>{{ bazi.getMonthZhi }}</td>
                     <td>{{ month_zhi_first_gan }}</td>
                     {% with x=month_zhi_value %}
-                        <td>{{ x }}</td>
+                        <td>{{ x |floatformat:2}}</td>
                         {% with y=month_zhi_gans|lookup:month_zhi_first_gan %}
-                            <td>{{ y }}</td>
+                            <td>{{ y|floatformat:2 }}</td>
                             {% with month_gan_wuxing=gan_wuxing|lookup:month_zhi_first_gan %}
                                 {% with month_wang_xiang=wang_xiang|lookup:month_gan_wuxing %}
                                     {% with z=wang_xiang_value|lookup:month_wang_xiang %}
-                                        <td>{{ z }}</td>
-                                        <td>{{ x|multiply:y|multiply:z }}</td>
+                                        <td>{{ z|floatformat:2 }}</td>
+                                        <td>{{ x|multiply:y|multiply:z|floatformat:2 }}</td>
                                     {% endwith %}
                                 {% endwith %}
                             {% endwith %}
@@ -206,13 +207,13 @@
                         <th scope="row"></th>
                         <td></td>
                         <td>{{ gan }}</td>
-                        <td>{{ month_zhi_value }}</td>
-                        <td>{{ ratio }}</td>
+                        <td>{{ month_zhi_value |floatformat:2}}</td>
+                        <td>{{ ratio |floatformat:2}}</td>
                         {% with month_gan_wuxing=gan_wuxing|lookup:gan %}
                             {% with month_wang_xiang=wang_xiang|lookup:month_gan_wuxing %}
                                 {% with x=wang_xiang_value|lookup:month_wang_xiang %}
-                                    <td>{{ x }}</td>
-                                    <td>{{ x|multiply:month_zhi_value|multiply:ratio }}</td>
+                                    <td>{{ x|floatformat:2 }}</td>
+                                    <td>{{ x|multiply:month_zhi_value|multiply:ratio|floatformat:2 }}</td>
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
@@ -244,13 +245,13 @@
             <th scope="row"></th>
             <td>{{ bazi.getDayGan }}</td>
             <td>{{ bazi.getDayGan }}</td>
-            <td>{{ day_gan_value }}</td>
-            <td>1</td>
+            <td>{{ day_gan_value|floatformat:2 }}</td>
+            <td>1.00</td>
             {% with day_gan_wuxing=gan_wuxing|lookup:bazi.getDayGan %}
                 {% with day_wang_xiang=wang_xiang|lookup:day_gan_wuxing %}
                     {% with x=wang_xiang_value|lookup:day_wang_xiang %}
-                        <td>{{ x }}</td>
-                        <td>{{ x|multiply:day_gan_value }}</td>
+                        <td>{{ x |floatformat:2}}</td>
+                        <td>{{ x|multiply:day_gan_value|floatformat:2 }}</td>
                     {% endwith %}
                 {% endwith %}
             {% endwith %}
@@ -262,14 +263,14 @@
                     <td>{{ bazi.getDayZhi }}</td>
                     <td>{{ day_zhi_first_gan }}</td>
                     {% with x=day_zhi_value %}
-                        <td>{{ x }}</td>
+                        <td>{{ x|floatformat:2 }}</td>
                         {% with y=day_zhi_gans|lookup:day_zhi_first_gan %}
-                            <td>{{ y }}</td>
+                            <td>{{ y|floatformat:2 }}</td>
                             {% with day_gan_wuxing=gan_wuxing|lookup:day_zhi_first_gan %}
                                 {% with day_wang_xiang=wang_xiang|lookup:day_gan_wuxing %}
                                     {% with z=wang_xiang_value|lookup:day_wang_xiang %}
-                                        <td>{{ z }}</td>
-                                        <td>{{ x|multiply:y|multiply:z }}</td>
+                                        <td>{{ z |floatformat:2}}</td>
+                                        <td>{{ x|multiply:y|multiply:z |floatformat:2}}</td>
                                     {% endwith %}
                                 {% endwith %}
                             {% endwith %}
@@ -285,13 +286,13 @@
                         <th scope="row"></th>
                         <td></td>
                         <td>{{ gan }}</td>
-                        <td>{{ day_zhi_value }}</td>
-                        <td>{{ ratio }}</td>
+                        <td>{{ day_zhi_value|floatformat:2 }}</td>
+                        <td>{{ ratio|floatformat:2 }}</td>
                         {% with day_gan_wuxing=gan_wuxing|lookup:gan %}
                             {% with day_wang_xiang=wang_xiang|lookup:day_gan_wuxing %}
                                 {% with x=wang_xiang_value|lookup:day_wang_xiang %}
-                                    <td>{{ x }}</td>
-                                    <td>{{ x|multiply:day_zhi_value|multiply:ratio }}</td>
+                                    <td>{{ x|floatformat:2 }}</td>
+                                    <td>{{ x|multiply:day_zhi_value|multiply:ratio|floatformat:2 }}</td>
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
@@ -323,13 +324,13 @@
             <th scope="row"></th>
             <td>{{ bazi.getTimeGan }}</td>
             <td>{{ bazi.getTimeGan }}</td>
-            <td>{{ time_gan_value }}</td>
-            <td>1</td>
+            <td>{{ time_gan_value|floatformat:2 }}</td>
+            <td>1.00</td>
             {% with time_gan_wuxing=gan_wuxing|lookup:bazi.getTimeGan %}
                 {% with time_wang_xiang=wang_xiang|lookup:time_gan_wuxing %}
                     {% with x=wang_xiang_value|lookup:time_wang_xiang %}
-                        <td>{{ x }}</td>
-                        <td>{{ x|multiply:time_gan_value }}</td>
+                        <td>{{ x|floatformat:2 }}</td>
+                        <td>{{ x|multiply:time_gan_value|floatformat:2 }}</td>
                     {% endwith %}
                 {% endwith %}
             {% endwith %}
@@ -339,16 +340,16 @@
                 <tr>
                     <th scope="row"></th>
                     <td>{{ bazi.getTimeZhi }}</td>
-                    <td>{{ time_zhi_first_gan }}</td>
+                    <td>{{ time_zhi_first_gan|floatformat:2 }}</td>
                     {% with x=time_zhi_value %}
-                        <td>{{ x }}</td>
+                        <td>{{ x |floatformat:2}}</td>
                         {% with y=time_zhi_gans|lookup:time_zhi_first_gan %}
-                            <td>{{ y }}</td>
+                            <td>{{ y |floatformat:2}}</td>
                             {% with time_gan_wuxing=gan_wuxing|lookup:time_zhi_first_gan %}
                                 {% with time_wang_xiang=wang_xiang|lookup:time_gan_wuxing %}
                                     {% with z=wang_xiang_value|lookup:time_wang_xiang %}
-                                        <td>{{ z }}</td>
-                                        <td>{{ x|multiply:y|multiply:z }}</td>
+                                        <td>{{ z |floatformat:2}}</td>
+                                        <td>{{ x|multiply:y|multiply:z |floatformat:2}}</td>
                                     {% endwith %}
                                 {% endwith %}
                             {% endwith %}
@@ -364,13 +365,13 @@
                         <th scope="row"></th>
                         <td></td>
                         <td>{{ gan }}</td>
-                        <td>{{ time_zhi_value }}</td>
-                        <td>{{ ratio }}</td>
+                        <td>{{ time_zhi_value|floatformat:2 }}</td>
+                        <td>{{ ratio |floatformat:2}}</td>
                         {% with time_gan_wuxing=gan_wuxing|lookup:gan %}
                             {% with time_wang_xiang=wang_xiang|lookup:time_gan_wuxing %}
                                 {% with x=wang_xiang_value|lookup:time_wang_xiang %}
-                                    <td>{{ x }}</td>
-                                    <td>{{ x|multiply:time_zhi_value|multiply:ratio }}</td>
+                                    <td>{{ x|floatformat:2 }}</td>
+                                    <td>{{ x|multiply:time_zhi_value|multiply:ratio|floatformat:2 }}</td>
                                 {% endwith %}
                             {% endwith %}
                         {% endwith %}
@@ -399,13 +400,13 @@
         <tr>
             <th scope="row"></th>
             <td> 生总值</td>
-            <td> {{ sheng_value }}</td>
+            <td> {{ sheng_value|floatformat:2 }}</td>
             <td> {{ sheng_percentage }}</td>
         </tr>
         <tr>
             <th scope="row"></th>
             <td>耗总值</td>
-            <td> {{ hao_value }}</td>
+            <td> {{ hao_value|floatformat:2 }}</td>
             <td> {{ hao_percentage }}</td>
         </tr>
         </tbody>
