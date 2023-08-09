@@ -11,30 +11,32 @@
 </head>
 <body>
 <div class="container mt-5">
-    <h2>请输入新历生日</h2>
-    <form method="post">
+    <h2 class="mb-4">请输入新历生日</h2>
+    <form method="post" class="row g-3">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="{{ form.year.id_for_label }}">年:</label>
+        <div class="col-md-2">
+            <label for="{{ form.year.id_for_label }}" class="form-label">年:</label>
             {{ form.year }}
         </div>
-        <div class="form-group">
-            <label for="{{ form.month.id_for_label }}">月:</label>
+        <div class="col-md-2">
+            <label for="{{ form.month.id_for_label }}" class="form-label">月:</label>
             {{ form.month }}
         </div>
-        <div class="form-group">
-            <label for="{{ form.day.id_for_label }}">日:</label>
+        <div class="col-md-2">
+            <label for="{{ form.day.id_for_label }}" class="form-label">日:</label>
             {{ form.day }}
         </div>
-        <div class="form-group">
-            <label for="{{ form.day.id_for_label }}">时:</label>
-            {{ form.hour }}
+        <div class="col-md-2">
+            <label for="{{ form.hour.id_for_label }}" class="form-label">时:</label>
+            {{ form.hour}}
         </div>
-        <div class="form-group">
-            <label for="{{ form.day.id_for_label }}">分:</label>
+        <div class="col-md-2">
+            <label for="{{ form.minute.id_for_label }}" class="form-label">分:</label>
             {{ form.minute }}
         </div>
-        <button type="submit" class="btn btn-primary">查看</button>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary mt-4">查看</button>
+        </div>
     </form>
 </div>
 {% if bazi %}
@@ -88,7 +90,7 @@
                 <th scope="row"></th>
                 <td>{{ bazi.getYearGan }}</td>
                 <td>{{ bazi.getYearGan }}</td>
-                <td>{{ year_gan_value|floatformat:2  }}</td>
+                <td>{{ year_gan_value|floatformat:2 }}</td>
                 <td>1.00</td>
                 {% with year_gan_wuxing=gan_wuxing|lookup:bazi.getYearGan %}
                     {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
