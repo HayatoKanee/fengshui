@@ -135,6 +135,10 @@ def get_relations(main_wuxing):
     return wuxing_relations.get(main_wuxing, {})
 
 
+def home_view(request):
+    return render(request, 'home.html')
+
+
 def bazi_view(request):
     if request.method == 'POST':
 

@@ -1,0 +1,5 @@
+.nav-link[data-lang-switch].active {
+    font-weight: bold;
+    color: blue;
+    background-color: transparent;
+}
