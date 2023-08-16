@@ -139,6 +139,22 @@ def home_view(request):
     return render(request, 'home.html')
 
 
+def tiangan_view(request):
+    return render(request, 'tiangan.html')
+
+
+def yinyang_view(request):
+    return render(request, 'yinyang.html')
+
+
+def dizhi_view(request):
+    return render(request, 'dizhi.html')
+
+
+def wuxing_view(request):
+    return render(request, 'wuxing.html')
+
+
 def bazi_view(request):
     if request.method == 'POST':
 

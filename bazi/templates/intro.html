@@ -1,0 +1,24 @@
+{% extends 'base_content.html' %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3" id="sidebar">
+                <ul>
+                    <li><a href="{% url 'wuxing' %}">五行</a></li>
+                    <li><a href="{% url 'tiangan' %}">天干</a></li>
+                    <li><a href="{% url 'yinyang' %}">阴阳</a></li>
+                    <li><a href="{% url 'yinyang' %}">地支</a></li>
+                </ul>
+            </div>
+            <div class="col-md-9">
+                {% block introContent %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    <style>
+        #sidebar {
+            border-right: 2px solid #000; /* Adjust color and width as needed */
+        }
+    </style>
+{% endblock %}

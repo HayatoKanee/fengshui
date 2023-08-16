@@ -16,10 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from bazi.views import bazi_view, home_view
+from bazi.views import bazi_view, home_view, wuxing_view, tiangan_view, yinyang_view, dizhi_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name='home'),
-    path('bazi', bazi_view, name='bazi')
+    path('bazi', bazi_view, name='bazi'),
+    path('wuxing', wuxing_view, name='wuxing'),
+    path('yinyang', yinyang_view, name='yinyang'),
+    path('tiangan', tiangan_view, name='tiangan'),
+    path('dizhi', dizhi_view, name='dizhi'),
 ]
