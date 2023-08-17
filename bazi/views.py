@@ -201,9 +201,7 @@ def bazi_view(request):
                                                          wang_xiang, sheng_hao_relations)
             sheng_value, hao_value = get_total_zhi_value(bazi.getYearZhi(), year_zhi_value, sheng_value, hao_value,
                                                          wang_xiang, sheng_hao_relations)
-            print(sheng_value, hao_value)
-            print(f"{sheng_value / (sheng_value + hao_value) * 100:.2f}%",
-                  f"{hao_value / (sheng_value + hao_value) * 100:.2f}%")
+            shengxiao = lunar.getYearShengXiaoExact()
             return render(request, 'bazi.html', {'form': form,
                                                  'bazi': bazi,
                                                  'time_gan_value': time_gan_value,
@@ -221,7 +219,9 @@ def bazi_view(request):
                                                  'wang_xiang': wang_xiang,
                                                  'gan_wuxing': gan_wuxing,
                                                  'wang_xiang_value': wang_xiang_value,
-                                                 'hidden_gan_ratios': hidden_gan_ratios
+                                                 'hidden_gan_ratios': hidden_gan_ratios,
+                                                 'main_wuxing':main_wuxing,
+                                                 'shengxiao': shengxiao
                                                  })
     else:
         form = BirthTimeForm()

@@ -6,18 +6,28 @@
         </a>
 
         <ul class="nav nav-pills">
-            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="/" class="nav-link active"
+            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="/"
+                                                                               class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
                                                                                aria-current="page">Home</a></li>
-            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="#" class="nav-link">Bazi</a></li>
+            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="{% url 'bazi' %}"
+                                                                               class="nav-link {% if request.resolver_match.url_name == 'bazi' %}active{% endif %}">Bazi</a>
+            </li>
             <li class="nav-item lang" data-lang="en" style="display: none;"><a href="#" class="nav-link">Calendar</a>
             </li>
-            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="#" class="nav-link">Intro</a>
+            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="{% url 'wuxing' %}"
+                                                                               class="nav-link {% if request.resolver_match.url_name == 'wuxing' %}active{% endif %}">Intro</a>
             </li>
-            <li class="nav-item lang" data-lang="zh"><a href="/" class="nav-link active" aria-current="page">首页</a>
+            <li class="nav-item lang" data-lang="zh"><a href="/"
+                                                        class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                                                        aria-current="page">首页</a>
             </li>
-            <li class="nav-item lang" data-lang="zh"><a href="{% url 'bazi' %}" class="nav-link">八字（维修中）</a></li>
+            <li class="nav-item lang" data-lang="zh"><a href="{% url 'bazi' %}"
+                                                        class="nav-link {% if request.resolver_match.url_name == 'bazi' %}active{% endif %}">八字</a>
+            </li>
             <li class="nav-item lang" data-lang="zh"><a href="#" class="nav-link">日历</a></li>
-            <li class="nav-item lang" data-lang="zh"><a href="{% url 'wuxing' %}" class="nav-link">简介</a></li>
+            <li class="nav-item lang" data-lang="zh"><a href="{% url 'wuxing' %}"
+                                                        class="nav-link {% if request.resolver_match.url_name == 'wuxing' %}active{% endif %}">简介</a>
+            </li>
             <li class="nav-item"><a href="#" class="nav-link" data-lang-switch="en">English</a></li>
             <li class="nav-item"><a href="#" class="nav-link" data-lang-switch="zh">中文</a></li>
         </ul>
