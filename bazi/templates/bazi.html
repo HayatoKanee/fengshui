@@ -83,321 +83,62 @@
                 <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab"
                      tabindex="0">
                     <div class="container mt-5">
-                        <h3>年柱计算</h3>
+                        <h3>旺相</h3>
                         <table class="table">
                             <thead>
                             <tr>
-                                <th scope="col"></th>
-                                <th scope="col">干支</th>
-                                <th scope="col">地支藏干</th>
-                                <th scope="col">生克比数</th>
-                                <th scope="col">支占比例</th>
-                                <th scope="col">旺囚度</th>
-                                <th scope="col">干量值</th>
+                                <th scope="col">五行</th>
+                                <th scope="col">旺相</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr>
-                                <th scope="row"></th>
-                                <td>{{ bazi.getYearGan }}</td>
-                                <td>{{ bazi.getYearGan }}</td>
-                                <td>{{ year_gan_value|floatformat:2 }}</td>
-                                <td>1.00</td>
-                                {% with year_gan_wuxing=gan_wuxing|lookup:bazi.getYearGan %}
-                                    {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
-                                        {% with x=wang_xiang_value|lookup:year_wang_xiang %}
-                                            <td>{{ x |floatformat:2 }}</td>
-                                            <td>{{ x|multiply:year_gan_value|floatformat:2 }}</td>
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endwith %}
-                            </tr>
-                            {% with year_zhi_gans=hidden_gan_ratios|lookup:bazi.getYearZhi %}
-                                {% with year_zhi_first_gan=year_zhi_gans|keys_to_list|first %}
-                                    <tr>
-                                        <th scope="row"></th>
-                                        <td>{{ bazi.getYearZhi }}</td>
-                                        <td>{{ year_zhi_first_gan }}</td>
-                                        {% with x=year_zhi_value %}
-                                            <td>{{ x|floatformat:2 }}</td>
-                                            {% with y=year_zhi_gans|lookup:year_zhi_first_gan %}
-                                                <td>{{ y |floatformat:2 }}</td>
-                                                {% with year_gan_wuxing=gan_wuxing|lookup:year_zhi_first_gan %}
-                                                    {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
-                                                        {% with z=wang_xiang_value|lookup:year_wang_xiang %}
-                                                            <td>{{ z|floatformat:2 }}</td>
-                                                            <td>{{ x|multiply:y|multiply:z |floatformat:2 }}</td>
-                                                        {% endwith %}
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        {% endwith %}
-                                    </tr>
-                                {% endwith %}
-                            {% endwith %}
-                            {% with year_zhi_gans=hidden_gan_ratios|lookup:bazi.getYearZhi %}
-                                {% for gan, ratio in year_zhi_gans.items %}
-                                    {% if not forloop.first %}
-                                        <tr>
-                                            <th scope="row"></th>
-                                            <td></td>
-                                            <td>{{ gan }}</td>
-                                            <td>{{ year_zhi_value|floatformat:2 }}</td>
-                                            <td>{{ ratio|floatformat:2 }}</td>
-                                            {% with year_gan_wuxing=gan_wuxing|lookup:gan %}
-                                                {% with year_wang_xiang=wang_xiang|lookup:year_gan_wuxing %}
-                                                    {% with x=wang_xiang_value|lookup:year_wang_xiang %}
-                                                        <td>{{ x |floatformat:2 }}</td>
-                                                        <td>{{ x|multiply:year_zhi_value|multiply:ratio|floatformat:2 }}</td>
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-
+                            {% for wx, wangxiang in wang_xiang.items %}
+                                <tr>
+                                    <td>{{ wx }}</td>
+                                    <td>{{ wangxiang }}</td>
+                                </tr>
+                            {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="container mt-5">
+                        <h3>年柱计算</h3>
+                        {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 wuxing=wuxing.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
                     </div>
 
                     <div class="container mt-5">
                         <h3>月柱计算</h3>
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col">干支</th>
-                                <th scope="col">地支藏干</th>
-                                <th scope="col">生克比数</th>
-                                <th scope="col">支占比例</th>
-                                <th scope="col">旺囚度</th>
-                                <th scope="col">干量值</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <th scope="row"></th>
-                                <td>{{ bazi.getMonthGan }}</td>
-                                <td>{{ bazi.getMonthGan }}</td>
-                                <td>{{ month_gan_value|floatformat:2 }}</td>
-                                <td>1.00</td>
-                                {% with month_gan_wuxing=gan_wuxing|lookup:bazi.getMonthGan %}
-                                    {% with month_wang_xiang=wang_xiang|lookup:month_gan_wuxing %}
-                                        {% with x=wang_xiang_value|lookup:month_wang_xiang %}
-                                            <td>{{ x|floatformat:2 }}</td>
-                                            <td>{{ x|multiply:month_gan_value|floatformat:2 }}</td>
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endwith %}
-                            </tr>
-                            {% with month_zhi_gans=hidden_gan_ratios|lookup:bazi.getMonthZhi %}
-                                {% with month_zhi_first_gan=month_zhi_gans|keys_to_list|first %}
-                                    <tr>
-                                        <th scope="row"></th>
-                                        <td>{{ bazi.getMonthZhi }}</td>
-                                        <td>{{ month_zhi_first_gan }}</td>
-                                        {% with x=month_zhi_value %}
-                                            <td>{{ x |floatformat:2 }}</td>
-                                            {% with y=month_zhi_gans|lookup:month_zhi_first_gan %}
-                                                <td>{{ y|floatformat:2 }}</td>
-                                                {% with month_gan_wuxing=gan_wuxing|lookup:month_zhi_first_gan %}
-                                                    {% with month_wang_xiang=wang_xiang|lookup:month_gan_wuxing %}
-                                                        {% with z=wang_xiang_value|lookup:month_wang_xiang %}
-                                                            <td>{{ z|floatformat:2 }}</td>
-                                                            <td>{{ x|multiply:y|multiply:z|floatformat:2 }}</td>
-                                                        {% endwith %}
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        {% endwith %}
-                                    </tr>
-                                {% endwith %}
-                            {% endwith %}
-                            {% with month_zhi_gans=hidden_gan_ratios|lookup:bazi.getMonthZhi %}
-                                {% for gan, ratio in month_zhi_gans.items %}
-                                    {% if not forloop.first %}
-                                        <tr>
-                                            <th scope="row"></th>
-                                            <td></td>
-                                            <td>{{ gan }}</td>
-                                            <td>{{ month_zhi_value |floatformat:2 }}</td>
-                                            <td>{{ ratio |floatformat:2 }}</td>
-                                            {% with month_gan_wuxing=gan_wuxing|lookup:gan %}
-                                                {% with month_wang_xiang=wang_xiang|lookup:month_gan_wuxing %}
-                                                    {% with x=wang_xiang_value|lookup:month_wang_xiang %}
-                                                        <td>{{ x|floatformat:2 }}</td>
-                                                        <td>{{ x|multiply:month_zhi_value|multiply:ratio|floatformat:2 }}</td>
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-
-                            </tbody>
-                        </table>
+                        {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 wuxing=wuxing.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
                     </div>
 
                     <div class="container mt-5">
                         <h3>日柱计算</h3>
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col">干支</th>
-                                <th scope="col">地支藏干</th>
-                                <th scope="col">生克比数</th>
-                                <th scope="col">支占比例</th>
-                                <th scope="col">旺囚度</th>
-                                <th scope="col">干量值</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <th scope="row"></th>
-                                <td>{{ bazi.getDayGan }}</td>
-                                <td>{{ bazi.getDayGan }}</td>
-                                <td>{{ day_gan_value|floatformat:2 }}</td>
-                                <td>1.00</td>
-                                {% with day_gan_wuxing=gan_wuxing|lookup:bazi.getDayGan %}
-                                    {% with day_wang_xiang=wang_xiang|lookup:day_gan_wuxing %}
-                                        {% with x=wang_xiang_value|lookup:day_wang_xiang %}
-                                            <td>{{ x |floatformat:2 }}</td>
-                                            <td>{{ x|multiply:day_gan_value|floatformat:2 }}</td>
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endwith %}
-                            </tr>
-                            {% with day_zhi_gans=hidden_gan_ratios|lookup:bazi.getDayZhi %}
-                                {% with day_zhi_first_gan=day_zhi_gans|keys_to_list|first %}
-                                    <tr>
-                                        <th scope="row"></th>
-                                        <td>{{ bazi.getDayZhi }}</td>
-                                        <td>{{ day_zhi_first_gan }}</td>
-                                        {% with x=day_zhi_value %}
-                                            <td>{{ x|floatformat:2 }}</td>
-                                            {% with y=day_zhi_gans|lookup:day_zhi_first_gan %}
-                                                <td>{{ y|floatformat:2 }}</td>
-                                                {% with day_gan_wuxing=gan_wuxing|lookup:day_zhi_first_gan %}
-                                                    {% with day_wang_xiang=wang_xiang|lookup:day_gan_wuxing %}
-                                                        {% with z=wang_xiang_value|lookup:day_wang_xiang %}
-                                                            <td>{{ z |floatformat:2 }}</td>
-                                                            <td>{{ x|multiply:y|multiply:z |floatformat:2 }}</td>
-                                                        {% endwith %}
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        {% endwith %}
-                                    </tr>
-                                {% endwith %}
-                            {% endwith %}
-                            {% with day_zhi_gans=hidden_gan_ratios|lookup:bazi.getDayZhi %}
-                                {% for gan, ratio in day_zhi_gans.items %}
-                                    {% if not forloop.first %}
-                                        <tr>
-                                            <th scope="row"></th>
-                                            <td></td>
-                                            <td>{{ gan }}</td>
-                                            <td>{{ day_zhi_value|floatformat:2 }}</td>
-                                            <td>{{ ratio|floatformat:2 }}</td>
-                                            {% with day_gan_wuxing=gan_wuxing|lookup:gan %}
-                                                {% with day_wang_xiang=wang_xiang|lookup:day_gan_wuxing %}
-                                                    {% with x=wang_xiang_value|lookup:day_wang_xiang %}
-                                                        <td>{{ x|floatformat:2 }}</td>
-                                                        <td>{{ x|multiply:day_zhi_value|multiply:ratio|floatformat:2 }}</td>
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-
-                            </tbody>
-                        </table>
+                        {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 wuxing=wuxing.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
                     </div>
 
                     <div class="container mt-5">
                         <h3>时柱计算</h3>
+                        {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 wuxing=wuxing.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
+                    </div>
+                    <div class="container mt-5">
+                        <h3>五行值</h3>
                         <table class="table">
                             <thead>
                             <tr>
-                                <th scope="col"></th>
-                                <th scope="col">干支</th>
-                                <th scope="col">地支藏干</th>
-                                <th scope="col">生克比数</th>
-                                <th scope="col">支占比例</th>
-                                <th scope="col">旺囚度</th>
-                                <th scope="col">干量值</th>
+                                <th scope="col">五行</th>
+                                <th scope="col">值</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr>
-                                <th scope="row"></th>
-                                <td>{{ bazi.getTimeGan }}</td>
-                                <td>{{ bazi.getTimeGan }}</td>
-                                <td>{{ time_gan_value|floatformat:2 }}</td>
-                                <td>1.00</td>
-                                {% with time_gan_wuxing=gan_wuxing|lookup:bazi.getTimeGan %}
-                                    {% with time_wang_xiang=wang_xiang|lookup:time_gan_wuxing %}
-                                        {% with x=wang_xiang_value|lookup:time_wang_xiang %}
-                                            <td>{{ x|floatformat:2 }}</td>
-                                            <td>{{ x|multiply:time_gan_value|floatformat:2 }}</td>
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endwith %}
-                            </tr>
-                            {% with time_zhi_gans=hidden_gan_ratios|lookup:bazi.getTimeZhi %}
-                                {% with time_zhi_first_gan=time_zhi_gans|keys_to_list|first %}
-                                    <tr>
-                                        <th scope="row"></th>
-                                        <td>{{ bazi.getTimeZhi }}</td>
-                                        <td>{{ time_zhi_first_gan }}</td>
-                                        {% with x=time_zhi_value %}
-                                            <td>{{ x |floatformat:2 }}</td>
-                                            {% with y=time_zhi_gans|lookup:time_zhi_first_gan %}
-                                                <td>{{ y |floatformat:2 }}</td>
-                                                {% with time_gan_wuxing=gan_wuxing|lookup:time_zhi_first_gan %}
-                                                    {% with time_wang_xiang=wang_xiang|lookup:time_gan_wuxing %}
-                                                        {% with z=wang_xiang_value|lookup:time_wang_xiang %}
-                                                            <td>{{ z |floatformat:2 }}</td>
-                                                            <td>{{ x|multiply:y|multiply:z |floatformat:2 }}</td>
-                                                        {% endwith %}
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        {% endwith %}
-                                    </tr>
-                                {% endwith %}
-                            {% endwith %}
-                            {% with time_zhi_gans=hidden_gan_ratios|lookup:bazi.getTimeZhi %}
-                                {% for gan, ratio in time_zhi_gans.items %}
-                                    {% if not forloop.first %}
-                                        <tr>
-                                            <th scope="row"></th>
-                                            <td></td>
-                                            <td>{{ gan }}</td>
-                                            <td>{{ time_zhi_value|floatformat:2 }}</td>
-                                            <td>{{ ratio |floatformat:2 }}</td>
-                                            {% with time_gan_wuxing=gan_wuxing|lookup:gan %}
-                                                {% with time_wang_xiang=wang_xiang|lookup:time_gan_wuxing %}
-                                                    {% with x=wang_xiang_value|lookup:time_wang_xiang %}
-                                                        <td>{{ x|floatformat:2 }}</td>
-                                                        <td>{{ x|multiply:time_zhi_value|multiply:ratio|floatformat:2 }}</td>
-                                                    {% endwith %}
-                                                {% endwith %}
-                                            {% endwith %}
-                                        </tr>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-
+                            {% for wx, value in wuxing_value.items %}
+                                <tr>
+                                    <td>{{ wx }}</td>
+                                    <td>{{ value|floatformat:2 }}</td>
+                                </tr>
+                            {% endfor %}
                             </tbody>
                         </table>
                     </div>
-
                     <div class="container mt-5">
                         <h3>生耗值</h3>
                         <table class="table">
@@ -414,14 +155,14 @@
                             <tr>
                                 <th scope="row"></th>
                                 <td> 生总值</td>
-                                <td> {{ sheng_value|floatformat:2 }}</td>
-                                <td> {{ sheng_percentage }}</td>
+                                <td> {{ sheng_hao.0|floatformat:2 }}</td>
+                                <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
                             </tr>
                             <tr>
                                 <th scope="row"></th>
                                 <td>耗总值</td>
-                                <td> {{ hao_value|floatformat:2 }}</td>
-                                <td> {{ hao_percentage }}</td>
+                                <td> {{ sheng_hao.1|floatformat:2 }}</td>
+                                <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
                             </tr>
                             </tbody>
                         </table>
@@ -431,7 +172,7 @@
             <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab"
                  tabindex="0">
                 <ul>
-                    <li>主属性:<strong>{{ main_wuxing }}</strong></li>
+                    <li>主属性: <strong>{{ main_wuxing }}</strong></li>
                     <li>生肖：<strong>{{ shengxiao }}</strong></li>
                 </ul>
                 <div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab"

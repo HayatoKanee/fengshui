@@ -16,3 +16,16 @@ def keys_to_list(dictionary):
 @register.filter
 def multiply(value, arg):
     return value * arg
+
+
+@register.filter
+def first_value(dictionary):
+    return next(iter(dictionary.values()))
+
+
+@register.filter
+def get_item(lst, i):
+    try:
+        return lst[i]
+    except:
+        return ''
