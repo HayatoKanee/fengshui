@@ -151,8 +151,16 @@ def dizhi_view(request):
     return render(request, 'dizhi.html')
 
 
+def ganzhi_view(request):
+    return render(request, 'ganzhi.html')
+
+
 def wuxing_view(request):
     return render(request, 'wuxing.html')
+
+
+def introbazi_view(request):
+    return render(request, 'introbazi.html')
 
 
 def bazi_view(request):
