@@ -1,6 +1,10 @@
+import openai
+import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
-    wuxing_relations, zhi_wuxing, gan_yinyang
+    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge
 
+openai.api_key = os.environ.get('OPENAI_API_KEY')
+print(openai.api_key)
 
 def wuxing_relationship(gan, zhi):
     element1, element2 = gan_wuxing.get(gan), zhi_wuxing.get(zhi)
@@ -186,3 +190,20 @@ def extract_form_data(form):
         'hour': form.cleaned_data['hour'],
         'minute': form.cleaned_data['minute']
     }
+
+
+def analyse_partner():
+    # Given ratios
+    ratios = "0.5正印 0.3正官 0.2食神"
+
+    # Construct the prompt
+    prompt = f"Based on the following descriptions: {peiou_xingge} and the given ratios: {ratios}, craft a nuanced description of the person."
+
+    # Make a completion request
+    response = openai.Completion.create(
+        engine="gpt-3.5-turbo",  # or "gpt-4.0-turbo" or whatever the engine name is for the newer version
+        prompt=prompt,
+        max_tokens=300  # adjust as needed
+    )
+
+    return(response.choices[0].text.strip())
