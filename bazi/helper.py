@@ -1,5 +1,5 @@
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
-    wuxing_relations, zhi_wuxing
+    wuxing_relations, zhi_wuxing, gan_yinyang
 
 
 def wuxing_relationship(gan, zhi):
@@ -108,25 +108,69 @@ def accumulate_wuxing_values(wuxing, gan_liang_value):
     return result
 
 
-def calculate_wu_xing_for_bazi(bazi):
-    wu_xing_values = []
+def calculate_values_for_bazi(bazi, dict):
+    values = []
 
     for item in bazi.toString().split():
         gan, zhi = item[0], item[1]
 
-        # Determine wu_xing for gan
-        wu_xing_for_gan = gan_wuxing.get(gan)
+        # Determine value for gan
+        value_for_gan = dict.get(gan)
 
-        # Determine wu_xing for each hidden gan in zhi
+        # Determine value for each hidden gan in zhi
         hidden_gans_for_zhi = hidden_gan_ratios.get(zhi)
-        wu_xing_values_for_zhi = []
+        values_for_zhi = []
         for hidden_gan in hidden_gans_for_zhi.keys():
-            wu_xing_for_hidden_gan = gan_wuxing.get(hidden_gan)
-            wu_xing_values_for_zhi.append(wu_xing_for_hidden_gan)
+            value_for_hidden_gan = dict.get(hidden_gan)
+            values_for_zhi.append(value_for_hidden_gan)
 
-        wu_xing_values.append((wu_xing_for_gan, wu_xing_values_for_zhi))
+        values.append((value_for_gan, values_for_zhi))
 
-    return wu_xing_values
+    return values
+
+
+def calculate_shishen(day_master_yinyang, day_master_wuxing, stem_yinyang, stem_wuxing):
+    if day_master_wuxing == stem_wuxing:
+        if day_master_yinyang == stem_yinyang:
+            return '比肩'
+        return '比劫'
+    elif relationships['生'][day_master_wuxing] == stem_wuxing:
+        if day_master_yinyang == stem_yinyang:
+            return '食神'
+        return '伤官'
+    elif relationships['生'][stem_wuxing] == day_master_wuxing:
+        if day_master_yinyang == stem_yinyang:
+            return '偏印'
+        return '正印'
+    elif relationships['克'][day_master_wuxing] == stem_wuxing:
+        if day_master_yinyang == stem_yinyang:
+            return '偏财'
+        return '正财'
+    elif relationships['克'][stem_wuxing] == day_master_wuxing:
+        if day_master_yinyang == stem_yinyang:
+            return '正官'
+        return '偏官'
+
+
+def calculate_shishen_for_bazi(wuxing, yinyang):
+    day_master_wuxing = wuxing[2][0]
+    day_master_yinyang = yinyang[2][0]
+
+    shishen_list = []
+
+    for i in range(len(wuxing)):
+        stem_wuxing = wuxing[i][0]
+        stem_yinyang = yinyang[i][0]
+        shishen_for_gan = calculate_shishen(day_master_yinyang, day_master_wuxing, stem_yinyang, stem_wuxing)
+        shishen_for_zhi = []
+        for hidden_stem in wuxing[i][1]:
+            hidden_stem_yinyang = yinyang[i][1][wuxing[i][1].index(hidden_stem)]
+            shishen_hidden = calculate_shishen(day_master_yinyang, day_master_wuxing, hidden_stem_yinyang, hidden_stem)
+            shishen_for_zhi.append(shishen_hidden)
+
+        shishen_list.append((shishen_for_gan, shishen_for_zhi))
+    shishen_list[2] = ('日主', shishen_list[2][1])
+    return shishen_list
 
 
 def get_relations(main_wuxing):

@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from .forms import BirthTimeForm
 from lunar_python import Lunar, Solar, EightChar, JieQi
-
+from .constants import gan_wuxing, gan_yinyang
 from .helper import extract_form_data, get_relations, get_wang_xiang, calculate_values, \
-    get_hidden_gans, calculate_wang_xiang_values, calculate_wu_xing_for_bazi, calculate_gan_liang_value, \
-    accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage
+    get_hidden_gans, calculate_wang_xiang_values, calculate_values_for_bazi, calculate_gan_liang_value, \
+    accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage, calculate_shishen_for_bazi
 
 
 def home_view(request):
@@ -48,7 +48,9 @@ def bazi_view(request):
             values = calculate_values(bazi)
             hidden_gans = get_hidden_gans(bazi)
             sheng_hao_relations = get_relations(main_wuxing)
-            wuxing = calculate_wu_xing_for_bazi(bazi)
+            wuxing = calculate_values_for_bazi(bazi, gan_wuxing)
+            yinyang = calculate_values_for_bazi(bazi, gan_yinyang)
+            shishen = calculate_shishen_for_bazi(wuxing, yinyang)
             wang_xiang = get_wang_xiang(bazi.getMonthZhi(), lunar)
             wang_xiang_values = calculate_wang_xiang_values(bazi, wang_xiang)
             gan_liang_values = calculate_gan_liang_value(values, hidden_gans, wang_xiang_values)
@@ -66,6 +68,8 @@ def bazi_view(request):
                 'wang_xiang': wang_xiang,
                 'wang_xiang_values': wang_xiang_values,
                 'wuxing': wuxing,
+                'yinyang': yinyang,
+                'shishen': shishen,
                 'gan_liang_values': gan_liang_values,
                 'wuxing_value': wuxing_value,
                 'sheng_hao': sheng_hao,

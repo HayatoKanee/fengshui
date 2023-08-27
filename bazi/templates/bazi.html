@@ -103,22 +103,22 @@
                     </div>
                     <div class="container mt-5">
                         <h3>年柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 wuxing=wuxing.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
+                        {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 yinyang=yinyang.0 wuxing=wuxing.0 shishen=shishen.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
                     </div>
 
                     <div class="container mt-5">
                         <h3>月柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 wuxing=wuxing.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
+                        {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 yinyang=yinyang.1 wuxing=wuxing.1 shishen=shishen.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
                     </div>
 
                     <div class="container mt-5">
                         <h3>日柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 wuxing=wuxing.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
+                        {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 yinyang=yinyang.2 wuxing=wuxing.2 shishen=shishen.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
                     </div>
 
                     <div class="container mt-5">
                         <h3>时柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 wuxing=wuxing.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
+                        {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 yinyang=yinyang.3 wuxing=wuxing.3 shishen=shishen.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
                     </div>
                     <div class="container mt-5">
                         <h3>五行值</h3>
