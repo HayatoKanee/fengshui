@@ -4,7 +4,8 @@ from lunar_python import Lunar, Solar, EightChar, JieQi
 from .constants import gan_wuxing, gan_yinyang
 from .helper import extract_form_data, get_relations, get_wang_xiang, calculate_values, \
     get_hidden_gans, calculate_wang_xiang_values, calculate_values_for_bazi, calculate_gan_liang_value, \
-    accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage, calculate_shishen_for_bazi
+    accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage, calculate_shishen_for_bazi, \
+    analyse_partner, get_day_gan_ratio, analyse_personality
 
 
 def home_view(request):
@@ -58,6 +59,8 @@ def bazi_view(request):
             wuxing_value = accumulate_wuxing_values(wuxing, gan_liang_values)
             sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
             sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
+            partner_analyst = analyse_partner(hidden_gans, shishen)
+            personality = analyse_personality(bazi.getMonthZhi())
             context = {
                 'form': form,
                 'bazi': bazi,
@@ -73,7 +76,9 @@ def bazi_view(request):
                 'gan_liang_values': gan_liang_values,
                 'wuxing_value': wuxing_value,
                 'sheng_hao': sheng_hao,
-                'sheng_hao_percentage': sheng_hao_percentage
+                'sheng_hao_percentage': sheng_hao_percentage,
+                'partner_analyst': partner_analyst,
+                'personality': personality
             }
             return render(request, 'bazi.html', context)
     else:
