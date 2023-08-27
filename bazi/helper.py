@@ -1,10 +1,11 @@
 import openai
 import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
-    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge
+    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 print(openai.api_key)
+
 
 def wuxing_relationship(gan, zhi):
     element1, element2 = gan_wuxing.get(gan), zhi_wuxing.get(zhi)
@@ -192,18 +193,33 @@ def extract_form_data(form):
     }
 
 
-def analyse_partner():
-    # Given ratios
-    ratios = "0.5正印 0.3正官 0.2食神"
+def get_day_gan_ratio(hidden_gan, shishen_list):
+    day_master_ratios = hidden_gan[2]
+    shishen = shishen_list[2][1]
+    shishen_ratios = {}
+    for key, value in day_master_ratios.items():
+        shishen_key = shishen[list(day_master_ratios.keys()).index(key)]
+        shishen_ratios[shishen_key] = value
 
-    # Construct the prompt
-    prompt = f"Based on the following descriptions: {peiou_xingge} and the given ratios: {ratios}, craft a nuanced description of the person."
+    return shishen_ratios
 
-    # Make a completion request
-    response = openai.Completion.create(
-        engine="gpt-3.5-turbo",  # or "gpt-4.0-turbo" or whatever the engine name is for the newer version
-        prompt=prompt,
-        max_tokens=300  # adjust as needed
+
+def analyse_partner(hidden_gan, shishen_list):
+    ratios = get_day_gan_ratio(hidden_gan, shishen_list)
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system",
+             "content": "You are a helpful assistant that can craft nuanced descriptions based on given ratios and "
+                        "predefined text."},
+            {"role": "user",
+             "content": f"Based on the following descriptions: {peiou_xingge} and the given ratios: {ratios}, craft a "
+                        f"nuanced description of the person in chinese. "}
+        ]
     )
 
-    return(response.choices[0].text.strip())
+    return response.choices[0].message.content
+
+
+def analyse_personality(month_zhi):
+    return tigang.get(month_zhi)
