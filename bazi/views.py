@@ -1,3 +1,5 @@
+import datetime
+
 from django.shortcuts import render
 from .forms import BirthTimeForm
 from lunar_python import Lunar, Solar, EightChar, JieQi
@@ -5,7 +7,7 @@ from .constants import gan_wuxing, gan_yinyang
 from .helper import extract_form_data, get_relations, get_wang_xiang, calculate_values, \
     get_hidden_gans, calculate_wang_xiang_values, calculate_values_for_bazi, calculate_gan_liang_value, \
     accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage, calculate_shishen_for_bazi, \
-    analyse_partner, get_day_gan_ratio, analyse_personality
+    analyse_partner, get_day_gan_ratio, analyse_personality, analyse_liunian
 
 
 def home_view(request):
@@ -37,11 +39,14 @@ def introbazi_view(request):
 
 
 def bazi_view(request):
+    current_year = datetime.datetime.now().year
+    years = range(current_year - 20, current_year + 50)
     if request.method == 'POST':
-
         form = BirthTimeForm(request.POST)
         if form.is_valid():
             data = extract_form_data(form)
+            selected_year = request.POST.get('liunian')
+            is_male = request.POST.get('gender') == 'male'
             solar = Solar.fromYmdHms(data['year'], data['month'], data['day'], data['hour'], data['minute'], 0)
             lunar = solar.getLunar()
             bazi = lunar.getEightChar()
@@ -59,8 +64,10 @@ def bazi_view(request):
             wuxing_value = accumulate_wuxing_values(wuxing, gan_liang_values)
             sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
             sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
-            partner_analyst = analyse_partner(hidden_gans, shishen)
+            is_strong = sheng_hao[0] > sheng_hao[1]
+            # partner_analyst = analyse_partner(hidden_gans, shishen)
             personality = analyse_personality(bazi.getMonthZhi())
+            liunian_analysis = analyse_liunian(bazi, shishen, selected_year, is_strong, is_male)
             context = {
                 'form': form,
                 'bazi': bazi,
@@ -77,11 +84,15 @@ def bazi_view(request):
                 'wuxing_value': wuxing_value,
                 'sheng_hao': sheng_hao,
                 'sheng_hao_percentage': sheng_hao_percentage,
-                'partner_analyst': partner_analyst,
+                'current_year': int(selected_year),
+                'is_male': is_male,
+                # 'partner_analyst': partner_analyst,
+                'liunian_analysis': liunian_analysis,
+                'years': years,
                 'personality': personality
             }
             return render(request, 'bazi.html', context)
     else:
         form = BirthTimeForm()
 
-    return render(request, 'bazi.html', {'form': form})
+    return render(request, 'bazi.html', {'form': form, 'current_year': current_year, 'years': years})

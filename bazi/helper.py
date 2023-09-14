@@ -1,10 +1,12 @@
+import datetime
+
 import openai
 import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
-    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang
+    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he
+from lunar_python import Solar
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
-print(openai.api_key)
 
 
 def wuxing_relationship(gan, zhi):
@@ -219,6 +221,186 @@ def analyse_partner(hidden_gan, shishen_list):
     )
 
     return response.choices[0].message.content
+
+
+def analyse_liunian(bazi, shishen, selected_year, is_strong, is_male):
+    daymaster_wuxing = gan_wuxing.get(bazi.getDayGan())
+    daymaster_yinyang = gan_yinyang.get(bazi.getDayGan())
+    solar = Solar.fromYmd(int(selected_year), 5, 5)
+    lunar = solar.getLunar()
+    year_bazi = lunar.getEightChar()
+    year_shishen = get_shishen_for_that_year(year_bazi, daymaster_wuxing, daymaster_yinyang)
+    analysis = f"{year_bazi.getYearGan()}{year_bazi.getYearZhi()}年，对应流年运：{year_shishen}（数字为地支藏干之比例）<br>"
+    analysis += "流年天干分析，主要对应上半年：<br>"
+    analysis += analyse_liunian_shishen(year_shishen[0], bazi, shishen, year_bazi, is_strong, is_male)
+    analysis += "流年地支分析，主要对应下半年：<br>"
+    for k, v in year_shishen[1].items():
+        analysis += f"{k}运(大约占{v*100}%):<br>"
+        analysis += analyse_liunian_shishen(k, bazi, shishen, year_bazi, is_strong, is_male)
+    return analysis
+
+
+def get_shishen_for_that_year(year_bazi, daymaster_wuxing, daymaster_yinyang):
+    year_gan = year_bazi.getYearGan()
+    year_hidden_gans = hidden_gan_ratios.get(year_bazi.getYearZhi())
+    yinyang_gan = gan_yinyang.get(year_gan)
+    wuxing_gan = gan_wuxing.get(year_gan)
+    gan_shishen = calculate_shishen(daymaster_yinyang, daymaster_wuxing, yinyang_gan, wuxing_gan)
+    zhi_shishen = {}
+    for gan, ratio in year_hidden_gans.items():
+        yinyang_for_gan = gan_yinyang.get(gan)
+        wuxing_for_gan = gan_wuxing.get(gan)
+        shishen_for_gan = calculate_shishen(daymaster_yinyang, daymaster_wuxing, yinyang_for_gan, wuxing_for_gan)
+        zhi_shishen[shishen_for_gan] = ratio
+    return [gan_shishen, zhi_shishen]
+
+
+def check_he(ganzhi1, ganzhi2):
+    return (ganzhi1, ganzhi2) in liu_he or (ganzhi2, ganzhi1) in liu_he or (ganzhi1, ganzhi2) in wu_he or (
+        ganzhi2, ganzhi1) in wu_he
+
+
+def contain_shishen(target, shishen_list):
+    for main, sublist in shishen_list:
+        if main == target or target in sublist:
+            return True
+    return False
+
+
+def find_shishen_indices(target, shishen_list):
+    indices = []
+    i = 0
+    for shishen, sublist in shishen_list:
+        if shishen == target:
+            indices.append(i)
+        i += 1
+        for sub_shishen in sublist:
+            if sub_shishen == target:
+                indices.append(i)
+        i += 1
+    return indices
+
+
+def check_if_he_target(shishen, bazi, year_bazi, target):
+    if contain_shishen(target, shishen):
+        indices = find_shishen_indices(target, shishen)
+        s = bazi.toString().replace(' ', '')
+        for i in indices:
+            if check_he(year_bazi.getYearGan(), s[i]) or check_he(year_bazi.getYearZhi(), s[i]):
+                return True
+    return False
+
+
+def handle_zheng_cai(bazi, shishen, year_bazi, is_strong, is_male):
+    analysis = "•流年走正财运， 未婚者有结婚之机会，已婚者太太能帮助先生，先生也较疼老婆。<br>"
+    if check_he(bazi.getDayGan(), year_bazi.getYearGan()) or check_he(bazi.getMonthZhi(), year_bazi.getYearZhi()):
+        analysis += "•正财合日主或月支，在钱财或身体方面会有损失"
+        if not is_male:
+            analysis += "，夫妻间感情会变不好"
+        analysis += "。<br>"
+    if not is_strong and contain_shishen('正印', shishen) and contain_shishen('比肩', shishen) and \
+            contain_shishen(
+                '比劫', shishen):
+        analysis += "•本命身弱而带有正印，比肩，比劫， 注意破财、损命。"
+        if is_male:
+            analysis += "太太与自己母亲不和，会有婆媳问题。"
+        analysis += "<br>"
+    if len(find_shishen_indices('正财', shishen)) >= 2:
+        analysis += "•财多又走财年， 很有异性缘"
+    if not is_strong:
+        analysis += ("•身弱，正财为忌神， 很会花钱，不重视钱财。<br>"
+                     "•要变通或较费力才会赚到钱。<br>"
+                     "•会有破财或桃色纠纷。<br>")
+    else:
+        analysis += "•身强， 正财为喜神， 较有赚钱机会， 赚钱不难。<br>"
+        if not (contain_shishen('正财', shishen) or contain_shishen('偏财', shishen)):
+            analysis += "•但本命无正财偏财， 宜从事劳力密集之行业。<br>"
+    return analysis
+
+
+def handle_pian_cai(bazi, shishen, year_bazi, is_strong, is_male):
+    analysis = "•流年走偏财，注意父亲身体状况，较不喜欢固定的工作，喜欢挑剔，感情亦不专。<br>"
+    if not is_male and is_strong and contain_shishen('七杀', shishen):
+        analysis += "•女命身强，走偏财，本命有七杀， 风情万种， 很开放， 易入上流社会。易养小男人或赚钱养男人<br>"
+    if not is_strong:
+        analysis += "•身弱，走偏财，赚钱很难。<br>"
+        analysis += "•身弱，偏财为忌神，宜戒色；不宜生活浮夸，钱少花一点，要懂得节约。<br>"
+    else:
+        analysis += "•身强，偏财为喜神，为人慷慨豪爽，懂得人情世故，交际特别好。<br>"
+        analysis += "•身强，偏财为喜神，得正职，亦主财运亨通，易有横财。<br>"
+    if is_male and is_strong and contain_shishen('七杀', shishen) and contain_shishen('偏财', shishen):
+        analysis += "•男命身强，走偏财，命中又有七杀及偏财，容易有名声与地位，但好色居多、养妾<br>"
+    indices = find_shishen_indices('偏财', shishen)
+    gan_indices = [i for i in indices if i % 2 == 0]
+    if len(gan_indices) > 0:
+        analysis += "•偏财通根，外面养妾， 偷偷摸摸。<br>"
+    if not (contain_shishen('正财', shishen) or contain_shishen('偏财', shishen)):
+        analysis += "•走偏财运，命中无正财，偏财，为人没有金钱观念，财来财去，不知如何赚钱，亦不重视钱财。<br>"
+    return analysis
+
+
+def handle_zheng_guan(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_qi_sha(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_zheng_yin(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_pian_yin(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_bi_jian(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_bi_jie(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_bi_jie(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_shang_guan(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+def handle_shi_shen(bazi, shishen, year_bazi, is_strong, is_male):
+    return ""
+
+
+shishen_handler = {
+    '正财': handle_zheng_cai,
+    '偏财': handle_pian_cai,
+    '正官': handle_zheng_guan,
+    '七杀': handle_qi_sha,
+    '正印': handle_zheng_yin,
+    '偏印': handle_pian_yin,
+    '比肩': handle_bi_jian,
+    '比劫': handle_bi_jie,
+    '伤官': handle_shang_guan,
+    '食神': handle_shi_shen
+}
+
+
+def analyse_liunian_shishen(year_shishen, bazi, shishen, year_bazi, is_strong, is_male):
+    handler = shishen_handler.get(year_shishen)
+    analysis = handler(bazi, shishen, year_bazi, is_strong, is_male)
+    if check_if_he_target(shishen, bazi, year_bazi, '正财'):
+        analysis += "•本命正财， 被流年合， 主钱财流失大"
+        if is_male:
+            analysis += ", 严防婚变"
+        analysis += "。<br>"
+    if check_if_he_target(shishen, bazi, year_bazi, '偏财'):
+        analysis += "•本命偏财， 被流年合， 开支特别大，生意会赔钱，钱财流失大，或生意一败涂地。父亲身体欠安，情人失恋，若为野桃花，易被揭发。<br>"
+
+    return analysis
 
 
 def analyse_personality(month_zhi):
