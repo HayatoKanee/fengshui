@@ -65,7 +65,7 @@ def bazi_view(request):
             sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
             sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
             is_strong = sheng_hao[0] > sheng_hao[1]
-            # partner_analyst = analyse_partner(hidden_gans, shishen)
+            partner_analyst = analyse_partner(hidden_gans, shishen)
             personality = analyse_personality(bazi.getMonthZhi())
             liunian_analysis = analyse_liunian(bazi, shishen, selected_year, is_strong, is_male)
             context = {
@@ -86,7 +86,7 @@ def bazi_view(request):
                 'sheng_hao_percentage': sheng_hao_percentage,
                 'current_year': int(selected_year),
                 'is_male': is_male,
-                # 'partner_analyst': partner_analyst,
+                'partner_analyst': partner_analyst,
                 'liunian_analysis': liunian_analysis,
                 'years': years,
                 'personality': personality
