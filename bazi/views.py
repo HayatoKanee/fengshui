@@ -71,6 +71,7 @@ def get_bazi_detail(request):
         context = {
             'bazi': bazi,
             'wuxing': wuxing,
+            'wuxing_value': wuxing_value,
             'sheng_hao': sheng_hao,
             'sheng_hao_percentage': sheng_hao_percentage,
         }
