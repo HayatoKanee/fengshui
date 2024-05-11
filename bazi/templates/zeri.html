@@ -1,0 +1,85 @@
+{% extends 'base_content.html' %}
+{% block content %}
+    <!-- Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">八字详细</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dynamic content will be loaded here -->
+                    <div id="modalContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="from_date">开始日子:</label>
+                <input type="date" class="form-control datepicker" id="from_date" name="from_date"
+                       value="{{ from_date }}" required>
+
+            </div>
+            <div class="form-group">
+                <label for="to_date">结束日子:</label>
+                <input type="date" class="form-control datepicker" id="to_date" name="to_date" value="{{ to_date }}"
+                       required>
+            </div>
+            <button type="submit" class="btn btn-primary">查看</button>
+        </form>
+        {% if data %}
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>年</th>
+                    <th>月</th>
+                    <th>日</th>
+                    <th>时</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for date in data %}
+                    <!-- Clickable row -->
+                    <tr class="clickable-row" data-bs-toggle="modal" data-bs-target="#detailsModal"
+                    onclick="showDetails('{{ date.year }}', '{{ date.month }}', '{{ date.day }}', '{{ date.hour }}')">
+                        <td>{{ date.year }}</td>
+                        <td>{{ date.month }}</td>
+                        <td>{{ date.day }}</td>
+                        <td>{{ date.hour }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script>
+        function showDetails(year, month, day, hour) {
+            // Make a POST request using jQuery's AJAX
+            $.ajax({
+                url: `{% url 'bazi_detail' %}`,
+                type: 'POST',
+                data: {
+                    'year': year,
+                    'month': month,
+                    'day': day,
+                    'hour': hour,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'  // Ensure CSRF token is included if not exempt
+                },
+                success: function (html) {
+                    // Insert the HTML into the modal and show it
+                    $('#modalContent').html(html);
+                    $('#detailsModal').show();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading the date details:', error);
+                }
+            });
+        }
+    </script>
+{% endblock %}

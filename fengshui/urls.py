@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from bazi.views import bazi_view, home_view, wuxing_view, tiangan_view, yinyang_view, dizhi_view, ganzhi_view, \
-    introbazi_view
+    introbazi_view, zeri_view, get_bazi_detail
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,4 +29,6 @@ urlpatterns = [
     path('dizhi', dizhi_view, name='dizhi'),
     path('ganzhi', ganzhi_view, name='ganzhi'),
     path('introbazi', introbazi_view, name='introbazi'),
+    path('zeri', zeri_view, name='zeri'),
+    path('bazi_detail', get_bazi_detail, name='bazi_detail')
 ]

@@ -3,8 +3,12 @@ import datetime
 import openai
 import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
-    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he
-from lunar_python import Solar
+    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he, wuxing, gan_xiang_chong, \
+    zhi_xiang_chong
+from lunar_python import Solar, Lunar, EightChar
+import csv
+
+from fengshui.settings import DATA_DIR
 
 openai.api_key = os.environ.get('OPENAI_API_KEY')
 
@@ -206,21 +210,25 @@ def get_day_gan_ratio(hidden_gan, shishen_list):
     return shishen_ratios
 
 
+# def analyse_partner(hidden_gan, shishen_list):
+#     ratios = get_day_gan_ratio(hidden_gan, shishen_list)
+#     response = openai.ChatCompletion.create(
+#         model="gpt-3.5-turbo",
+#         messages=[
+#             {"role": "system",
+#              "content": "You are a helpful assistant that can craft nuanced descriptions based on given ratios and "
+#                         "predefined text."},
+#             {"role": "user",
+#              "content": f"Based on the following descriptions: {peiou_xingge} and the given ratios: {ratios}, craft a "
+#                         f"nuanced description of the person in chinese. "}
+#         ]
+#     )
+#
+#     return response.choices[0].message.content
+
 def analyse_partner(hidden_gan, shishen_list):
     ratios = get_day_gan_ratio(hidden_gan, shishen_list)
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system",
-             "content": "You are a helpful assistant that can craft nuanced descriptions based on given ratios and "
-                        "predefined text."},
-            {"role": "user",
-             "content": f"Based on the following descriptions: {peiou_xingge} and the given ratios: {ratios}, craft a "
-                        f"nuanced description of the person in chinese. "}
-        ]
-    )
-
-    return response.choices[0].message.content
+    return peiou_xingge.get(list(ratios.items())[0][0])
 
 
 def analyse_liunian(bazi, shishen, selected_year, is_strong, is_male):
@@ -608,3 +616,72 @@ def analyse_liunian_shishen(year_shishen, bazi, shishen, year_bazi, is_strong, i
 
 def analyse_personality(month_zhi):
     return tigang.get(month_zhi)
+
+
+def best_bazi_from_to(start_year, end_year):
+    for year in range(start_year, end_year + 1):
+        print('processing year' + str(year))
+        best_bazi_in_year(year)
+        print('finish year ' + str(year))
+
+
+def best_bazi_in_year(year):
+    lunar = Lunar.fromYmdHms(year, 1, 1, 0, 0, 0)
+    file_path = os.path.join(DATA_DIR, f"good_bazis_{year}.csv")
+    with open(file_path, "w", newline='') as csvfile:
+        bazi_writer = csv.writer(csvfile)
+        while lunar.getYear() == year:
+            solar = lunar.getSolar()
+            if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 0, 0, 0).getEightChar()):
+                bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), 0])
+                for i in range(1, 23, 2):
+                    if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), i, 0, 0).getEightChar()):
+                        bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), i])
+            if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 23, 0, 0).getEightChar()):
+                bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), 23])
+            i = 1
+            next_lunar = lunar.next(i)
+            while next_lunar.toString() == lunar.toString():
+                i += 1
+                next_lunar = lunar.next(i)
+            if next_lunar.getMonth() < lunar.getMonth():
+                break
+            lunar = next_lunar
+
+def is_bazi_good(bazi: EightChar):
+    return is_bazi_contain_all_wuxing(bazi) and not wu_bu_yu_shi(bazi) and not tian_gan_or_di_zhi_xiang_chong(bazi,
+                                                                                                              0) and not tian_gan_or_di_zhi_xiang_chong(
+        bazi, 1)
+
+
+def is_bazi_contain_all_wuxing(bazi: EightChar):
+    wuxing_big_number = {'金': 0, '木': 0, '水': 0, '火': 0, '土': 0}
+    for tiangan in bazi.toString().split():
+        for char in tiangan:
+            wuxing_big_number[wuxing[char]] += 1
+    for num in wuxing_big_number.values():
+        if num == 0:
+            return False
+    return True
+
+
+def wu_bu_yu_shi(bazi: EightChar):
+    return relationships['克'][gan_wuxing[bazi.getTimeGan()]] == gan_wuxing[bazi.getDayGan()] and gan_yinyang[
+        bazi.getTimeGan()] == gan_yinyang[bazi.getDayGan()]
+
+
+def tian_gan_or_di_zhi_xiang_chong(bazi: EightChar, get_gan=0):
+    clashing_pair = {0: gan_xiang_chong, 1: zhi_xiang_chong}
+    gan = get_gan_or_zhi(bazi, get_gan)
+    for i in range(len(gan)):
+        for j in range(i + 1, len(gan)):
+            if (gan[i], gan[j]) in clashing_pair[get_gan]:
+                return True
+    return False
+
+
+def get_gan_or_zhi(bazi: EightChar, get_gan=0):
+    gan_or_zhi = []
+    for tiangan in bazi.toString().split():
+        gan_or_zhi.append(tiangan[get_gan])
+    return gan_or_zhi

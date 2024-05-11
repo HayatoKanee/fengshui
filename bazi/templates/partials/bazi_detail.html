@@ -1,0 +1,103 @@
+<div class="container mt-5">
+    <table class="table">
+        <h3>八字</h3>
+        <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col">时柱</th>
+            <th scope="col">日柱</th>
+            <th scope="col">月柱</th>
+            <th scope="col">年柱</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row">天干</th>
+            <td>{{ bazi.getTimeGan }}</td>
+            <td>{{ bazi.getDayGan }}</td>
+            <td>{{ bazi.getMonthGan }}</td>
+            <td>{{ bazi.getYearGan }}</td>
+        </tr>
+        <tr>
+            <th scope="row">地支</th>
+            <td>{{ bazi.getTimeZhi }}</td>
+            <td>{{ bazi.getDayZhi }}</td>
+            <td>{{ bazi.getMonthZhi }}</td>
+            <td>{{ bazi.getYearZhi }}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div class="container mt-5">
+    <h3>生耗值</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col"></th>
+            <th scope="col">值</th>
+            <th scope="col">占比</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row"></th>
+            <td> 生总值</td>
+            <td> {{ sheng_hao.0|floatformat:2 }}</td>
+            <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
+        </tr>
+        <tr>
+            <th scope="row"></th>
+            <td>耗总值</td>
+            <td> {{ sheng_hao.1|floatformat:2 }}</td>
+            <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div class="container mt-5">
+    <h3>吉星</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col"></th>
+            <th scope="col"></th>
+            <th scope="col">数量</th>
+
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row"></th>
+            <td> 日贵人</td>
+            <td> working</td>
+        </tr>
+        <tr>
+            <th scope="row"></th>
+            <td>天德</td>
+            <td> working</td>
+        </tr>
+        <tr>
+            <th scope="row"></th>
+            <td>月德</td>
+            <td> working</td>
+        </tr>
+        <tr>
+            <th scope="row"></th>
+            <td>文昌</td>
+            <td> working</td>
+        </tr>
+        <tr>
+            <th scope="row"></th>
+            <td>年贵人</td>
+            <td> working</td>
+        </tr>
+        <tr>
+            <th scope="row"></th>
+            <td>祿神</td>
+            <td> working</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
