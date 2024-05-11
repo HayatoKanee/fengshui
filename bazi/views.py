@@ -70,6 +70,7 @@ def get_bazi_detail(request):
         sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
         context = {
             'bazi': bazi,
+            'wuxing': wuxing,
             'sheng_hao': sheng_hao,
             'sheng_hao_percentage': sheng_hao_percentage,
         }
