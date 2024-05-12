@@ -4,7 +4,7 @@ import openai
 import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
     wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he, wuxing, gan_xiang_chong, \
-    zhi_xiang_chong
+    zhi_xiang_chong, gui_ren, tian_de, yue_de, wu_bu_yu_shi, lu_shen
 from lunar_python import Solar, Lunar, EightChar
 import csv
 
@@ -632,12 +632,13 @@ def best_bazi_in_year(year):
         bazi_writer = csv.writer(csvfile)
         while lunar.getYear() == year:
             solar = lunar.getSolar()
-            if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 0, 0, 0).getEightChar()):
+            if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 0, 0, 0).getEightChar(), 0):
                 bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), 0])
                 for i in range(1, 23, 2):
-                    if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), i, 0, 0).getEightChar()):
+                    if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), i, 0, 0).getEightChar(),
+                                    i):
                         bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), i])
-            if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 23, 0, 0).getEightChar()):
+            if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 23, 0, 0).getEightChar(), 23):
                 bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), 23])
             i = 1
             next_lunar = lunar.next(i)
@@ -648,9 +649,11 @@ def best_bazi_in_year(year):
                 break
             lunar = next_lunar
 
-def is_bazi_good(bazi: EightChar):
-    return is_bazi_contain_all_wuxing(bazi) and not wu_bu_yu_shi(bazi) and not tian_gan_or_di_zhi_xiang_chong(bazi,
-                                                                                                              0) and not tian_gan_or_di_zhi_xiang_chong(
+
+def is_bazi_good(bazi: EightChar, hour):
+    return is_bazi_contain_all_wuxing(bazi) and not is_wu_bu_yu_shi(bazi, hour) and not tian_gan_or_di_zhi_xiang_chong(
+        bazi,
+        0) and not tian_gan_or_di_zhi_xiang_chong(
         bazi, 1)
 
 
@@ -665,9 +668,14 @@ def is_bazi_contain_all_wuxing(bazi: EightChar):
     return True
 
 
-def wu_bu_yu_shi(bazi: EightChar):
-    return relationships['克'][gan_wuxing[bazi.getTimeGan()]] == gan_wuxing[bazi.getDayGan()] and gan_yinyang[
-        bazi.getTimeGan()] == gan_yinyang[bazi.getDayGan()]
+def is_wu_bu_yu_shi(bazi: EightChar, hour):
+    # return relationships['克'][gan_wuxing[bazi.getTimeGan()]] == gan_wuxing[bazi.getDayGan()] and gan_yinyang[
+    #     bazi.getTimeGan()] == gan_yinyang[bazi.getDayGan()]
+    if (bazi.getDayGan(), bazi.getTimeZhi()) in wu_bu_yu_shi:
+        return True
+    if bazi.getDayGan() == '戊' and bazi.getTimeZhi() == '子' and hour >= 23:
+        return True
+    return False
 
 
 def tian_gan_or_di_zhi_xiang_chong(bazi: EightChar, get_gan=0):
@@ -682,6 +690,71 @@ def tian_gan_or_di_zhi_xiang_chong(bazi: EightChar, get_gan=0):
 
 def get_gan_or_zhi(bazi: EightChar, get_gan=0):
     gan_or_zhi = []
-    for tiangan in bazi.toString().split():
-        gan_or_zhi.append(tiangan[get_gan])
+    for ganzhi in bazi.toString().split():
+        gan_or_zhi.append(ganzhi[get_gan])
     return gan_or_zhi
+
+
+def calculate_day_guiren(bazi: EightChar):
+    ri_yuan = bazi.getDayGan()
+    zhi = get_gan_or_zhi(bazi, 1)
+    day_guiren = 0
+    for i in range(len(zhi)):
+        if (ri_yuan, zhi[i]) in gui_ren:
+            day_guiren += 1
+    return day_guiren
+
+
+def calculate_year_guiren(bazi: EightChar):
+    year_gan = bazi.getYearGan()
+    zhi = get_gan_or_zhi(bazi, 1)
+    year_guiren = 0
+    for i in range(len(zhi)):
+        if (year_gan, zhi[i]) in gui_ren:
+            year_guiren += 1
+    return year_guiren
+
+
+def calculate_tian_de(bazi: EightChar):
+    month_zhi = bazi.getMonthZhi()
+    ganzhi = bazi.toString().split()
+    ganzhi.pop(1)
+    total_tian_de = 0
+    for gz in ganzhi:
+        for i in range(2):
+            if (month_zhi, ganzhi[i]) in tian_de:
+                total_tian_de += 1
+    return total_tian_de
+
+
+def calculate_yue_de(bazi: EightChar):
+    month_zhi = bazi.getMonthZhi()
+    ganzhi = bazi.toString().split()
+    ganzhi.pop(1)
+    total_yue_de = 0
+    for gz in ganzhi:
+        for i in range(2):
+            if (month_zhi, ganzhi[i]) in yue_de:
+                total_yue_de += 1
+    return total_yue_de
+
+
+def calculate_wen_chang(bazi: EightChar):
+    total_wen_chang = 0
+    ri_yuan = bazi.getDayGan()
+    zhi = get_gan_or_zhi(bazi, 1)
+    for i in range(len(zhi)):
+        if (ri_yuan, zhi[i]) in gui_ren:
+            total_wen_chang += 1
+    return total_wen_chang
+
+
+def calculate_lu_shen(bazi: EightChar):
+    total_lu_shen = 0
+    ri_yuan = bazi.getDayGan()
+    year_gan = bazi.getYearGan()
+    if (ri_yuan, bazi.getDayZhi()) in lu_shen:
+        total_lu_shen += 1
+    if (year_gan, bazi.getYearZhi()) in lu_shen:
+        total_lu_shen += 1
+    return total_lu_shen
