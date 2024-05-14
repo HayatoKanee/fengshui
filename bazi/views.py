@@ -107,7 +107,7 @@ def zeri_view(request):
             return redirect('zeri')
 
         data = []
-        for year in range(from_date.year, to_date.year + 1):
+        for year in range(from_date.year - 1, to_date.year + 2):
             csv_file_path = os.path.join(settings.DATA_DIR, f'good_bazis_{year}.csv')
             try:
                 with open(csv_file_path, 'r', newline='') as csvfile:
