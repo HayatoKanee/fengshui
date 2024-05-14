@@ -69,8 +69,8 @@ def get_bazi_detail(request):
         wuxing_value = accumulate_wuxing_values(wuxing, gan_liang_values)
         sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
         sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
-        day_gui_ren = calculate_day_guiren(bazi)
-        year_gui_ren = calculate_year_guiren(bazi)
+        gui_ren = calculate_day_guiren(bazi)
+        # year_gui_ren = calculate_year_guiren(bazi)
         tian_de = calculate_tian_de(bazi)
         yue_de = calculate_yue_de(bazi)
         wen_chang = calculate_wen_chang(bazi)
@@ -82,8 +82,8 @@ def get_bazi_detail(request):
             'wuxing_value': wuxing_value,
             'sheng_hao': sheng_hao,
             'sheng_hao_percentage': sheng_hao_percentage,
-            'day_gui_ren': day_gui_ren,
-            'year_gui_ren': year_gui_ren,
+            'gui_ren': gui_ren,
+            # 'year_gui_ren': year_gui_ren,
             'tian_de': tian_de,
             'yue_de': yue_de,
             'wen_chang': wen_chang,
