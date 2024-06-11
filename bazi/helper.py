@@ -634,10 +634,10 @@ def best_bazi_in_year(year):
             solar = lunar.getSolar()
             if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 0, 0, 0).getEightChar(), 0):
                 bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), 0])
-                for i in range(1, 23, 2):
-                    if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), i, 0, 0).getEightChar(),
-                                    i):
-                        bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), i])
+            for i in range(1, 23, 2):
+                if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), i, 0, 0).getEightChar(),
+                                i):
+                    bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), i])
             if is_bazi_good(Lunar.fromYmdHms(year, lunar.getMonth(), lunar.getDay(), 23, 0, 0).getEightChar(), 23):
                 bazi_writer.writerow([solar.getYear(), solar.getMonth(), solar.getDay(), 23])
             i = 1
