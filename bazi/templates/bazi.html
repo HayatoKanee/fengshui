@@ -194,8 +194,18 @@
             <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab"
                  tabindex="0">
                 <ul>
-                    <li>主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
-                        身弱 {% endif %}</strong></li>
+                    {% if ge == '正格' %}
+                        <li>主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
+                            身弱 {% endif %}</strong></li>
+                        <li>格局:<strong>正格</strong>,喜用神: {% for w in good_wuxing %}<strong>{{ w }}</strong>,{% endfor %},不喜:{% for w in bad_wuxing %}<strong>{{ w }}</strong>,{% endfor %}</li>
+                    {% else %}
+                        <li><strong>特殊格局</strong></li>
+                        <li>
+                            格局:<strong>{{ ge }}</strong>,用神:<strong>{{ best_wuxing }}</strong>,喜:<strong>{{ good_wuxing }}</strong>,忌:<strong>{{ worst_wuxing }}</strong>,不喜:<strong>{{ bad_wuxing }}</strong>
+                        </li>
+                    {% endif %}
+
+
                     <li>生肖：<strong>{{ shengxiao }}</strong></li>
                     <li>配偶之性情：{{ partner_analyst }}</li>
                     <li>自身性格：{{ personality }}</li>

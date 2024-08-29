@@ -4,7 +4,7 @@ import openai
 import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
     wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he, wuxing, gan_xiang_chong, \
-    zhi_xiang_chong, gui_ren, tian_de, yue_de, wu_bu_yu_shi, lu_shen
+    zhi_xiang_chong, gui_ren, tian_de, yue_de, wu_bu_yu_shi, lu_shen, yinyang
 from lunar_python import Solar, Lunar, EightChar
 import csv
 
@@ -758,3 +758,80 @@ def calculate_lu_shen(bazi: EightChar):
     if (year_gan, bazi.getYearZhi()) in lu_shen:
         total_lu_shen += 1
     return total_lu_shen
+
+
+def is_cong_ge(bazi: EightChar):
+    day_master = bazi.getDayGan()
+    day_master_yinyang = gan_yinyang[day_master]
+    day_master_wuxing = gan_wuxing[day_master]
+    stems = bazi.toString().split()
+    stems[2] = bazi.getDayZhi()
+    count = 0
+    shishen_list = []
+    s = '','','','',''
+    if wuxing[bazi.getDayZhi()] == day_master_wuxing:
+        return s
+    for stem in stems:
+        for ganzhi in stem:
+            shi_shen = calculate_shishen(day_master_yinyang, day_master_wuxing, yinyang[ganzhi], wuxing[ganzhi])
+            shishen_list.append(shi_shen)
+            if "印" in shi_shen or "比" in shi_shen:
+                count += 1
+                if count > 1:
+                    return s
+    cai = 0
+    guan = 0
+    shen = 0
+    best = 0
+    cong_ge = ""
+    for i, shishen in enumerate(shishen_list):
+        if "财" in shishen:
+            cai += 1
+            if cai > best:
+                best = cai
+                cong_ge = "从财"
+        elif shishen == "正官" or shishen == "七杀":
+            guan += 1
+            if guan > best:
+                best = guan
+                cong_ge = "从官"
+        elif shishen == "伤官" or shishen == "食神":
+            shen += 1
+            if shen > best:
+                best = guan
+                cong_ge = "从儿"
+    if count == 1:
+        if cai < 1:
+            return s
+    best_wuxing = ""
+
+    counter_wuxing = ""
+    if cong_ge == "从财":
+        best_wuxing = relationships["克"][day_master_wuxing]
+        counter_wuxing = day_master_wuxing
+        s = cong_ge,best_wuxing, relationships["生"][day_master_wuxing], counter_wuxing, relationships["克"][
+            relationships["克"][day_master_wuxing]]
+    elif cong_ge == "从官":
+        best_wuxing = relationships["生"][
+            relationships["克"][day_master_wuxing]]
+        counter_wuxing = relationships["生"][day_master_wuxing]
+        s = cong_ge,best_wuxing, relationships["克"][day_master_wuxing], counter_wuxing, relationships["克"][
+                                                                                     relationships["克"][
+                                                                                         day_master_wuxing]] + day_master_wuxing
+    elif cong_ge == "从儿":
+        best_wuxing = relationships["生"][day_master_wuxing]
+        counter_wuxing = relationships["克"][
+            relationships["克"][day_master_wuxing]]
+        s = cong_ge,best_wuxing, relationships["克"][day_master_wuxing], counter_wuxing, relationships["克"][
+            relationships["克"][day_master_wuxing]], counter_wuxing, relationships["生"][
+            relationships["克"][day_master_wuxing]]
+    for stem in stems:
+        for ganzhi in stem:
+            if wuxing[ganzhi] == counter_wuxing:
+                return s
+    return s
+
+
+def is_speical(bazi:EightChar):
+    s = is_cong_ge(bazi)
+    return s

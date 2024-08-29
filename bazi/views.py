@@ -11,11 +11,7 @@ from fengshui import settings
 from .forms import BirthTimeForm
 from lunar_python import Lunar, Solar, EightChar, JieQi
 from .constants import gan_wuxing, gan_yinyang
-from .helper import extract_form_data, get_relations, get_wang_xiang, calculate_values, \
-    get_hidden_gans, calculate_wang_xiang_values, calculate_values_for_bazi, calculate_gan_liang_value, \
-    accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage, calculate_shishen_for_bazi, \
-    analyse_partner, get_day_gan_ratio, analyse_personality, analyse_liunian, best_bazi_in_year, calculate_day_guiren, \
-    calculate_year_guiren, calculate_tian_de, calculate_yue_de, calculate_wen_chang, calculate_lu_shen
+from .helper import *
 
 
 def home_view(request):
@@ -126,6 +122,8 @@ def zeri_view(request):
 def bazi_view(request):
     current_year = datetime.datetime.now().year
     years = range(current_year - 20, current_year + 50)
+    solar = Solar(1975, 3, 25, 22, 10, 00)
+    print(is_cong_ge(solar.getLunar().getEightChar()))
     if request.method == 'POST':
         form = BirthTimeForm(request.POST)
         if form.is_valid():
@@ -135,6 +133,7 @@ def bazi_view(request):
             solar = Solar.fromYmdHms(data['year'], data['month'], data['day'], data['hour'], data['minute'], 0)
             lunar = solar.getLunar()
             bazi = lunar.getEightChar()
+            speical, best_wuxing, good_wuxing, worst_wuxing, bad_wuxing = is_cong_ge(bazi)
             main_wuxing = bazi.getDayWuXing()[0]
             values = calculate_values(bazi)
             hidden_gans = get_hidden_gans(bazi)
@@ -153,6 +152,16 @@ def bazi_view(request):
             partner_analyst = analyse_partner(hidden_gans, shishen)
             personality = analyse_personality(bazi.getMonthZhi())
             liunian_analysis = analyse_liunian(bazi, shishen, selected_year, is_strong, is_male)
+            ge = speical
+            if not speical:
+                ge = "正格"
+                if is_strong:
+                    good_wuxing =  wuxing_relations[main_wuxing]["不利"]
+                    bad_wuxing =  wuxing_relations[main_wuxing]["有利"]
+                else:
+                    good_wuxing = wuxing_relations[main_wuxing]["有利"]
+                    bad_wuxing = wuxing_relations[main_wuxing]["不利"]
+
             context = {
                 'form': form,
                 'bazi': bazi,
@@ -174,7 +183,12 @@ def bazi_view(request):
                 'partner_analyst': partner_analyst,
                 'liunian_analysis': liunian_analysis,
                 'years': years,
-                'personality': personality
+                'personality': personality,
+                'ge':ge,
+                'best_wuxing': best_wuxing,
+                'good_wuxing':good_wuxing,
+                'worst_wuxing': worst_wuxing,
+                'bad_wuxing': bad_wuxing,
             }
             return render(request, 'bazi.html', context)
     else:
