@@ -1,5 +1,7 @@
 from django import template
 
+from bazi.feixing import mountains_24
+
 register = template.Library()
 
 
@@ -81,16 +83,15 @@ def get_direction_grid(star):
       - Left (center of left column): (i + 18) mod 24
       - Bottom-left: (i + 21) mod 24
     """
-    mountains_24 = [
-        "子", "癸", "丑", "艮", "寅", "甲", "卯", "乙",
-        "辰", "巽", "巳", "丙", "午", "丁", "未", "坤",
-        "申", "庚", "酉", "辛", "戌", "乾", "亥", "壬"
-    ]
-    try:
-        i = mountains_24.index(star)
-    except ValueError:
-        # If the star is not found, default to 0.
-        i = 0
+
+    if not star:
+         return {
+        "bottom": "",
+        "right": "",
+        "top": "",
+        "left": "",
+    }
+    i = mountains_24.index(star)
 
     return {
         "bottom": mountains_24[i % 24],

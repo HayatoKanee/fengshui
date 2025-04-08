@@ -185,45 +185,60 @@ def feixing_view(request):
     except ValueError:
         main_center = 9
 
-    # 2) Build table data for each mountain star (already in your code)
+    # Build table_data: one entry for each unique grid configuration.
     table_data = []
-    for star, pos in fixed_positions.items():
+    for star in mountains_24:
+        pos = fixed_positions[star]
+        # Generate a fresh main grid for each star.
         main_grid = generate_grid(main_center, order='f')
 
         opp_coord = (2 - pos[0], 2 - pos[1])
         star_center = main_grid[pos[0]][pos[1]]
         opp_center = main_grid[opp_coord[0]][opp_coord[1]]
+        second_star = None
 
-        # Determine flight orders
+        # Determine flight orders based on star_center (or opp_center if star_center == 5)
         if star_center != 5:
             order_main = get_flight(star_center, yuan_long_mapping[star])
             order_opp = 'r' if order_main == 'f' else 'f'
             grid_star = generate_grid(star_center, order_main)
             grid_opposite_star = generate_grid(opp_center, order_opp)
         else:
-            # If star_center == 5, you used the opposite logic
+            # Use the opposite logic if star_center is 5.
             order_main = get_flight(opp_center, yuan_long_mapping[star])
             order_opp = 'r' if order_main == 'f' else 'f'
             grid_star = generate_grid(star_center, order_opp)
             grid_opposite_star = generate_grid(opp_center, order_main)
 
-        # 3) Realign each minor grid so 'star_center' (or 'opp_center') is bottom-center
-        #    (You can decide which digit you want in bottom-center. Often it's the star_center).
+        # Realign: Compute the shift (for outer ring) needed so that star_center ends up in the bottom-center.
         shift = get_shift(main_grid, star_center)
+        # Apply the same shift to each grid.
         main_grid = rotate_outer_ring_by_steps(main_grid, shift)
         grid_star = rotate_outer_ring_by_steps(grid_star, shift)
         grid_opposite_star = rotate_outer_ring_by_steps(grid_opposite_star, shift)
+        # Convert the main grid to Chinese numerals.
         main_grid_cn = [[arabic_to_chinese(n) for n in row] for row in main_grid]
 
-        table_data.append({
-            'main_grid': main_grid_cn,
-            'star': star,
-            'grid_star': grid_star,
-            'grid_opposite_star': grid_opposite_star,
-        })
+        # Instead of adding duplicate grid entries, check if an identical grid_star (and grid_opposite_star)
+        # has already been added. If so, record this star as the second_star.
+        found = False
+        for existing in table_data:
+            if existing['grid_star'] == grid_star and existing['grid_opposite_star'] == grid_opposite_star:
+                existing['second_star'] = star
+                found = True
+                break
 
+        if not found:
+            table_data.append({
+                'main_grid': main_grid_cn,
+                'star': star,
+                'second_star': second_star,
+                'grid_star': grid_star,
+                'grid_opposite_star': grid_opposite_star,
+            })
     context = {
         'main_center': str(main_center),
         'table_data': table_data,
     }
     return render(request, 'feixing.html', context)
+

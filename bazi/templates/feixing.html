@@ -25,10 +25,11 @@
 
         <!-- 1) Get the direction labels for this star -->
         {% get_direction_grid item.star as direction_grid %}
-
+        {% get_direction_grid item.second_star as direction_second_grid %}
         <!-- 2) Display the "top" direction outside/above the grid -->
         <div style="text-align: center; font-weight: bold; margin-bottom: 4px;">
           {{ direction_grid.top }}
+            {{ direction_second_grid.top }}
         </div>
 
         <!-- 3) Middle row: left label, the 3×3 table, and right label side by side -->
@@ -36,6 +37,8 @@
           <!-- Left label -->
           <div style="font-weight: bold; width: 30px; text-align: left;">
             {{ direction_grid.left }}
+            {{ direction_second_grid.left }}
+
           </div>
 
           <!-- The 3×3 table of numbers -->
@@ -72,14 +75,15 @@
           <!-- Right label -->
           <div style="font-weight: bold; width: 30px; text-align: right;">
             {{ direction_grid.right }}
+              {{ direction_second_grid.right }}
           </div>
         </div>
 
         <!-- 4) The "bottom" direction under the grid -->
         <div style="text-align: center; font-weight: bold; margin-top: 4px;">
           {{ direction_grid.bottom }}
+           {{ direction_second_grid.bottom }}
         </div>
-
       </div>
 
       {% if forloop.counter|divisibleby:4 and not forloop.last %}
