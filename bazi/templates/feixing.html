@@ -1,0 +1,60 @@
+{% extends 'base_content.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="container mt-3">
+  <h1 class="mb-4">飞星图</h1>
+
+  <!-- Dropdown that auto-submits via GET -->
+  <form method="get" action="{% url 'feixing' %}">
+    <div class="mb-3">
+      <label for="centerSelect" class="form-label">请选择第几运:</label>
+      <select id="centerSelect" name="center" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+        {% for i in "123456789"|make_list %}
+          <option value="{{ i }}" {% if i == main_center %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+  <!-- 各山位飞星 (minor charts) -->
+  <h2 class="mt-5">【各山位飞星】</h2>
+  {% for item in table_data %}
+    <div class="mb-4">
+      <h4>
+        山位: {{ item.star }} &nbsp;
+        大运数字: <span style="font-size: 1.5rem;">{{ item.dayun }}</span>
+      </h4>
+
+      <!-- Nested 3×3 chart: each cell shows the main grid number (top)
+           and below it two Arabic numbers side by side -->
+      <table class="table table-bordered" style="width: 240px; margin: auto; text-align: center;">
+        {% for r in 3|to_range %}
+          <tr>
+            {% for c in 3|to_range %}
+              <td style="vertical-align: middle; padding: 6px;">
+                <!-- Top line: 大运格 number -->
+                <div style="font-size: 1.1rem; margin-bottom: 4px;">
+                  {{ main_grid|index:r|index:c }}
+                </div>
+                <!-- Bottom line: Two Arabic numbers side by side -->
+                <div style="width: 100%;">
+                  <table style="width:100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="text-align: right; width:50%; padding-right: 3px;">
+                        {{ item.grid_star|index:r|index:c }}
+                      </td>
+                      <td style="text-align: left; width:50%; padding-left: 3px;">
+                        {{ item.grid_opposite_star|index:r|index:c }}
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </table>
+      <hr>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
