@@ -141,3 +141,40 @@ def arabic_to_chinese(num):
     mapping = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五",
                6: "六", 7: "七", 8: "八", 9: "九"}
     return mapping.get(num, str(num))
+
+
+def rotate_outer_ring_by_steps(grid, steps):
+    """
+    Rotate only the outer ring of a 3×3 grid by 'steps' clockwise.
+    The center cell is left unchanged.
+
+    The outer ring order is defined as:
+        positions = [(0,0), (0,1), (0,2), (1,2), (2,2), (2,1), (2,0), (1,0)]
+
+    For example, a one-step clockwise shift would move the value originally at (1,0)
+    into (0,0), the value from (0,0) into (0,1), etc.
+    """
+    positions = [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (2, 1), (2, 0), (1, 0)]
+    # Make a copy of the grid.
+    new_grid = [list(row) for row in grid]
+    # Extract the outer ring values.
+    outer = [grid[r][c] for r, c in positions]
+    steps %= 8
+    if steps == 0:
+        return grid
+    # Rotate the outer list: take the last 'steps' items and prepend the remaining.
+    new_outer = outer[-steps:] + outer[:-steps]
+    # Place the rotated outer ring back into the grid.
+    for i, (r, c) in enumerate(positions):
+        new_grid[r][c] = new_outer[i]
+    return new_grid
+
+
+def get_shift(grid, target_digit, target_index=5):
+    positions = [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (2, 1), (2, 0), (1, 0)]
+    outer = [grid[r][c] for r, c in positions]
+    current_index = outer.index(target_digit)
+    # Calculate the number of steps needed so that current_index becomes target_index.
+    shift = (target_index - current_index) % 8
+    return shift
+

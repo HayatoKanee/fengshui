@@ -179,51 +179,51 @@ def bazi_view(request):
     return render(request, 'bazi.html', {'form': form, 'current_year': current_year, 'years': years})
 
 def feixing_view(request):
-    """
-    Process all Flying Star (飞星) calculations on the backend.
-    The user selects a 大运中心数字 from 1–9 (via a dropdown that auto-submits).
-    For each mountain (山位), calculate the full 3×3 minor grids (both 顺飞 and 逆飞),
-    its fixed direction (“坐”) and opposite direction (“向”), and convert all numbers to Chinese.
-    """
-    # Get the center number from GET parameters (default: 5)
     center_param = request.GET.get("center", "9")
     try:
         main_center = int(center_param)
     except ValueError:
         main_center = 9
 
-    # Generate the main grid (大运格)
-    main_grid = generate_grid(main_center, order='f')
-    main_grid_cn = [[arabic_to_chinese(n) for n in row] for row in main_grid]
-
-    # Build table data for each mountain star.
+    # 2) Build table data for each mountain star (already in your code)
     table_data = []
     for star, pos in fixed_positions.items():
-        opp_coord = (2 - pos[0], 2 - pos[1])  # symmetry about center (1,1)
+        main_grid = generate_grid(main_center, order='f')
+
+        opp_coord = (2 - pos[0], 2 - pos[1])
         star_center = main_grid[pos[0]][pos[1]]
         opp_center = main_grid[opp_coord[0]][opp_coord[1]]
-        # Determine the flight orders for the two candidate minor grids.
+
+        # Determine flight orders
         if star_center != 5:
             order_main = get_flight(star_center, yuan_long_mapping[star])
             order_opp = 'r' if order_main == 'f' else 'f'
             grid_star = generate_grid(star_center, order_main)
             grid_opposite_star = generate_grid(opp_center, order_opp)
         else:
+            # If star_center == 5, you used the opposite logic
             order_main = get_flight(opp_center, yuan_long_mapping[star])
             order_opp = 'r' if order_main == 'f' else 'f'
             grid_star = generate_grid(star_center, order_opp)
             grid_opposite_star = generate_grid(opp_center, order_main)
 
+        # 3) Realign each minor grid so 'star_center' (or 'opp_center') is bottom-center
+        #    (You can decide which digit you want in bottom-center. Often it's the star_center).
+        shift = get_shift(main_grid, star_center)
+        main_grid = rotate_outer_ring_by_steps(main_grid, shift)
+        grid_star = rotate_outer_ring_by_steps(grid_star, shift)
+        grid_opposite_star = rotate_outer_ring_by_steps(grid_opposite_star, shift)
+        main_grid_cn = [[arabic_to_chinese(n) for n in row] for row in main_grid]
+
         table_data.append({
+            'main_grid': main_grid_cn,
             'star': star,
-            'dayun': arabic_to_chinese(star_center),
             'grid_star': grid_star,
             'grid_opposite_star': grid_opposite_star,
         })
 
     context = {
         'main_center': str(main_center),
-        'main_grid': main_grid_cn,
         'table_data': table_data,
     }
     return render(request, 'feixing.html', context)
