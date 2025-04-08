@@ -95,7 +95,7 @@ def get_direction_grid(star):
 
     return {
         "bottom": mountains_24[i % 24],
-        "right": mountains_24[(i + 6) % 24],
+        "right": mountains_24[(i + 18) % 24],
         "top": mountains_24[(i + 12) % 24],
-        "left": mountains_24[(i + 18) % 24],
+        "left": mountains_24[(i + 6) % 24],
     }
