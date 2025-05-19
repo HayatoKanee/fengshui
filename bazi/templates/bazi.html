@@ -197,6 +197,15 @@
                     <li>主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
                         身弱 {% endif %}</strong></li>
                     <li>生肖：<strong>{{ shengxiao }}</strong></li>
+                    <li>神煞：
+                        <ul>
+                            {% for name, desc in shensha_list %}
+                                <li><strong>{{ name }}</strong> - {{ desc }}</li>
+                            {% empty %}
+                                <li>无显著神煞</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
                     <li>配偶之性情：{{ partner_analyst }}</li>
                     <li>自身性格：{{ personality }}</li>
                     <li>{{ current_year }}流年分析: {{ liunian_analysis|safe }} </li>
