@@ -29,6 +29,9 @@
             <li class="nav-item lang" data-lang="zh"><a href="{% url 'zeri' %}"
                                                         class="nav-link {% if request.resolver_match.url_name == 'zeri' %}active{% endif %}">择日
             </a>
+                 <li class="nav-item lang" data-lang="zh"><a href="{% url 'feixing' %}"
+                                                        class="nav-link {% if request.resolver_match.url_name == 'feixing' %}active{% endif %}">九宫飞星图
+            </a>
             </li>
             <li class=" nav-item lang" data-lang="zh"><a href="{% url 'wuxing' %}"
                                                          class="nav-link {% if request.resolver_match.url_name == 'wuxing' %}active{% endif %}">简介</a>

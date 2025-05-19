@@ -1,0 +1,95 @@
+{% extends 'base_content.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="container mt-3">
+  <h1 class="mb-4">飞星图</h1>
+
+  <!-- Dropdown that auto-submits via GET -->
+  <form method="get" action="{% url 'feixing' %}">
+    <div class="mb-3">
+      <label for="centerSelect" class="form-label">请选择第几运:</label>
+      <select id="centerSelect" name="center" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+        {% for i in "123456789"|make_list %}
+          <option value="{{ i }}" {% if i == main_center %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  <h2 class="mt-5">【各山位飞星】</h2>
+
+  <!-- Bootstrap row to display multiple charts side by side -->
+  <div class="row">
+    {% for item in table_data %}
+      <div class="col-md-3 mb-3">
+
+        <!-- 1) Get the direction labels for this star -->
+        {% get_direction_grid item.star as direction_grid %}
+        {% get_direction_grid item.second_star as direction_second_grid %}
+        <!-- 2) Display the "top" direction outside/above the grid -->
+        <div style="text-align: center; font-weight: bold; margin-bottom: 4px;">
+          {{ direction_grid.top }}
+            {{ direction_second_grid.top }}
+        </div>
+
+        <!-- 3) Middle row: left label, the 3×3 table, and right label side by side -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <!-- Left label -->
+          <div style="font-weight: bold; width: 30px; text-align: left;">
+            {{ direction_grid.left }}
+            {{ direction_second_grid.left }}
+
+          </div>
+
+          <!-- The 3×3 table of numbers -->
+          <div style="margin: auto;">  <!-- centers it horizontally in the flex row -->
+            <table class="table table-bordered" style="width: 240px; text-align: center;">
+              {% for r in 3|to_range %}
+                <tr>
+                  {% for c in 3|to_range %}
+                    <td style="vertical-align: middle; padding: 6px;">
+                      <!-- Top line: the main_grid digit -->
+                      <div style="font-size: 1.1rem; margin-bottom: 4px;">
+                        {{ item.main_grid|index:r|index:c }}
+                      </div>
+                      <!-- Bottom line: the star & opposite star side by side -->
+                      <div style="width: 100%;">
+                        <table style="width:100%; border-collapse: collapse;">
+                          <tr>
+                            <td style="text-align: right; width:50%; padding-right: 3px;">
+                              {{ item.grid_star|index:r|index:c }}
+                            </td>
+                            <td style="text-align: left; width:50%; padding-left: 3px;">
+                              {{ item.grid_opposite_star|index:r|index:c }}
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+
+          <!-- Right label -->
+          <div style="font-weight: bold; width: 30px; text-align: right;">
+            {{ direction_grid.right }}
+              {{ direction_second_grid.right }}
+          </div>
+        </div>
+
+        <!-- 4) The "bottom" direction under the grid -->
+        <div style="text-align: center; font-weight: bold; margin-top: 4px;">
+          {{ direction_grid.bottom }}
+           {{ direction_second_grid.bottom }}
+        </div>
+      </div>
+
+      {% if forloop.counter|divisibleby:4 and not forloop.last %}
+        </div><div class="row">
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
