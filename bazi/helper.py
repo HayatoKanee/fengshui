@@ -4,7 +4,7 @@ import openai
 import os
 from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
     wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he, wuxing, gan_xiang_chong, \
-    zhi_xiang_chong, gui_ren, tian_de, yue_de, wu_bu_yu_shi, lu_shen
+    zhi_xiang_chong, gui_ren, tian_de, yue_de, wu_bu_yu_shi, lu_shen, wen_chang
 from lunar_python import Solar, Lunar, EightChar
 import csv
 
@@ -752,9 +752,65 @@ def calculate_wen_chang(bazi: EightChar):
 def calculate_lu_shen(bazi: EightChar):
     total_lu_shen = 0
     ri_yuan = bazi.getDayGan()
-    year_gan = bazi.getYearGan()
-    if (ri_yuan, bazi.getDayZhi()) in lu_shen:
-        total_lu_shen += 1
-    if (year_gan, bazi.getYearZhi()) in lu_shen:
-        total_lu_shen += 1
+    # year_gan = bazi.getYearGan()
+    zhi = get_gan_or_zhi(bazi, 1)
+    for z in zhi:
+        if (ri_yuan, z) in lu_shen:
+            total_lu_shen += 1
+    # if (year_gan, bazi.getYearZhi()) in lu_shen:
+    #     total_lu_shen += 1
     return total_lu_shen
+
+def calculate_yang_ren(bazi: EightChar):
+    total_yang_ren = 0
+
+
+def calculate_shensha(bazi: EightChar, shen_sha_rule):
+    
+def get_shensha(bazi):
+    """
+    根据八字计算神煞
+    :param bazi: 包含年、月、日、时柱干支的对象
+    :return: 神煞列表（名称+解释）
+    """
+    shensha_list = []
+
+    # 获取关键信息
+    month_zhi = bazi.getMonthZhi()
+
+    # 天德贵人
+    num_tian_de = calculate_tian_de(bazi)
+    if num_tian_de > 0:
+        shensha_list.append(
+            ('天德贵人', '吉神，贵人扶持，主仁慈、聪明、善良，遵纪守法，一生是非少，逢凶化吉，女命主善良贤慧，配贵夫'))
+    # 月德贵人
+    num_yue_de = calculate_yue_de(bazi)
+    if num_yue_de > 0:
+        shensha_list.append(('月德贵人',
+                             '吉神，贵人扶持，月德是阴德，其功效隐密，月德入命，主福分深厚，长寿，不犯官刑。为人多仁慈敏慧，能逢凶化吉，去灾招祥，然人命若带月德，亦需本身勤勉自助，才能在紧要关头获得天助。'))
+    if num_yue_de > 0 and num_tian_de > 0:
+        shensha_list.append(('天月二德', '大吉，凡八字中有天月二德，其人恺悌慈祥，待人至诚仁厚。'))
+
+    # 天乙贵人
+    day_guiren = calculate_day_guiren(bazi)
+    year_guiren = calculate_year_guiren(bazi)
+    if day_guiren > 0 or year_guiren > 0:
+        shensha_list.append(('天乙贵人', '吉神，贵人扶持，若人遇之主荣名早达，成事多助，官禄易进。'))
+    # 禄神
+    lu_shen = calculate_lu_shen(bazi)
+    if lu_shen > 0:
+        # FIXME
+        # 禄神 喜忌有所不同
+        shensha_list.append(('禄神','吉神，主衣禄充足，但要按喜忌神分，若禄为忌神则为凶煞（有空会增加判断逻辑）'))
+    # 文昌
+    wen_chang = calculate_wen_chang(bazi)
+    if wen_chang > 0:
+        shensha_list.append(('文昌','吉神，主生性聪明，文笔极好，逢凶化吉。'))
+    # 羊刃
+
+    return shensha_list
+
+
+
+
+
