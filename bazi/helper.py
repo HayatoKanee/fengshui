@@ -821,7 +821,7 @@ def filter_zhi_from_list(zhi_list, zhi_to_exclude):
     return [z for z in zhi_list if z != zhi_to_exclude]
 
 # --- 将星: 以日支或年支对比四柱地支
-# 参考表: jiang_xing（如未定义请在 bazi/constants.py 中补充）
+# 参考表: jiang_xing
 # main: 日支或年支, zhi_list: 四柱地支(排除主支)
 
 def calculate_jiang_xing(bazi):
@@ -841,7 +841,7 @@ def is_jiang_xing(bazi):
     return calculate_jiang_xing(bazi) > 0
 
 # --- 华盖: 以日支或年支对比四柱地支
-# 参考表: hua_gai（如未定义请在 bazi/constants.py 中补充）
+# 参考表: hua_gai
 # main: 日支或年支, zhi_list: 四柱地支(排除主支)
 
 def calculate_hua_gai(bazi):
@@ -861,7 +861,7 @@ def is_hua_gai(bazi):
     return calculate_hua_gai(bazi) > 0
 
 # --- 驿马: 以日支或年支对比四柱地支
-# 参考表: yi_ma（如未定义请在 bazi/constants.py 中补充）
+# 参考表: yi_ma）
 # main: 日支或年支, zhi_list: 四柱地支(排除主支)
 
 def calculate_yi_ma(bazi):
@@ -881,7 +881,7 @@ def is_yi_ma(bazi):
     return calculate_yi_ma(bazi) > 0
 
 # --- 劫煞: 以日支或年支对比四柱地支
-# 参考表: jie_sha（如未定义请在 bazi/constants.py 中补充）
+# 参考表: jie_sha
 # main: 日支或年支, zhi_list: 四柱地支(排除主支)
 
 def calculate_jie_sha(bazi):
@@ -901,7 +901,7 @@ def is_jie_sha(bazi):
     return calculate_jie_sha(bazi) > 0
 
 # --- 亡神: 以日支或年支对比四柱地支
-# 参考表: wang_shen（如未定义请在 bazi/constants.py 中补充）
+# 参考表: wang_shen
 # main: 日支或年支, zhi_list: 四柱地支(排除主支)
 
 def calculate_wang_shen(bazi):
@@ -921,7 +921,7 @@ def is_wang_shen(bazi):
     return calculate_wang_shen(bazi) > 0
 
 # --- 桃花: 以日支或年支对比四柱地支
-# 参考表: tao_hua（如未定义请在 bazi/constants.py 中补充）
+# 参考表: tao_hua
 # main: 日支或年支, zhi_list: 四柱地支(排除主支)
 
 def calculate_tao_hua(bazi):
@@ -939,6 +939,46 @@ def calculate_tao_hua(bazi):
 
 def is_tao_hua(bazi):
     return calculate_tao_hua(bazi) > 0
+
+# --- 孤辰: 以年支对比四柱地支
+# 参考表: gu_chen
+# main: 年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_gu_chen(bazi):
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    return count_shensha(year_zhi, year_zhi_list, gu_chen)
+
+def is_gu_chen(bazi):
+    return calculate_gu_chen(bazi) > 0
+
+# --- 寡宿: 以年支对比四柱地支
+# 参考表: gou_xiu
+# main: 年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_gua_su(bazi):
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    return count_shensha(year_zhi, year_zhi_list, gua_su)
+
+def is_gua_su(bazi):
+    return calculate_gua_su(bazi) > 0
+
+# --- 空亡: 以日支对比四柱地支
+# 参考表: kong_wang
+# main: 日支, zhi_list: 四柱地支(排除主支)
+def is_kong_wang(bazi):
+    day_ganzhi = bazi.getDayGan() + bazi.getDayZhi()  # 日柱
+    kong_list = xun_kong.get(day_ganzhi)
+    if not kong_list:
+        return False
+    year_zhi = bazi.getYearZhi()
+    month_zhi = bazi.getMonthZhi()
+    time_zhi = bazi.getTimeZhi()
+    
+    return (year_zhi in kong_list) or (month_zhi in kong_list) or (time_zhi in kong_list)
 
 # --- 神煞注册表 ---
 SHENSHA_RULES = [
@@ -1032,6 +1072,24 @@ SHENSHA_RULES = [
         "desc": "主感情、姻缘、异性缘，为双面神，既主良缘美姻，亦主情感纠纷。",
         "checker": is_tao_hua,
         "use": "日支或年支+地支"
+    },
+    {
+        "name": "孤辰",
+        "desc": "主孤独、独立，感情路较坎坷，适合晚婚，男忌孤辰。",
+        "checker": is_gu_chen,
+        "use": "日支+地支"
+    },
+    {
+        "name": "寡宿",
+        "desc": "主清冷、孤寡，女性遇之婚姻不顺，男性则性格孤僻，女忌寡宿。",
+        "checker": is_gua_su,
+        "use": "日支+地支"
+    },
+    {
+        "name": "空亡",
+        "desc": "如吉神落空亡，则吉力减半，如凶神落空亡，则凶力大减。",
+        "checker": is_kong_wang,
+        "use": "日柱+地支"
     }
 ]
 
