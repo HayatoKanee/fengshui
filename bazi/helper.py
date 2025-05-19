@@ -2,9 +2,7 @@ import datetime
 
 import openai
 import os
-from bazi.constants import relationships, wang_xiang_value, gan_wuxing, hidden_gan_ratios, zhi_seasons, season_phases, \
-    wuxing_relations, zhi_wuxing, gan_yinyang, peiou_xingge, tigang, liu_he, wu_he, wuxing, gan_xiang_chong, \
-    zhi_xiang_chong, gui_ren, tian_de, yue_de, wu_bu_yu_shi, lu_shen
+from bazi.constants import *
 from lunar_python import Solar, Lunar, EightChar
 import csv
 
@@ -412,7 +410,7 @@ def handle_zheng_guan(bazi, shishen, year_bazi, is_strong, is_male):
         if contain_shishen('正官', shishen) and contain_shishen('七杀', shishen):
             analysis += "•女命带正官，七杀，行运逢正官，易有桃色纠纷或红杏出墙。<br>"
     if not is_strong:
-        analysis += "•身弱者走正官运，为忌神，今年身体不好，会变成体弱多病，因为“身弱不得任财官”也。<br>"
+        analysis += "•身弱者走正官运，为忌神，今年身体不好，会变成体弱多病，因为'身弱不得任财官'也。<br>"
         analysis += "•身弱者走正官运，为忌神，家庭、学业或工作压力会感觉特别大，处事较优柔寡断，做事欠周圆，缺乏自信，魄力不足。<br>"
         analysis += "•身弱者走正官运，为忌神，注意是非或降职丢官之事情发生。<br>"
         if not is_male:
@@ -695,66 +693,361 @@ def get_gan_or_zhi(bazi: EightChar, get_gan=0):
     return gan_or_zhi
 
 
-def calculate_day_guiren(bazi: EightChar):
-    ri_yuan = bazi.getDayGan()
-    zhi = get_gan_or_zhi(bazi, 1)
-    day_guiren = 0
-    for i in range(len(zhi)):
-        if (ri_yuan, zhi[i]) in gui_ren:
-            day_guiren += 1
-    return day_guiren
+# --- 通用神煞计数函数 ---
+def count_shensha(main, zhi_list, table):
+    count = 0
+    for z in zhi_list:
+        if (main, z) in table:
+            count += 1
+    return count
 
 
-def calculate_year_guiren(bazi: EightChar):
-    year_gan = bazi.getYearGan()
-    zhi = get_gan_or_zhi(bazi, 1)
-    year_guiren = 0
-    for i in range(len(zhi)):
-        if (year_gan, zhi[i]) in gui_ren:
-            year_guiren += 1
-    return year_guiren
+# --- 重构后的神煞计数函数 ---
+# 天德贵人: 以月支对比四柱天干
+# 参考表: tian_de
+# main: 月支, zhi_list: 四柱天干
 
-
-def calculate_tian_de(bazi: EightChar):
+def calculate_tian_de(bazi):
     month_zhi = bazi.getMonthZhi()
-    ganzhi = bazi.toString().split()
-    ganzhi.pop(1)
-    total_tian_de = 0
-    for gz in ganzhi:
-        for i in range(2):
-            if (month_zhi, ganzhi[i]) in tian_de:
-                total_tian_de += 1
-    return total_tian_de
+    gan_list = get_gan_or_zhi(bazi, 0)
+    return count_shensha(month_zhi, gan_list, tian_de)
 
+# 月德贵人: 以月支对比四柱天干
+# 参考表: yue_de
+# main: 月支, zhi_list: 四柱天干
 
-def calculate_yue_de(bazi: EightChar):
+def calculate_yue_de(bazi):
     month_zhi = bazi.getMonthZhi()
-    ganzhi = bazi.toString().split()
-    ganzhi.pop(1)
-    total_yue_de = 0
-    for gz in ganzhi:
-        for i in range(2):
-            if (month_zhi, ganzhi[i]) in yue_de:
-                total_yue_de += 1
-    return total_yue_de
+    gan_list = get_gan_or_zhi(bazi, 0)
+    return count_shensha(month_zhi, gan_list, yue_de)
 
+# 天乙贵人（日干）: 以日干对比四柱地支
+# 参考表: gui_ren
+# main: 日干, zhi_list: 四柱地支
 
-def calculate_wen_chang(bazi: EightChar):
-    total_wen_chang = 0
-    ri_yuan = bazi.getDayGan()
-    zhi = get_gan_or_zhi(bazi, 1)
-    for i in range(len(zhi)):
-        if (ri_yuan, zhi[i]) in gui_ren:
-            total_wen_chang += 1
-    return total_wen_chang
+def calculate_day_guiren(bazi):
+    day_gan = bazi.getDayGan()
+    zhi_list = get_gan_or_zhi(bazi, 1)
+    return count_shensha(day_gan, zhi_list, gui_ren)
 
+# 天乙贵人（年干）: 以年干对比四柱地支
+# 参考表: gui_ren
+# main: 年干, zhi_list: 四柱地支
 
-def calculate_lu_shen(bazi: EightChar):
-    total_lu_shen = 0
-    ri_yuan = bazi.getDayGan()
+def calculate_year_guiren(bazi):
     year_gan = bazi.getYearGan()
-    if (ri_yuan, bazi.getDayZhi()) in lu_shen:
-        total_lu_shen += 1
-    if (year_gan, bazi.getYearZhi()) in lu_shen:
-        total_lu_shen += 1
-    return total_lu_shen
+    zhi_list = get_gan_or_zhi(bazi, 1)
+    return count_shensha(year_gan, zhi_list, gui_ren)
+
+# 禄神: 以日干对比四柱地支
+# 参考表: lu_shen
+# main: 日干, zhi_list: 四柱地支
+
+def calculate_lu_shen(bazi):
+    day_gan = bazi.getDayGan()
+    zhi_list = get_gan_or_zhi(bazi, 1)
+    return count_shensha(day_gan, zhi_list, lu_shen)
+
+# 文昌: 以日干对比四柱地支
+# 参考表: wen_chang
+# main: 日干, zhi_list: 四柱地支
+
+def calculate_wen_chang(bazi):
+    day_gan = bazi.getDayGan()
+    zhi_list = get_gan_or_zhi(bazi, 1)
+    return count_shensha(day_gan, zhi_list, wen_chang)
+
+# --- 羊刃: 以日干对比四柱地支
+# 参考表: yang_ren
+# main: 日干, zhi_list: 四柱地支
+
+def calculate_yang_ren(bazi):
+    day_gan = bazi.getDayGan()
+    zhi_list = get_gan_or_zhi(bazi, 1)
+    return count_shensha(day_gan, zhi_list, yang_ren)
+
+# --- 红艳煞: 以日干对比四柱地支
+# 参考表: hong_yan_sha
+# main: 日干, zhi_list: 四柱地支
+
+def calculate_hong_yan_sha(bazi):
+    day_gan = bazi.getDayGan()
+    zhi_list = get_gan_or_zhi(bazi, 1)
+    return count_shensha(day_gan, zhi_list, hong_yan_sha)
+
+# --- 神煞判定函数（保持不变，自动用新实现） ---
+def is_tian_de(bazi):
+    return calculate_tian_de(bazi) > 0
+
+def is_yue_de(bazi):
+    return calculate_yue_de(bazi) > 0
+
+def is_tian_yue_erde(bazi):
+    return calculate_tian_de(bazi) > 0 and calculate_yue_de(bazi) > 0
+
+def is_tian_yi_guiren(bazi):
+    return calculate_day_guiren(bazi) > 0 or calculate_year_guiren(bazi) > 0
+
+def is_lu_shen(bazi):
+    return calculate_lu_shen(bazi) > 0
+
+def is_wen_chang(bazi):
+    return calculate_wen_chang(bazi) > 0
+
+def is_yang_ren(bazi):
+    return calculate_yang_ren(bazi) > 0
+
+def is_hong_yan_sha(bazi):
+    return calculate_hong_yan_sha(bazi) > 0
+
+# --- 三奇: 四柱天干中有顺序出现的三奇组合
+# 组合：乙丙丁、甲戊庚、壬癸辛，且顺序相连
+
+def is_san_qi(bazi):
+    gan_list = get_gan_or_zhi(bazi, 0)
+    san_qi_groups = [
+        ['乙', '丙', '丁'],
+        ['甲', '戊', '庚'],
+        ['壬', '癸', '辛'],
+    ]
+    for i in range(len(gan_list) - 2):
+        sub = gan_list[i:i+3]
+        if sub in san_qi_groups:
+            return True
+    return False
+
+# --- 辅助函数：从地支列表中排除指定地支
+def filter_zhi_from_list(zhi_list, zhi_to_exclude):
+    return [z for z in zhi_list if z != zhi_to_exclude]
+
+# --- 将星: 以日支或年支对比四柱地支
+# 参考表: jiang_xing（如未定义请在 bazi/constants.py 中补充）
+# main: 日支或年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_jiang_xing(bazi):
+    day_zhi = bazi.getDayZhi()
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    
+    # 从地支列表中排除日支和年支
+    day_zhi_list = filter_zhi_from_list(all_zhi, day_zhi)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    
+    count_day = count_shensha(day_zhi, day_zhi_list, jiang_xing)
+    count_year = count_shensha(year_zhi, year_zhi_list, jiang_xing)
+    return count_day + count_year
+
+def is_jiang_xing(bazi):
+    return calculate_jiang_xing(bazi) > 0
+
+# --- 华盖: 以日支或年支对比四柱地支
+# 参考表: hua_gai（如未定义请在 bazi/constants.py 中补充）
+# main: 日支或年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_hua_gai(bazi):
+    day_zhi = bazi.getDayZhi()
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    
+    # 从地支列表中排除日支和年支
+    day_zhi_list = filter_zhi_from_list(all_zhi, day_zhi)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    
+    count_day = count_shensha(day_zhi, day_zhi_list, hua_gai)
+    count_year = count_shensha(year_zhi, year_zhi_list, hua_gai)
+    return count_day + count_year
+
+def is_hua_gai(bazi):
+    return calculate_hua_gai(bazi) > 0
+
+# --- 驿马: 以日支或年支对比四柱地支
+# 参考表: yi_ma（如未定义请在 bazi/constants.py 中补充）
+# main: 日支或年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_yi_ma(bazi):
+    day_zhi = bazi.getDayZhi()
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    
+    # 从地支列表中排除日支和年支
+    day_zhi_list = filter_zhi_from_list(all_zhi, day_zhi)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    
+    count_day = count_shensha(day_zhi, day_zhi_list, yi_ma)
+    count_year = count_shensha(year_zhi, year_zhi_list, yi_ma)
+    return count_day + count_year
+
+def is_yi_ma(bazi):
+    return calculate_yi_ma(bazi) > 0
+
+# --- 劫煞: 以日支或年支对比四柱地支
+# 参考表: jie_sha（如未定义请在 bazi/constants.py 中补充）
+# main: 日支或年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_jie_sha(bazi):
+    day_zhi = bazi.getDayZhi()
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    
+    # 从地支列表中排除日支和年支
+    day_zhi_list = filter_zhi_from_list(all_zhi, day_zhi)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    
+    count_day = count_shensha(day_zhi, day_zhi_list, jie_sha)
+    count_year = count_shensha(year_zhi, year_zhi_list, jie_sha)
+    return count_day + count_year
+
+def is_jie_sha(bazi):
+    return calculate_jie_sha(bazi) > 0
+
+# --- 亡神: 以日支或年支对比四柱地支
+# 参考表: wang_shen（如未定义请在 bazi/constants.py 中补充）
+# main: 日支或年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_wang_shen(bazi):
+    day_zhi = bazi.getDayZhi()
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    
+    # 从地支列表中排除日支和年支
+    day_zhi_list = filter_zhi_from_list(all_zhi, day_zhi)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    
+    count_day = count_shensha(day_zhi, day_zhi_list, wang_shen)
+    count_year = count_shensha(year_zhi, year_zhi_list, wang_shen)
+    return count_day + count_year
+
+def is_wang_shen(bazi):
+    return calculate_wang_shen(bazi) > 0
+
+# --- 桃花: 以日支或年支对比四柱地支
+# 参考表: tao_hua（如未定义请在 bazi/constants.py 中补充）
+# main: 日支或年支, zhi_list: 四柱地支(排除主支)
+
+def calculate_tao_hua(bazi):
+    day_zhi = bazi.getDayZhi()
+    year_zhi = bazi.getYearZhi()
+    all_zhi = get_gan_or_zhi(bazi, 1)
+    
+    # 从地支列表中排除日支和年支
+    day_zhi_list = filter_zhi_from_list(all_zhi, day_zhi)
+    year_zhi_list = filter_zhi_from_list(all_zhi, year_zhi)
+    
+    count_day = count_shensha(day_zhi, day_zhi_list, tao_hua)
+    count_year = count_shensha(year_zhi, year_zhi_list, tao_hua)
+    return count_day + count_year
+
+def is_tao_hua(bazi):
+    return calculate_tao_hua(bazi) > 0
+
+# --- 神煞注册表 ---
+SHENSHA_RULES = [
+    {
+        "name": "天德贵人",
+        "desc": "吉神，贵人扶持，主仁慈、聪明、善良，遵纪守法，一生是非少，逢凶化吉，女命主善良贤慧，配贵夫",
+        "checker": is_tian_de,
+        "use": "月支+其他"
+    },
+    {
+        "name": "月德贵人",
+        "desc": "吉神，贵人扶持，月德是阴德，其功效隐密，月德入命，主福分深厚，长寿，不犯官刑。为人多仁慈敏慧，能逢凶化吉，去灾招祥，然人命若带月德，亦需本身勤勉自助，才能在紧要关头获得天助。",
+        "checker": is_yue_de,
+        "use": "月支+其他"
+    },
+    {
+        "name": "天月二德",
+        "desc": "大吉，凡八字中有天月二德，其人恺悌慈祥，待人至诚仁厚。",
+        "checker": is_tian_yue_erde,
+        "use": "月支+其他"
+    },
+    {
+        "name": "天乙贵人",
+        "desc": "吉神，贵人扶持，若人遇之主荣名早达，成事多助，官禄易进。",
+        "checker": is_tian_yi_guiren,
+        "use": "日干/年干+地支"
+    },
+    {
+        "name": "禄神",
+        "desc": "吉神，主衣禄充足，但要按喜忌神分，若禄为忌神则为凶煞（有空会增加判断逻辑）",
+        "checker": is_lu_shen,
+        "use": "日干+地支"
+    },
+    {
+        "name": "文昌",
+        "desc": "吉神，主生性聪明，文笔极好，逢凶化吉。",
+        "checker": is_wen_chang,
+        "use": "日干+地支"
+    },
+    {
+        "name": "羊刃",
+        "desc": "煞神，主性格刚烈、易有冲突、遇事易极端，若为忌神则主灾祸、血光、刑伤。",
+        "checker": is_yang_ren,
+        "use": "日干+地支"
+    },
+    {
+        "name": "红艳煞",
+        "desc": "煞神，主异性缘分强、情感丰富，若为忌神则主感情纠纷、桃色是非。",
+        "checker": is_hong_yan_sha,
+        "use": "日干+地支"
+    }
+    ,
+    {
+        "name": "三奇",
+        "desc": "吉神，主聪明才智、机遇佳，遇三奇者多有贵人相助、事业顺利。三奇为四柱天干中顺序出现的乙丙丁、甲戊庚、壬癸辛。",
+        "checker": is_san_qi,
+        "use": "四柱天干顺序"
+    },
+    {
+        "name": "将星",
+        "desc": "主权力、领导、威严，为吉神，遇之主贵人相助、官位提升。",
+        "checker": is_jiang_xing,
+        "use": "日支或年支+地支"
+    },
+    {
+        "name": "华盖",
+        "desc": "主文学艺术才华、清高独立，为双面神，既主才华横溢，亦主孤独清高。",
+        "checker": is_hua_gai,
+        "use": "日支或年支+地支"
+    },
+    {
+        "name": "驿马",
+        "desc": "主奔波、流动、变化，为双面神，既主事业拓展、旅行，亦主漂泊不定。",
+        "checker": is_yi_ma,
+        "use": "日支或年支+地支"
+    },
+    {
+        "name": "劫煞",
+        "desc": "主劫难、变故、突发事件，为凶煞，遇之多有突发变动、灾祸。",
+        "checker": is_jie_sha,
+        "use": "日支或年支+地支"
+    },
+    {
+        "name": "亡神",
+        "desc": "主损失、破财、不详，为凶煞，遇之多有损失、不祥之事。",
+        "checker": is_wang_shen,
+        "use": "日支或年支+地支"
+    },
+    {
+        "name": "桃花",
+        "desc": "主感情、姻缘、异性缘，为双面神，既主良缘美姻，亦主情感纠纷。",
+        "checker": is_tao_hua,
+        "use": "日支或年支+地支"
+    }
+]
+
+def get_shensha(bazi):
+    """
+    根据八字计算神煞
+    :param bazi: 包含年、月、日、时柱干支的对象
+    :return: 神煞列表（名称+解释）
+    """
+    shensha_list = []
+    for rule in SHENSHA_RULES:
+        if rule["checker"](bazi):
+            shensha_list.append((rule["name"], rule["desc"]))
+    return shensha_list
+
+
+
+
+

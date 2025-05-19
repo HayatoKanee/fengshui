@@ -3,7 +3,7 @@ import datetime
 import os
 
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
@@ -71,6 +71,8 @@ def get_bazi_detail(request):
         yue_de = calculate_yue_de(bazi)
         wen_chang = calculate_wen_chang(bazi)
         lu_shen = calculate_lu_shen(bazi)
+        # Get the shensha list using the new function
+        shensha_list = get_shensha(bazi)
 
         context = {
             'bazi': bazi,
@@ -83,7 +85,8 @@ def get_bazi_detail(request):
             'tian_de': tian_de,
             'yue_de': yue_de,
             'wen_chang': wen_chang,
-            'lu_shen': lu_shen
+            'lu_shen': lu_shen,
+            'shensha_list': shensha_list  # Add shensha list to the context
         }
         html = render_to_string('partials/bazi_detail.html', context)
         return HttpResponse(html)
@@ -149,6 +152,9 @@ def bazi_view(request):
             partner_analyst = analyse_partner(hidden_gans, shishen)
             personality = analyse_personality(bazi.getMonthZhi())
             liunian_analysis = analyse_liunian(bazi, shishen, selected_year, is_strong, is_male)
+            # Get the shensha list using the new function
+            shensha_list = get_shensha(bazi)
+            
             context = {
                 'form': form,
                 'bazi': bazi,
@@ -170,7 +176,8 @@ def bazi_view(request):
                 'partner_analyst': partner_analyst,
                 'liunian_analysis': liunian_analysis,
                 'years': years,
-                'personality': personality
+                'personality': personality,
+                'shensha_list': shensha_list  # Now includes all the shensha calculated by the restructured system
             }
             return render(request, 'bazi.html', context)
     else:
