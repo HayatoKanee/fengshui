@@ -3,7 +3,7 @@ import datetime
 import os
 
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 
@@ -11,12 +11,8 @@ from fengshui import settings
 from .forms import BirthTimeForm
 from lunar_python import Lunar, Solar, EightChar, JieQi
 from .constants import gan_wuxing, gan_yinyang
-from .helper import extract_form_data, get_relations, get_wang_xiang, calculate_values, \
-    get_hidden_gans, calculate_wang_xiang_values, calculate_values_for_bazi, calculate_gan_liang_value, \
-    accumulate_wuxing_values, calculate_shenghao, calculate_shenghao_percentage, calculate_shishen_for_bazi, \
-    analyse_partner, get_day_gan_ratio, analyse_personality, analyse_liunian, best_bazi_in_year, calculate_day_guiren, \
-    calculate_year_guiren, calculate_tian_de, calculate_yue_de, calculate_wen_chang, calculate_lu_shen
-
+from .helper import *
+from .feixing import *
 
 def home_view(request):
     return render(request, 'home.html')
@@ -75,6 +71,8 @@ def get_bazi_detail(request):
         yue_de = calculate_yue_de(bazi)
         wen_chang = calculate_wen_chang(bazi)
         lu_shen = calculate_lu_shen(bazi)
+        # Get the shensha list using the new function
+        shensha_list = get_shensha(bazi)
 
         context = {
             'bazi': bazi,
@@ -87,7 +85,8 @@ def get_bazi_detail(request):
             'tian_de': tian_de,
             'yue_de': yue_de,
             'wen_chang': wen_chang,
-            'lu_shen': lu_shen
+            'lu_shen': lu_shen,
+            'shensha_list': shensha_list  # Add shensha list to the context
         }
         html = render_to_string('partials/bazi_detail.html', context)
         return HttpResponse(html)
@@ -153,6 +152,9 @@ def bazi_view(request):
             partner_analyst = analyse_partner(hidden_gans, shishen)
             personality = analyse_personality(bazi.getMonthZhi())
             liunian_analysis = analyse_liunian(bazi, shishen, selected_year, is_strong, is_male)
+            # Get the shensha list using the new function
+            shensha_list = get_shensha(bazi)
+            
             context = {
                 'form': form,
                 'bazi': bazi,
@@ -174,10 +176,76 @@ def bazi_view(request):
                 'partner_analyst': partner_analyst,
                 'liunian_analysis': liunian_analysis,
                 'years': years,
-                'personality': personality
+                'personality': personality,
+                'shensha_list': shensha_list  # Now includes all the shensha calculated by the restructured system
             }
             return render(request, 'bazi.html', context)
     else:
         form = BirthTimeForm()
 
     return render(request, 'bazi.html', {'form': form, 'current_year': current_year, 'years': years})
+
+def feixing_view(request):
+    center_param = request.GET.get("center", "9")
+    try:
+        main_center = int(center_param)
+    except ValueError:
+        main_center = 9
+
+    # Build table_data: one entry for each unique grid configuration.
+    table_data = []
+    for star in mountains_24:
+        pos = fixed_positions[star]
+        # Generate a fresh main grid for each star.
+        main_grid = generate_grid(main_center, order='f')
+
+        opp_coord = (2 - pos[0], 2 - pos[1])
+        star_center = main_grid[pos[0]][pos[1]]
+        opp_center = main_grid[opp_coord[0]][opp_coord[1]]
+        second_star = None
+
+        # Determine flight orders based on star_center (or opp_center if star_center == 5)
+        if star_center != 5:
+            order_main = get_flight(star_center, yuan_long_mapping[star])
+            order_opp = 'r' if order_main == 'f' else 'f'
+            grid_star = generate_grid(star_center, order_main)
+            grid_opposite_star = generate_grid(opp_center, order_opp)
+        else:
+            # Use the opposite logic if star_center is 5.
+            order_main = get_flight(opp_center, yuan_long_mapping[star])
+            order_opp = 'r' if order_main == 'f' else 'f'
+            grid_star = generate_grid(star_center, order_opp)
+            grid_opposite_star = generate_grid(opp_center, order_main)
+
+        # Realign: Compute the shift (for outer ring) needed so that star_center ends up in the bottom-center.
+        shift = get_shift(main_grid, star_center)
+        # Apply the same shift to each grid.
+        main_grid = rotate_outer_ring_by_steps(main_grid, shift)
+        grid_star = rotate_outer_ring_by_steps(grid_star, shift)
+        grid_opposite_star = rotate_outer_ring_by_steps(grid_opposite_star, shift)
+        # Convert the main grid to Chinese numerals.
+        main_grid_cn = [[arabic_to_chinese(n) for n in row] for row in main_grid]
+
+        # Instead of adding duplicate grid entries, check if an identical grid_star (and grid_opposite_star)
+        # has already been added. If so, record this star as the second_star.
+        found = False
+        for existing in table_data:
+            if existing['grid_star'] == grid_star and existing['grid_opposite_star'] == grid_opposite_star:
+                existing['second_star'] = star
+                found = True
+                break
+
+        if not found:
+            table_data.append({
+                'main_grid': main_grid_cn,
+                'star': star,
+                'second_star': second_star,
+                'grid_star': grid_star,
+                'grid_opposite_star': grid_opposite_star,
+            })
+    context = {
+        'main_center': str(main_center),
+        'table_data': table_data,
+    }
+    return render(request, 'feixing.html', context)
+
