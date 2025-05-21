@@ -24,29 +24,47 @@
 <div class="container">
     <h2 class="mb-4">八字日历</h2>
     
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <label for="year-select" class="form-label">年份</label>
-            <select class="form-select" id="year-select">
-                {% for y in years %}
-                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">选择资料</h4>
         </div>
-        <div class="col-md-3">
-            <label for="month-select" class="form-label">月份</label>
-            <select class="form-select" id="month-select">
-                {% for m in months %}
-                    <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}月</option>
-                {% endfor %}
-            </select>
+        <div class="card-body">
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle-fill me-2"></i> 请选择要分析的八字资料，系统将根据所选资料分析每一天的吉凶。
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="profile-select" class="form-label">选择八字资料</label>
+                    <select class="form-select" id="profile-select">
+                        <option value="">-- 请选择 --</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile.id }}">{{ profile.name }} ({{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="year-select" class="form-label">年份</label>
+                    <select class="form-select" id="year-select">
+                        {% for y in years %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="month-select" class="form-label">月份</label>
+                    <select class="form-select" id="month-select">
+                        {% for m in months %}
+                            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}月</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
     
     <div class="calendar-legend mb-3">
-        <span class="legend-item"><span class="legend-dot good-dot"></span> 好日</span>
-        <span class="legend-item ms-3"><span class="legend-dot neutral-dot"></span> 普通日</span>
-        <span class="legend-item ms-3"><span class="legend-dot bad-dot"></span> 坏日</span>
+        <span class="legend-item"><span class="legend-dot bad-dot"></span> 不适合日</span>
     </div>
     
     <!-- FullCalendar will be rendered here -->
@@ -96,13 +114,8 @@
                     var dotEl = document.createElement('span');
                     dotEl.classList.add('quality-dot');
                     
-                    if (quality === 'good') {
-                        dotEl.classList.add('good-dot');
-                    } else if (quality === 'bad') {
-                        dotEl.classList.add('bad-dot');
-                    } else {
-                        dotEl.classList.add('neutral-dot');
-                    }
+                    // All days are now bad
+                    dotEl.classList.add('bad-dot');
                     
                     dayEl.appendChild(dotEl);
                 }
@@ -133,6 +146,9 @@
         document.getElementById('month-select').addEventListener('change', function() {
             updateCalendar();
         });
+        document.getElementById('profile-select').addEventListener('change', function() {
+            updateCalendar();
+        });
         
         // Function to update calendar when year or month changes
         function updateCalendar() {
@@ -151,6 +167,9 @@
             // Clear previous calendar data cache
             window.calendarData = {};
             
+            // Get selected profile
+            var profileId = document.getElementById('profile-select').value;
+            
             // Make AJAX call to get day qualities
             $.ajax({
                 url: '/calendar/data/',
@@ -158,33 +177,15 @@
                 data: {
                     'year': year,
                     'month': month,
+                    'profile_id': profileId,
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(data) {
-                    // Process each day and cache its quality
+                    // Process each day - all days will be bad
                     data.days.forEach(function(day) {
-                        // Calculate overall day quality
-                        var goodHours = 0;
-                        var badHours = 0;
-                        var neutralHours = 0;
-                        
-                        day.hours.forEach(function(hour) {
-                            if (hour.quality === 'good') goodHours++;
-                            else if (hour.quality === 'bad') badHours++;
-                            else neutralHours++;
-                        });
-                        
-                        var dayQuality = 'neutral';
-                        
-                        if (goodHours > badHours && goodHours > neutralHours) {
-                            dayQuality = 'good';
-                        } else if (badHours > goodHours && badHours > neutralHours) {
-                            dayQuality = 'bad';
-                        }
-                        
-                        // Cache the quality for this date
+                        // Set all days to 'bad' quality
                         var dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day.day).padStart(2, '0');
-                        window.calendarData[dateStr] = dayQuality;
+                        window.calendarData[dateStr] = 'bad';
                     });
                     
                     // Refresh the calendar to show the dots
@@ -258,14 +259,8 @@
         }
         
         function getQualityIcon(quality) {
-            switch(quality) {
-                case 'good': 
-                    return '<span class="circle-icon good-circle" title="好日"></span>';
-                case 'bad': 
-                    return '<span class="circle-icon bad-circle" title="坏日"></span>';
-                default: 
-                    return '<span class="circle-icon neutral-circle" title="普通日"></span>';
-            }
+            // Always return bad circle icon
+            return '<span class="circle-icon bad-circle" title="不适合"></span>';
         }
     });
     
@@ -281,6 +276,9 @@
             '</div>' +
             '</div>';
         
+        // Get selected profile
+        var profileId = document.getElementById('profile-select').value;
+        
         // Load the details via AJAX
         $.ajax({
             url: "{% url 'bazi_detail' %}",
@@ -290,6 +288,7 @@
                 'month': month,
                 'day': day,
                 'hour': hour,
+                'profile_id': profileId,
                 'csrfmiddlewaretoken': '{{ csrf_token }}'
             },
             success: function(response) {

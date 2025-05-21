@@ -4,18 +4,11 @@
 <div class="container">
     <h2 class="mb-4">个人资料管理</h2>
     
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    
     <div class="row mb-4">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header">
                     <h5 class="mb-0">已保存的八字资料</h5>
-                    <a href="{% url 'add_profile' %}" class="btn btn-primary btn-sm">添加新资料</a>
                 </div>
                 <div class="card-body">
                     {% if profiles %}
@@ -48,7 +41,7 @@
                     {% else %}
                         <div class="text-center py-3">
                             <p class="text-muted">您还没有保存任何八字资料</p>
-                            <a href="{% url 'add_profile' %}" class="btn btn-primary">添加资料</a>
+                            <a href="{% url 'bazi' %}" class="btn btn-primary">添加八字资料</a>
                         </div>
                     {% endif %}
                 </div>

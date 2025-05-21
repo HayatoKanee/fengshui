@@ -25,7 +25,7 @@ urlpatterns = [
     # Authentication URLs
     path('login/', user_login, name='login'),
     path('logout/', user_logout, name='logout'),
-    path('register/', user_register, name='register'),
+    path('register/', user_login, name='register'),  # Point to login view for compatibility
     
     # Profile management URLs
     path('profiles/', profile_list, name='profiles'),

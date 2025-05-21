@@ -1092,7 +1092,7 @@ SHENSHA_RULES = [
         "use": "日柱+地支"
     }
 ]
-
+    
 def get_shensha(bazi):
     """
     根据八字计算神煞

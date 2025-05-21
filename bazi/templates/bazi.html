@@ -2,11 +2,6 @@
 {% load custom_filters %}
 {% block content %}
     <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <h1>八字排盘</h1>
-            </div>
-        </div>
         
         {% if user.is_authenticated and profiles %}
         <div class="row mb-4">
@@ -25,7 +20,7 @@
                                 </div>
                             {% endfor %}
                             <div class="col-md-4 mb-2">
-                                <a href="{% url 'add_profile' %}" class="btn btn-outline-success w-100">
+                                <a href="#" class="btn btn-outline-success w-100 add-new-profile-btn">
                                     <i class="bi bi-plus-circle"></i> 添加新资料
                                 </a>
                             </div>
@@ -36,9 +31,20 @@
         </div>
         {% endif %}
         
-        <!-- New birth form -->
-        <div class="row">
-            <div class="col-md-6">
+        <!-- Toggle Button for New Input Form when viewing profile -->
+        {% if request.GET.profile_id %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <button class="btn btn-outline-primary toggle-input-form" type="button">
+                    <i class="bi bi-pencil-square"></i> 输入新八字
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- New birth form - initially hidden when viewing a profile -->
+        <div class="row input-form-container" {% if request.GET.profile_id %}style="display:none;"{% endif %}>
+            <div class="col-md-12">
                 <div class="card mb-4">
                     <div class="card-header">
                         {% if user.is_authenticated %}
@@ -102,7 +108,7 @@
                             
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">查看八字</button>
-                                {% if user.is_authenticated and not request.GET.profile_id %}
+                                {% if user.is_authenticated %}
                                     <div class="text-center mt-2">
                                         <a href="#" class="btn btn-sm btn-outline-secondary save-profile-btn">保存此资料</a>
                                     </div>
@@ -118,40 +124,46 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Rest of the template -->
-            {% if bazi %}
-                <div class="container mt-5">
-                    <table class="table">
-                        <h3>八字</h3>
-                        <thead>
-                        <tr>
-                            <th scope="col"></th>
-                            <th scope="col">时柱</th>
-                            <th scope="col">日柱</th>
-                            <th scope="col">月柱</th>
-                            <th scope="col">年柱</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <th scope="row">天干</th>
-                            <td>{{ bazi.getTimeGan }}</td>
-                            <td>{{ bazi.getDayGan }}</td>
-                            <td>{{ bazi.getMonthGan }}</td>
-                            <td>{{ bazi.getYearGan }}</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">地支</th>
-                            <td>{{ bazi.getTimeZhi }}</td>
-                            <td>{{ bazi.getDayZhi }}</td>
-                            <td>{{ bazi.getMonthZhi }}</td>
-                            <td>{{ bazi.getYearZhi }}</td>
-                        </tr>
-                        </tbody>
-                    </table>
+        </div>
+        
+        <!-- Bazi Results Display -->
+        {% if bazi %}
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">八字排盘</h3>
                 </div>
-                <div class="container mt-5">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <table class="table">
+                            <thead class="table-light">
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col">时柱</th>
+                                <th scope="col">日柱</th>
+                                <th scope="col">月柱</th>
+                                <th scope="col">年柱</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th scope="row">天干</th>
+                                <td>{{ bazi.getTimeGan }}</td>
+                                <td>{{ bazi.getDayGan }}</td>
+                                <td>{{ bazi.getMonthGan }}</td>
+                                <td>{{ bazi.getYearGan }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">地支</th>
+                                <td>{{ bazi.getTimeZhi }}</td>
+                                <td>{{ bazi.getDayZhi }}</td>
+                                <td>{{ bazi.getMonthZhi }}</td>
+                                <td>{{ bazi.getYearZhi }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home-tab-pane"
@@ -163,131 +175,165 @@
                                     type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">八字分析
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane"
-                                    type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">开发中
-                            </button>
-                        </li>
                     </ul>
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab"
                              tabindex="0">
-                            <div class="container mt-5">
-                                <h3>旺相</h3>
-                                <table class="table">
-                                    <thead>
-                                    <tr>
-                                        <th scope="col">五行</th>
-                                        <th scope="col">旺相</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for wx, wangxiang in wang_xiang.items %}
-                                        <tr>
-                                            <td>{{ wx }}</td>
-                                            <td>{{ wangxiang }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="container mt-5">
-                                <h3>年柱计算</h3>
-                                {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 yinyang=yinyang.0 wuxing=wuxing.0 shishen=shishen.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
-                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">旺相</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table">
+                                                <thead class="table-light">
+                                                <tr>
+                                                    <th scope="col">五行</th>
+                                                    <th scope="col">旺相</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {% for wx, wangxiang in wang_xiang.items %}
+                                                    <tr>
+                                                        <td>{{ wx }}</td>
+                                                        <td>{{ wangxiang }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
 
-                            <div class="container mt-5">
-                                <h3>月柱计算</h3>
-                                {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 yinyang=yinyang.1 wuxing=wuxing.1 shishen=shishen.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
-                            </div>
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">五行值</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table">
+                                                <thead class="table-light">
+                                                <tr>
+                                                    <th scope="col">五行</th>
+                                                    <th scope="col">值</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {% for wx, value in wuxing_value.items %}
+                                                    <tr>
+                                                        <td>{{ wx }}</td>
+                                                        <td>{{ value|floatformat:2 }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">生耗值</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="table">
+                                                <thead class="table-light">
+                                                <tr>
+                                                    <th scope="col"></th>
+                                                    <th scope="col"></th>
+                                                    <th scope="col">值</th>
+                                                    <th scope="col">占比</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr>
+                                                    <th scope="row"></th>
+                                                    <td> 生总值</td>
+                                                    <td> {{ sheng_hao.0|floatformat:2 }}</td>
+                                                    <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row"></th>
+                                                    <td>耗总值</td>
+                                                    <td> {{ sheng_hao.1|floatformat:2 }}</td>
+                                                    <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-8">
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">年柱计算</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 yinyang=yinyang.0 wuxing=wuxing.0 shishen=shishen.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
+                                        </div>
+                                    </div>
 
-                            <div class="container mt-5">
-                                <h3>日柱计算</h3>
-                                {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 yinyang=yinyang.2 wuxing=wuxing.2 shishen=shishen.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
-                            </div>
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">月柱计算</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 yinyang=yinyang.1 wuxing=wuxing.1 shishen=shishen.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
+                                        </div>
+                                    </div>
 
-                            <div class="container mt-5">
-                                <h3>时柱计算</h3>
-                                {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 yinyang=yinyang.3 wuxing=wuxing.3 shishen=shishen.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
-                            </div>
-                            <div class="container mt-5">
-                                <h3>五行值</h3>
-                                <table class="table">
-                                    <thead>
-                                    <tr>
-                                        <th scope="col">五行</th>
-                                        <th scope="col">值</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for wx, value in wuxing_value.items %}
-                                        <tr>
-                                            <td>{{ wx }}</td>
-                                            <td>{{ value|floatformat:2 }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="container mt-5">
-                                <h3>生耗值</h3>
-                                <table class="table">
-                                    <thead>
-                                    <tr>
-                                        <th scope="col"></th>
-                                        <th scope="col"></th>
-                                        <th scope="col">值</th>
-                                        <th scope="col">占比</th>
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">日柱计算</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 yinyang=yinyang.2 wuxing=wuxing.2 shishen=shishen.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
+                                        </div>
+                                    </div>
 
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr>
-                                        <th scope="row"></th>
-                                        <td> 生总值</td>
-                                        <td> {{ sheng_hao.0|floatformat:2 }}</td>
-                                        <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row"></th>
-                                        <td>耗总值</td>
-                                        <td> {{ sheng_hao.1|floatformat:2 }}</td>
-                                        <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
-                                    </tr>
-                                    </tbody>
-                                </table>
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h4 class="mb-0">时柱计算</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 yinyang=yinyang.3 wuxing=wuxing.3 shishen=shishen.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab"
-                         tabindex="0">
-                        <ul>
-                            <li>主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
-                                身弱 {% endif %}</strong></li>
-                            <li>生肖：<strong>{{ shengxiao }}</strong></li>
-                            <li>神煞：
-                                <ul>
-                                    {% for name, desc in shensha_list %}
-                                        <li><strong>{{ name }}</strong> - {{ desc }}</li>
-                                    {% empty %}
-                                        <li>无显著神煞</li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
-                            <li>配偶之性情：{{ partner_analyst }}</li>
-                            <li>自身性格：{{ personality }}</li>
-                            <li>{{ current_year }}流年分析: {{ liunian_analysis|safe }} </li>
-                        </ul>
-                        <div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab"
+                        <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab"
                              tabindex="0">
-                            ...
-                        </div>
-                        <div class="tab-pane fade" id="disabled-tab-pane" role="tabpanel" aria-labelledby="disabled-tab"
-                             tabindex="0">...
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
+                                                    身弱 {% endif %}</strong></li>
+                                                <li class="list-group-item">生肖：<strong>{{ shengxiao }}</strong></li>
+                                                <li class="list-group-item">神煞：
+                                                    <ul class="mt-2">
+                                                        {% for name, desc in shensha_list %}
+                                                            <li><strong>{{ name }}</strong> - {{ desc }}</li>
+                                                        {% empty %}
+                                                            <li>无显著神煞</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </li>
+                                                <li class="list-group-item">配偶之性情：{{ partner_analyst }}</li>
+                                                <li class="list-group-item">自身性格：{{ personality }}</li>
+                                                <li class="list-group-item">{{ current_year }}流年分析: {{ liunian_analysis|safe }}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            {% endif %}
+            </div>
+        </div>
+        {% endif %}
         </div>
     </div>
     
@@ -313,10 +359,101 @@
                         <input type="hidden" id="birth_hour" name="birth_hour">
                         <input type="hidden" id="birth_minute" name="birth_minute">
                         <input type="hidden" id="is_male" name="is_male">
+                        <!-- Add hidden field to indicate we want to redirect to bazi page -->
+                        <input type="hidden" name="redirect_to_bazi" value="1">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                         <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for adding new profile directly -->
+    <div class="modal fade" id="addNewProfileModal" tabindex="-1" aria-labelledby="addNewProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addNewProfileModalLabel">添加新八字资料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{% url 'add_profile' %}" method="post">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="new_profile_name" class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="new_profile_name" name="name" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="new_birth_year" class="form-label">出生年</label>
+                                <select class="form-select" id="new_birth_year" name="birth_year" required>
+                                    {% for year in years %}
+                                        <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="new_birth_month" class="form-label">出生月</label>
+                                <select class="form-select" id="new_birth_month" name="birth_month" required>
+                                    {% for month in "123456789101112"|make_list %}
+                                        <option value="{{ month }}">{{ month }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="new_birth_day" class="form-label">出生日</label>
+                                <select class="form-select" id="new_birth_day" name="birth_day" required>
+                                    {% for day in "123456789101112131415161718192021222324252627282930"|make_list %}
+                                        <option value="{{ day }}">{{ day }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="new_birth_hour" class="form-label">出生时</label>
+                                <select class="form-select" id="new_birth_hour" name="birth_hour" required>
+                                    {% for hour in "0123456789101112131415161718192021222324"|make_list %}
+                                        <option value="{{ hour }}">{{ hour }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="new_birth_minute" class="form-label">出生分</label>
+                                <select class="form-select" id="new_birth_minute" name="birth_minute">
+                                    <option value="0">0</option>
+                                    {% for min in "1530"|make_list %}
+                                        <option value="{{ min }}">{{ min }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">性别</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="is_male" id="new_is_male_true" value="True" checked>
+                                    <label class="form-check-label" for="new_is_male_true">男</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="is_male" id="new_is_male_false" value="False">
+                                    <label class="form-check-label" for="new_is_male_false">女</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Add hidden field to indicate we want to redirect to bazi page -->
+                        <input type="hidden" name="redirect_to_bazi" value="1">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存并查看八字</button>
                     </div>
                 </form>
             </div>
@@ -328,34 +465,49 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
-        // Existing script code
+        // Check if user is authenticated
+        var isAuthenticated = document.body.getAttribute('data-user-authenticated') === 'true';
         
-        {% if user.is_authenticated %}
-        // Handle save profile button click
-        $('.save-profile-btn').click(function(e) {
-            e.preventDefault();
-            
-            // Get form values
-            var year = $('#id_year').val();
-            var month = $('#id_month').val();
-            var day = $('#id_day').val();
-            var hour = $('#id_hour').val();
-            var minute = $('#id_minute').val() || 0;
-            var is_male = $('input[name="gender"]:checked').val() === 'male' ? 'True' : 'False';
-            
-            // Set values in modal form
-            $('#birth_year').val(year);
-            $('#birth_month').val(month);
-            $('#birth_day').val(day);
-            $('#birth_hour').val(hour);
-            $('#birth_minute').val(minute);
-            $('#is_male').val(is_male);
-            
-            // Show modal
-            var modal = new bootstrap.Modal(document.getElementById('saveProfileModal'));
-            modal.show();
+        // Toggle input form when viewing a profile
+        $('.toggle-input-form').click(function() {
+            $('.input-form-container').toggle();
         });
-        {% endif %}
+        
+        if (isAuthenticated) {
+            // Handle save profile button click
+            $('.save-profile-btn').click(function(e) {
+                e.preventDefault();
+                
+                // Get form values
+                var year = $('#id_year').val();
+                var month = $('#id_month').val();
+                var day = $('#id_day').val();
+                var hour = $('#id_hour').val();
+                var minute = $('#id_minute').val() || 0;
+                var is_male = $('input[name="gender"]:checked').val() === 'male' ? 'True' : 'False';
+                
+                // Set values in modal form
+                $('#birth_year').val(year);
+                $('#birth_month').val(month);
+                $('#birth_day').val(day);
+                $('#birth_hour').val(hour);
+                $('#birth_minute').val(minute);
+                $('#is_male').val(is_male);
+                
+                // Show modal
+                var modal = new bootstrap.Modal(document.getElementById('saveProfileModal'));
+                modal.show();
+            });
+            
+            // Handle add new profile button click
+            $('.add-new-profile-btn').click(function(e) {
+                e.preventDefault();
+                
+                // Show modal
+                var modal = new bootstrap.Modal(document.getElementById('addNewProfileModal'));
+                modal.show();
+            });
+        }
     });
 </script>
 {% endblock %}
