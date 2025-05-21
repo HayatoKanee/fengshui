@@ -21,6 +21,19 @@ from bazi.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name='home'),
+    
+    # Authentication URLs
+    path('login/', user_login, name='login'),
+    path('logout/', user_logout, name='logout'),
+    path('register/', user_register, name='register'),
+    
+    # Profile management URLs
+    path('profiles/', profile_list, name='profiles'),
+    path('profiles/add/', add_profile, name='add_profile'),
+    path('profiles/edit/<int:profile_id>/', edit_profile, name='edit_profile'),
+    path('profiles/delete/<int:profile_id>/', delete_profile, name='delete_profile'),
+    
+    # Main app URLs
     path('bazi', bazi_view, name='bazi'),
     path('wuxing', wuxing_view, name='wuxing'),
     path('yinyang', yinyang_view, name='yinyang'),

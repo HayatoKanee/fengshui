@@ -2,222 +2,360 @@
 {% load custom_filters %}
 {% block content %}
     <div class="container">
-        <h2 class="mb-4">请输入新历生日</h2>
-        <form method="post" class="row g-3">
-            {% csrf_token %}
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="gender" id="male" value="male"
-                       {% if is_male %}checked {% endif %}>
-                <label class="form-check-label" for="male">
-                    男
-                </label>
+        <div class="row">
+            <div class="col-md-12">
+                <h1>八字排盘</h1>
             </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="gender" id="female" value="female"
-                       {% if not is_male %}checked {% endif %}>
-                <label class="form-check-label" for="female">
-                    女
-                </label>
-            </div>
-            <div class="col-md-2">
-                <label for="{{ form.year.id_for_label }}" class="form-label">年:</label>
-                {{ form.year }}
-            </div>
-            <div class="col-md-2">
-                <label for="{{ form.month.id_for_label }}" class="form-label">月:</label>
-                {{ form.month }}
-            </div>
-            <div class="col-md-2">
-                <label for="{{ form.day.id_for_label }}" class="form-label">日:</label>
-                {{ form.day }}
-            </div>
-            <div class="col-md-2">
-                <label for="{{ form.hour.id_for_label }}" class="form-label">时:</label>
-                {{ form.hour }}
-            </div>
-            <div class="col-md-2">
-                <label for="{{ form.minute.id_for_label }}" class="form-label">分:</label>
-                {{ form.minute }}
-            </div>
-            <div class="col-md-2">流年：
-                <select name="liunian" id="liunian">
-                    {% for year in years %}
-                        <option value="{{ year }}"
-                                {% if year == current_year %}selected{% endif %}>{{ year }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary mt-4">查看</button>
-            </div>
-        </form>
-    </div>
-    {% if bazi %}
-        <div class="container mt-5">
-            <table class="table">
-                <h3>八字</h3>
-                <thead>
-                <tr>
-                    <th scope="col"></th>
-                    <th scope="col">时柱</th>
-                    <th scope="col">日柱</th>
-                    <th scope="col">月柱</th>
-                    <th scope="col">年柱</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <th scope="row">天干</th>
-                    <td>{{ bazi.getTimeGan }}</td>
-                    <td>{{ bazi.getDayGan }}</td>
-                    <td>{{ bazi.getMonthGan }}</td>
-                    <td>{{ bazi.getYearGan }}</td>
-                </tr>
-                <tr>
-                    <th scope="row">地支</th>
-                    <td>{{ bazi.getTimeZhi }}</td>
-                    <td>{{ bazi.getDayZhi }}</td>
-                    <td>{{ bazi.getMonthZhi }}</td>
-                    <td>{{ bazi.getYearZhi }}</td>
-                </tr>
-                </tbody>
-            </table>
         </div>
-        <div class="container mt-5">
-            <ul class="nav nav-tabs" id="myTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home-tab-pane"
-                            type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">详细计算
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane"
-                            type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">八字分析
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane"
-                            type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">开发中
-                    </button>
-                </li>
-            </ul>
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab"
-                     tabindex="0">
-                    <div class="container mt-5">
-                        <h3>旺相</h3>
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th scope="col">五行</th>
-                                <th scope="col">旺相</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for wx, wangxiang in wang_xiang.items %}
-                                <tr>
-                                    <td>{{ wx }}</td>
-                                    <td>{{ wangxiang }}</td>
-                                </tr>
+        
+        {% if user.is_authenticated and profiles %}
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>选择已保存的资料</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for profile in profiles %}
+                                <div class="col-md-4 mb-2">
+                                    <a href="{% url 'bazi' %}?profile_id={{ profile.id }}" class="btn {% if request.GET.profile_id|add:'0' == profile.id %}btn-primary{% else %}btn-outline-primary{% endif %} w-100">
+                                        {{ profile.name }} ({{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日)
+                                    </a>
+                                </div>
                             {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="container mt-5">
-                        <h3>年柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 yinyang=yinyang.0 wuxing=wuxing.0 shishen=shishen.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
-                    </div>
-
-                    <div class="container mt-5">
-                        <h3>月柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 yinyang=yinyang.1 wuxing=wuxing.1 shishen=shishen.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
-                    </div>
-
-                    <div class="container mt-5">
-                        <h3>日柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 yinyang=yinyang.2 wuxing=wuxing.2 shishen=shishen.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
-                    </div>
-
-                    <div class="container mt-5">
-                        <h3>时柱计算</h3>
-                        {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 yinyang=yinyang.3 wuxing=wuxing.3 shishen=shishen.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
-                    </div>
-                    <div class="container mt-5">
-                        <h3>五行值</h3>
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th scope="col">五行</th>
-                                <th scope="col">值</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for wx, value in wuxing_value.items %}
-                                <tr>
-                                    <td>{{ wx }}</td>
-                                    <td>{{ value|floatformat:2 }}</td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="container mt-5">
-                        <h3>生耗值</h3>
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col"></th>
-                                <th scope="col">值</th>
-                                <th scope="col">占比</th>
-
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <th scope="row"></th>
-                                <td> 生总值</td>
-                                <td> {{ sheng_hao.0|floatformat:2 }}</td>
-                                <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
-                            </tr>
-                            <tr>
-                                <th scope="row"></th>
-                                <td>耗总值</td>
-                                <td> {{ sheng_hao.1|floatformat:2 }}</td>
-                                <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
-                            </tr>
-                            </tbody>
-                        </table>
+                            <div class="col-md-4 mb-2">
+                                <a href="{% url 'add_profile' %}" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-plus-circle"></i> 添加新资料
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab"
-                 tabindex="0">
-                <ul>
-                    <li>主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
-                        身弱 {% endif %}</strong></li>
-                    <li>生肖：<strong>{{ shengxiao }}</strong></li>
-                    <li>神煞：
+        </div>
+        {% endif %}
+        
+        <!-- New birth form -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        {% if user.is_authenticated %}
+                            <h5>输入新的八字资料</h5>
+                        {% else %}
+                            <h5>输入八字资料 <small class="text-muted">(注册账号可保存资料)</small></h5>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <form action="{% url 'bazi' %}" method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.year.id_for_label }}">出生年</label>
+                                    {{ form.year }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.month.id_for_label }}">出生月</label>
+                                    {{ form.month }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.day.id_for_label }}">出生日</label>
+                                    {{ form.day }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.hour.id_for_label }}">出生时</label>
+                                    {{ form.hour }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.minute.id_for_label }}">出生分</label>
+                                    {{ form.minute }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label>性别</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="gender" id="gender_male" value="male" {% if form.gender.value == 'male' %}checked{% endif %}>
+                                        <label class="form-check-label" for="gender_male">男</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="gender" id="gender_female" value="female" {% if form.gender.value == 'female' %}checked{% endif %}>
+                                        <label class="form-check-label" for="gender_female">女</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="liunian">流年</label>
+                                <select class="form-select" name="liunian" id="liunian">
+                                    {% for year in years %}
+                                        <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">查看八字</button>
+                                {% if user.is_authenticated and not request.GET.profile_id %}
+                                    <div class="text-center mt-2">
+                                        <a href="#" class="btn btn-sm btn-outline-secondary save-profile-btn">保存此资料</a>
+                                    </div>
+                                {% elif not user.is_authenticated %}
+                                    <div class="text-center mt-2">
+                                        <a href="{% url 'login' %}?next={% url 'bazi' %}" class="text-muted">登录</a> 或 
+                                        <a href="{% url 'register' %}?next={% url 'bazi' %}" class="text-muted">注册</a> 
+                                        以保存八字资料
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rest of the template -->
+            {% if bazi %}
+                <div class="container mt-5">
+                    <table class="table">
+                        <h3>八字</h3>
+                        <thead>
+                        <tr>
+                            <th scope="col"></th>
+                            <th scope="col">时柱</th>
+                            <th scope="col">日柱</th>
+                            <th scope="col">月柱</th>
+                            <th scope="col">年柱</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <th scope="row">天干</th>
+                            <td>{{ bazi.getTimeGan }}</td>
+                            <td>{{ bazi.getDayGan }}</td>
+                            <td>{{ bazi.getMonthGan }}</td>
+                            <td>{{ bazi.getYearGan }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">地支</th>
+                            <td>{{ bazi.getTimeZhi }}</td>
+                            <td>{{ bazi.getDayZhi }}</td>
+                            <td>{{ bazi.getMonthZhi }}</td>
+                            <td>{{ bazi.getYearZhi }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="container mt-5">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home-tab-pane"
+                                    type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">详细计算
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane"
+                                    type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">八字分析
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane"
+                                    type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">开发中
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab"
+                             tabindex="0">
+                            <div class="container mt-5">
+                                <h3>旺相</h3>
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">五行</th>
+                                        <th scope="col">旺相</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for wx, wangxiang in wang_xiang.items %}
+                                        <tr>
+                                            <td>{{ wx }}</td>
+                                            <td>{{ wangxiang }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="container mt-5">
+                                <h3>年柱计算</h3>
+                                {% include 'partials/bazi_table.html' with gan=bazi.getYearGan zhi=bazi.getYearZhi gan_value=values.0.0 zhi_value=values.0.1 hidden_gans=hidden_gans.0 yinyang=yinyang.0 wuxing=wuxing.0 shishen=shishen.0 wx_value=wang_xiang_values.0 gl_value=gan_liang_values.0 %}
+                            </div>
+
+                            <div class="container mt-5">
+                                <h3>月柱计算</h3>
+                                {% include 'partials/bazi_table.html' with gan=bazi.getMonthGan zhi=bazi.getMonthZhi gan_value=values.1.0 zhi_value=values.1.1 hidden_gans=hidden_gans.1 yinyang=yinyang.1 wuxing=wuxing.1 shishen=shishen.1 wx_value=wang_xiang_values.1 gl_value=gan_liang_values.1 %}
+                            </div>
+
+                            <div class="container mt-5">
+                                <h3>日柱计算</h3>
+                                {% include 'partials/bazi_table.html' with gan=bazi.getDayGan zhi=bazi.getDayZhi gan_value=values.2.0 zhi_value=values.2.1 hidden_gans=hidden_gans.2 yinyang=yinyang.2 wuxing=wuxing.2 shishen=shishen.2 wx_value=wang_xiang_values.2 gl_value=gan_liang_values.2 %}
+                            </div>
+
+                            <div class="container mt-5">
+                                <h3>时柱计算</h3>
+                                {% include 'partials/bazi_table.html' with gan=bazi.getTimeGan zhi=bazi.getTimeZhi gan_value=values.3.0 zhi_value=values.3.1 hidden_gans=hidden_gans.3 yinyang=yinyang.3 wuxing=wuxing.3 shishen=shishen.3 wx_value=wang_xiang_values.3 gl_value=gan_liang_values.3 %}
+                            </div>
+                            <div class="container mt-5">
+                                <h3>五行值</h3>
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">五行</th>
+                                        <th scope="col">值</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for wx, value in wuxing_value.items %}
+                                        <tr>
+                                            <td>{{ wx }}</td>
+                                            <td>{{ value|floatformat:2 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="container mt-5">
+                                <h3>生耗值</h3>
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col"></th>
+                                        <th scope="col"></th>
+                                        <th scope="col">值</th>
+                                        <th scope="col">占比</th>
+
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <th scope="row"></th>
+                                        <td> 生总值</td>
+                                        <td> {{ sheng_hao.0|floatformat:2 }}</td>
+                                        <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row"></th>
+                                        <td>耗总值</td>
+                                        <td> {{ sheng_hao.1|floatformat:2 }}</td>
+                                        <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab"
+                         tabindex="0">
                         <ul>
-                            {% for name, desc in shensha_list %}
-                                <li><strong>{{ name }}</strong> - {{ desc }}</li>
-                            {% empty %}
-                                <li>无显著神煞</li>
-                            {% endfor %}
+                            <li>主属性: <strong>{{ main_wuxing }} {% if sheng_hao.0 > sheng_hao.1 %} 身强 {% else %}
+                                身弱 {% endif %}</strong></li>
+                            <li>生肖：<strong>{{ shengxiao }}</strong></li>
+                            <li>神煞：
+                                <ul>
+                                    {% for name, desc in shensha_list %}
+                                        <li><strong>{{ name }}</strong> - {{ desc }}</li>
+                                    {% empty %}
+                                        <li>无显著神煞</li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                            <li>配偶之性情：{{ partner_analyst }}</li>
+                            <li>自身性格：{{ personality }}</li>
+                            <li>{{ current_year }}流年分析: {{ liunian_analysis|safe }} </li>
                         </ul>
-                    </li>
-                    <li>配偶之性情：{{ partner_analyst }}</li>
-                    <li>自身性格：{{ personality }}</li>
-                    <li>{{ current_year }}流年分析: {{ liunian_analysis|safe }} </li>
-                </ul>
-                <div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab"
-                     tabindex="0">
-                    ...
+                        <div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab"
+                             tabindex="0">
+                            ...
+                        </div>
+                        <div class="tab-pane fade" id="disabled-tab-pane" role="tabpanel" aria-labelledby="disabled-tab"
+                             tabindex="0">...
+                        </div>
+                    </div>
                 </div>
-                <div class="tab-pane fade" id="disabled-tab-pane" role="tabpanel" aria-labelledby="disabled-tab"
-                     tabindex="0">...
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Modal for saving profile -->
+    {% if user.is_authenticated %}
+    <div class="modal fade" id="saveProfileModal" tabindex="-1" aria-labelledby="saveProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saveProfileModalLabel">保存八字资料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <form action="{% url 'add_profile' %}" method="post">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="profile_name" class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="profile_name" name="name" required>
+                        </div>
+                        <input type="hidden" id="birth_year" name="birth_year">
+                        <input type="hidden" id="birth_month" name="birth_month">
+                        <input type="hidden" id="birth_day" name="birth_day">
+                        <input type="hidden" id="birth_hour" name="birth_hour">
+                        <input type="hidden" id="birth_minute" name="birth_minute">
+                        <input type="hidden" id="is_male" name="is_male">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
     {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Existing script code
+        
+        {% if user.is_authenticated %}
+        // Handle save profile button click
+        $('.save-profile-btn').click(function(e) {
+            e.preventDefault();
+            
+            // Get form values
+            var year = $('#id_year').val();
+            var month = $('#id_month').val();
+            var day = $('#id_day').val();
+            var hour = $('#id_hour').val();
+            var minute = $('#id_minute').val() || 0;
+            var is_male = $('input[name="gender"]:checked').val() === 'male' ? 'True' : 'False';
+            
+            // Set values in modal form
+            $('#birth_year').val(year);
+            $('#birth_month').val(month);
+            $('#birth_day').val(day);
+            $('#birth_hour').val(hour);
+            $('#birth_minute').val(minute);
+            $('#is_male').val(is_male);
+            
+            // Show modal
+            var modal = new bootstrap.Modal(document.getElementById('saveProfileModal'));
+            modal.show();
+        });
+        {% endif %}
+    });
+</script>
 {% endblock %}

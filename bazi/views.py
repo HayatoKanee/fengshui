@@ -4,17 +4,103 @@ import os
 import json
 
 from django.contrib import messages
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 
 from fengshui import settings
-from .forms import BirthTimeForm
+from .forms import BirthTimeForm, UserRegistrationForm, UserProfileForm
+from .models import UserProfile
 from lunar_python import Lunar, Solar, EightChar, JieQi
 from .constants import gan_wuxing, gan_yinyang
 from .helper import *
 from .feixing import *
+
+# Authentication Views
+def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+        
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, "登录成功!")
+            return redirect('home')
+        else:
+            messages.error(request, "用户名或密码错误。请重试。")
+            
+    return render(request, 'login.html')
+
+def user_logout(request):
+    logout(request)
+    messages.success(request, "您已成功退出登录。")
+    return redirect('home')
+
+def user_register(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+        
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "注册成功，已自动登录。")
+            return redirect('home')
+    else:
+        form = UserRegistrationForm()
+        
+    return render(request, 'register.html', {'form': form})
+
+# Profile Management Views
+@login_required
+def profile_list(request):
+    profiles = UserProfile.objects.filter(user=request.user)
+    return render(request, 'profiles.html', {'profiles': profiles})
+
+@login_required
+def add_profile(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            messages.success(request, "个人资料添加成功!")
+            return redirect('profiles')
+    else:
+        form = UserProfileForm()
+        
+    return render(request, 'profile_form.html', {'form': form})
+
+@login_required
+def edit_profile(request, profile_id):
+    profile = get_object_or_404(UserProfile, id=profile_id, user=request.user)
+    
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "个人资料更新成功!")
+            return redirect('profiles')
+    else:
+        form = UserProfileForm(instance=profile)
+        
+    return render(request, 'profile_form.html', {'form': form})
+
+@login_required
+def delete_profile(request, profile_id):
+    profile = get_object_or_404(UserProfile, id=profile_id, user=request.user)
+    profile.delete()
+    messages.success(request, "个人资料已删除。")
+    return redirect('profiles')
 
 def home_view(request):
     return render(request, 'home.html')
@@ -183,9 +269,11 @@ def zeri_view(request):
     return render(request, 'zeri.html')
 
 
+@login_required
 def calendar_view(request):
     """
     View for the calendar tab where users can select a date and see its quality.
+    Requires user to be logged in.
     """
     # Initial display with current year and month
     current_year = datetime.datetime.now().year
@@ -202,6 +290,16 @@ def calendar_view(request):
 def bazi_view(request):
     current_year = datetime.datetime.now().year
     years = range(current_year - 20, current_year + 50)
+    
+    # Check if viewing a saved profile
+    profile = None
+    profile_id = request.GET.get('profile_id')
+    if profile_id and request.user.is_authenticated:
+        try:
+            profile = UserProfile.objects.get(id=profile_id, user=request.user)
+        except UserProfile.DoesNotExist:
+            pass
+    
     if request.method == 'POST':
         form = BirthTimeForm(request.POST)
         if form.is_valid():
@@ -254,13 +352,30 @@ def bazi_view(request):
                 'liunian_analysis': liunian_analysis,
                 'years': years,
                 'personality': personality,
-                'shensha_list': shensha_list 
+                'shensha_list': shensha_list,
+                'profiles': UserProfile.objects.filter(user=request.user) if request.user.is_authenticated else None
             }
             return render(request, 'bazi.html', context)
     else:
-        form = BirthTimeForm()
+        # Pre-fill the form with profile data if available
+        initial_data = {}
+        if profile:
+            initial_data = {
+                'year': profile.birth_year,
+                'month': profile.birth_month,
+                'day': profile.birth_day,
+                'hour': profile.birth_hour,
+                'minute': profile.birth_minute,
+                'gender': 'male' if profile.is_male else 'female'
+            }
+        form = BirthTimeForm(initial=initial_data)
 
-    return render(request, 'bazi.html', {'form': form, 'current_year': current_year, 'years': years})
+    return render(request, 'bazi.html', {
+        'form': form, 
+        'current_year': current_year, 
+        'years': years,
+        'profiles': UserProfile.objects.filter(user=request.user) if request.user.is_authenticated else None
+    })
 
 def feixing_view(request):
     center_param = request.GET.get("center", "9")
