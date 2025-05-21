@@ -439,7 +439,7 @@ def handle_qi_sha(bazi, shishen, year_bazi, is_strong, is_male):
             analysis += "•男命走七杀，本命有正官，喜欢在风月场所或在女人堆中鬼混。<br>"
         qisha_indices = find_shishen_indices('七杀', shishen)
         if len(qisha_indices) >= 2:
-            analysis += "•男命七杀两个以上，又逢七杀运，会为子女奔波i操劳，甚至受其所累。<br>"
+            analysis += "•男命七杀两个以上，又逢七杀运，会为子女奔波操劳，甚至受其所累。<br>"
     if not is_strong:
         analysis += "•身弱行七杀，理想较难实现，容易离婚，易换工作。<br>"
         analysis += "•身弱，杀为忌神，性情上显得刚愎自用。<br>"

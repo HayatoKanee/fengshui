@@ -16,6 +16,10 @@
                                                                                class="nav-link {% if request.resolver_match.url_name == 'zeri' %}active{% endif %}">
                 Pick date</a>
             </li>
+            <li class="nav-item lang" data-lang="en" style="display: none;"><a href="{% url 'calendar' %}"
+                                                                               class="nav-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+                Calendar</a>
+            </li>
             <li class="nav-item lang" data-lang="en" style="display: none;"><a href="{% url 'wuxing' %}"
                                                                                class="nav-link {% if request.resolver_match.url_name == 'wuxing' %}active{% endif %}">Intro</a>
             </li>
@@ -29,7 +33,10 @@
             <li class="nav-item lang" data-lang="zh"><a href="{% url 'zeri' %}"
                                                         class="nav-link {% if request.resolver_match.url_name == 'zeri' %}active{% endif %}">择日
             </a>
-                 <li class="nav-item lang" data-lang="zh"><a href="{% url 'feixing' %}"
+            <li class="nav-item lang" data-lang="zh"><a href="{% url 'calendar' %}"
+                                                        class="nav-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">日历
+            </a>
+            <li class="nav-item lang" data-lang="zh"><a href="{% url 'feixing' %}"
                                                         class="nav-link {% if request.resolver_match.url_name == 'feixing' %}active{% endif %}">九宫飞星图
             </a>
             </li>

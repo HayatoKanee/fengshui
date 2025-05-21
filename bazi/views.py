@@ -1,11 +1,13 @@
 import csv
 import datetime
 import os
+import json
 
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
 
 from fengshui import settings
 from .forms import BirthTimeForm
@@ -93,6 +95,65 @@ def get_bazi_detail(request):
     return HttpResponse(status=404)
 
 
+def calendar_data(request):
+    """API endpoint to get calendar day quality data"""
+    if request.method == 'POST':
+        year = int(request.POST.get('year', datetime.datetime.now().year))
+        month = int(request.POST.get('month', datetime.datetime.now().month))
+        
+        # Get the number of days in the selected month
+        first_day = datetime.datetime(year, month, 1)
+        if month == 12:
+            last_day = datetime.datetime(year + 1, 1, 1) - datetime.timedelta(days=1)
+        else:
+            last_day = datetime.datetime(year, month + 1, 1) - datetime.timedelta(days=1)
+        
+        num_days = last_day.day
+        
+        # For each day in the month, determine if it's good, neutral, or bad
+        calendar_days = []
+        for day in range(1, num_days + 1):
+            day_quality = []
+            for hour in [0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]:
+                try:
+                    solar = Solar.fromYmdHms(year, month, day, hour, 0, 0)
+                    lunar = solar.getLunar()
+                    bazi = lunar.getEightChar()
+                    
+                    # Use the is_bazi_good function to determine the quality
+                    if is_bazi_good(bazi, hour):
+                        quality = 'good'  # Good day - red color
+                    else:
+                        # Check for specific bad conditions
+                        has_bad_shensha = any(item[0] in ["劫煞", "亡神"] for item in get_shensha(bazi))
+                        has_clash = tian_gan_or_di_zhi_xiang_chong(bazi, 0) or tian_gan_or_di_zhi_xiang_chong(bazi, 1)
+                        
+                        if has_bad_shensha or has_clash:
+                            quality = 'bad'  # Bad day - black color
+                        else:
+                            quality = 'neutral'  # Neutral day - normal color
+                    
+                    day_quality.append({
+                        'hour': hour,
+                        'quality': quality
+                    })
+                except Exception as e:
+                    day_quality.append({
+                        'hour': hour,
+                        'quality': 'error',
+                        'error': str(e)
+                    })
+                    
+            calendar_days.append({
+                'day': day,
+                'hours': day_quality
+            })
+        
+        return JsonResponse({'days': calendar_days})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
 def zeri_view(request):
     if request.method == 'POST':
         from_date_str = request.POST.get('from_date')
@@ -120,6 +181,22 @@ def zeri_view(request):
                 continue
         return render(request, 'zeri.html', {'data': data, 'from_date': from_date_str, 'to_date': to_date_str})
     return render(request, 'zeri.html')
+
+
+def calendar_view(request):
+    """
+    View for the calendar tab where users can select a date and see its quality.
+    """
+    # Initial display with current year and month
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+    
+    return render(request, 'calendar.html', {
+        'year': current_year,
+        'month': current_month,
+        'years': range(current_year - 10, current_year + 11),
+        'months': range(1, 13)
+    })
 
 
 def bazi_view(request):
@@ -177,7 +254,7 @@ def bazi_view(request):
                 'liunian_analysis': liunian_analysis,
                 'years': years,
                 'personality': personality,
-                'shensha_list': shensha_list  # Now includes all the shensha calculated by the restructured system
+                'shensha_list': shensha_list 
             }
             return render(request, 'bazi.html', context)
     else:
