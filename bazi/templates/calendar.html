@@ -34,7 +34,7 @@
                     <li><strong>避凶</strong>：首先排除所有对当事人不利的日子，如与日柱相冲相害的日期。</li>
                     <li><strong>趋吉</strong>：在避开不利日子的前提下，再从剩余日期中选取对命主五行有补益作用的良辰吉日。</li>
                 </ul>
-                <p>在日历中，红色表示对您的八字有利的吉日，黑色表示不宜做重大事情的日子。</p>
+                <p>在日历中，越红色表示对您的八字有利的吉日，越黑色表示不宜做重大事情的日子。</p>
             </div>
             
             <div class="row mb-4">
@@ -55,11 +55,9 @@
     </div>
     
     <div class="calendar-legend mb-3">
-        <span class="legend-item"><span class="legend-dot score-very-good-dot"></span> 大吉 (>3分)</span>
-        <span class="legend-item ms-3"><span class="legend-dot score-good-dot"></span> 吉 (1-3分)</span>
-        <span class="legend-item ms-3"><span class="legend-dot score-neutral-dot"></span> 平 (-1至1分)</span>
-        <span class="legend-item ms-3"><span class="legend-dot score-bad-dot"></span> 凶 (-3至-1分)</span>
-        <span class="legend-item ms-3"><span class="legend-dot score-very-bad-dot"></span> 大凶 (<-3分)</span>
+        <span class="legend-item"><span class="legend-dot good-dot"></span> 吉日 (>1分)</span>
+        <span class="legend-item ms-3"><span class="legend-dot neutral-dot"></span> 平日 (-1至1分)</span>
+        <span class="legend-item ms-3"><span class="legend-dot bad-dot"></span> 黑日 (<-1分)</span>
     </div>
     
     <!-- FullCalendar will be rendered here -->
@@ -137,16 +135,12 @@
                 
                 // Add appropriate class based on score
                 if (score !== undefined && score !== null) {
-                    if (score > 3) {
-                        dotEl.classList.add('score-very-good-dot');
-                    } else if (score > 1) {
-                        dotEl.classList.add('score-good-dot');
+                    if (score > 1) {
+                        dotEl.classList.add('good-dot');
                     } else if (score >= -1) {
-                        dotEl.classList.add('score-neutral-dot');
-                    } else if (score >= -3) {
-                        dotEl.classList.add('score-bad-dot');
+                        dotEl.classList.add('neutral-dot');
                     } else {
-                        dotEl.classList.add('score-very-bad-dot');
+                        dotEl.classList.add('bad-dot');
                     }
                 } else if (window.calendarData && window.calendarData[dateStr]) {
                     // Fallback to quality-based coloring
@@ -357,16 +351,12 @@
                                 cell.setAttribute('data-score', score);
                                 console.log("Applying score for " + date + ": " + score);
                                 
-                                if (score > 3) {
-                                    dotElement.classList.add('score-very-good-dot');
-                                } else if (score > 1) {
-                                    dotElement.classList.add('score-good-dot');
+                                if (score > 1) {
+                                    dotElement.classList.add('good-dot');
                                 } else if (score >= -1) {
-                                    dotElement.classList.add('score-neutral-dot');
-                                } else if (score >= -3) {
-                                    dotElement.classList.add('score-bad-dot');
+                                    dotElement.classList.add('neutral-dot');
                                 } else {
-                                    dotElement.classList.add('score-very-bad-dot');
+                                    dotElement.classList.add('bad-dot');
                                 }
                             } else {
                                 // Fallback to quality-based coloring
@@ -434,23 +424,17 @@
             var qualityClass = '';
             
             if (score !== undefined) {
-                if (score > 3) {
-                    qualityText = '大吉日';
-                    qualityClass = 'text-danger fw-bold';
-                } else if (score > 1) {
+                if (score > 1) {
                     qualityText = '吉日';
                     qualityClass = 'text-danger';
                 } else if (score >= -1) {
                     qualityText = '平日';
                     qualityClass = 'text-secondary';
-                } else if (score >= -3) {
-                    qualityText = '黑日';
-                    qualityClass = 'text-warning';
                 } else {
-                    qualityText = '大黑日';
-                    qualityClass = 'text-dark fw-bold';
+                    qualityText = '黑日';
+                    qualityClass = 'text-dark';
                 }
-            } else {
+                        } else {
                 // Fallback to simple quality
                 if (quality === 'good') {
                     qualityText = '吉日';
@@ -459,7 +443,7 @@
                     qualityText = '平日';
                     qualityClass = 'text-secondary';
                 } else {
-                                        qualityText = '黑日';
+                    qualityText = '黑日';
                     qualityClass = 'text-dark';
                 }
             }
@@ -552,46 +536,36 @@
         vertical-align: middle;
     }
     
-    /* Score-based dot colors */
-    .score-very-bad-dot {
-        background-color: #000000; /* Black for very bad scores (< -3) */
-        box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
-    }
-    
-    .score-bad-dot {
-        background-color: #8B4513; /* Brown for bad scores (-3 to -1) */
-        box-shadow: 0 0 3px rgba(139, 69, 19, 0.7);
-    }
-    
-    .score-neutral-dot {
-        background-color: transparent;
-        border: 2px solid #999999; /* Gray outline for neutral scores (-1 to 1) */
-    }
-    
-    .score-good-dot {
-        background-color: #FF8000; /* Orange for good scores (1 to 3) */
-        box-shadow: 0 0 3px rgba(255, 128, 0, 0.7);
-    }
-    
-    .score-very-good-dot {
-        background-color: #FF0000; /* Bright red for very good scores (> 3) */
-        box-shadow: 0 0 3px rgba(255, 0, 0, 0.7);
-    }
-    
-    /* Legacy styles for backward compatibility */
+    /* Dot colors */
     .good-dot {
-        background-color: #ff6666;
-        box-shadow: 0 0 2px rgba(255, 0, 0, 0.5);
+        background-color: #FF0000; /* Bright red for good scores (> 1) */
+        box-shadow: 0 0 3px rgba(255, 0, 0, 0.7);
     }
     
     .neutral-dot {
         background-color: transparent;
-        border: 2px solid #ff6666;
+        border: 2px solid #999999; /* Gray outline for neutral scores (-1 to 1) */
     }
     
     .bad-dot {
-        background-color: #333333;
-        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        background-color: #000000; /* Black for bad scores (< -1) */
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+    }
+    
+    /* Legacy score-based dot styles (kept for compatibility) */
+    .score-very-good-dot, .score-good-dot {
+        background-color: #FF0000;
+        box-shadow: 0 0 3px rgba(255, 0, 0, 0.7);
+    }
+    
+    .score-neutral-dot {
+        background-color: transparent;
+        border: 2px solid #999999;
+    }
+    
+    .score-bad-dot, .score-very-bad-dot {
+        background-color: #000000;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
     }
     
     .fc-day-today {
