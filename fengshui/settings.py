@@ -72,14 +72,25 @@ WSGI_APPLICATION = 'fengshui.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Check if running on Heroku (Production)
+IS_HEROKU = os.environ.get('IS_HEROKU', False)
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default="sqlite:///db.sqlite3",   # fallback for local dev
-        conn_max_age=600,
-        ssl_require=True                   # enforce SSL in production
-    )
-}
+if IS_HEROKU:
+    # Production database settings
+    DATABASES = {
+        "default": dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True  # enforce SSL in production
+        )
+    }
+else:
+    # Local development database settings
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
