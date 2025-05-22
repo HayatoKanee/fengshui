@@ -1,0 +1,644 @@
+{% extends 'base_content.html' %}
+
+{% block content %}
+<!-- Modal for detailed day information -->
+<div class="modal fade" id="dayDetailsModal" tabindex="-1" aria-labelledby="dayDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dayDetailsModalLabel">日期详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="dayDetailsModalContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="mb-4">个人择日</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">个人择日说明</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info mb-4">
+                <p><strong>个人择日</strong>是指根据每个人的生辰八字（即四柱：年柱、月柱、日柱、时柱），来为其选择有利的日子，以趋吉避凶。简而言之，就是充分利用八字命理的信息，在选定日期时避开不利因素，并选择对自身有利的吉利日子。</p>
+                <p>个人择日通过"避凶"和"趋吉"两大步骤筛选日期：</p>
+                <ul>
+                    <li><strong>避凶</strong>：首先排除所有对当事人不利的日子，如与日柱相冲相害的日期。</li>
+                    <li><strong>趋吉</strong>：在避开不利日子的前提下，再从剩余日期中选取对命主五行有补益作用的良辰吉日。</li>
+                </ul>
+                <p>在日历中，越红色表示对您的八字有利的吉日，越黑色表示不宜做重大事情的日子。</p>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label for="profile-select" class="form-label">选择八字资料</label>
+                    <select class="form-select" id="profile-select">
+                        <option value="">-- 请选择 --</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile.id }}" {% if profile.is_default %}selected{% endif %}>
+                                {{ profile.name }} ({{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日)
+                                {% if profile.is_default %}[默认]{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        
+    </div>
+    
+    <div class="calendar-legend mb-3">
+        <span class="legend-item"><span class="legend-dot good-dot"></span> 吉日</span>
+        <span class="legend-item ms-3"><span class="legend-dot neutral-dot"></span> 平日</span>
+        <span class="legend-item ms-3"><span class="legend-dot bad-dot"></span> 黑日</span>
+    </div>
+    
+    <!-- FullCalendar will be rendered here -->
+    <div id="calendar"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Add FullCalendar CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/locales-all.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Flag to prevent datesSet from firing during initialization
+        window.isCalendarInitializing = true;
+        
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth'
+            },
+            initialView: 'dayGridMonth',
+            locale: 'zh-cn',
+            initialDate: '{{ year }}-{{ month|stringformat:"02d" }}-01',
+            selectable: true,
+            navLinks: true,
+            dayMaxEvents: true,
+            height: 'auto',
+            // Handle date click events
+            dateClick: function(info) {
+                showDayDetails(info.dateStr);
+            },
+            // Add listener for when calendar view changes (month changes)
+            datesSet: function(info) {
+                // Avoid firing on initial render
+                if (window.isCalendarInitializing) {
+                    window.isCalendarInitializing = false;
+                    return;
+                }
+                
+                // Use the calendar's current date which is more reliable than info.start
+                var currentDate = calendar.getDate();
+                var displayedYear = currentDate.getFullYear();
+                var displayedMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+                
+                // Load data for the displayed month
+                loadMonthData(displayedYear, displayedMonth);
+            },
+            // Custom day cell content to include dots
+            dayCellContent: function(args) {
+                var dateNum = args.dayNumberText;
+                var dateStr = args.date.getFullYear() + '-' + 
+                             String(args.date.getMonth() + 1).padStart(2, '0') + '-' + 
+                             String(args.date.getDate()).padStart(2, '0');
+                
+                // Debug: Check if this date has a score (when rendering new cells)
+                if (window.dayScores && window.dayScores[dateStr] !== undefined) {
+                    console.log("Day cell score for " + dateStr + ": " + window.dayScores[dateStr]);
+                }
+                
+                var dayEl = document.createElement('div');
+                dayEl.classList.add('day-content');
+                
+                // Find quality for this day in our cached data
+                var dotEl = document.createElement('span');
+                dotEl.classList.add('quality-dot');
+                
+                // Get the day's score if available
+                var score = window.dayScores && window.dayScores[dateStr];
+                var quality = window.calendarData && window.calendarData[dateStr] || 'neutral';
+                
+                // Add appropriate class based on score
+                if (score !== undefined && score !== null) {
+                    if (score > 2) {
+                        dotEl.classList.add('good-dot');
+                    } else if (score >= -1) {
+                        dotEl.classList.add('neutral-dot');
+                    } else {
+                        dotEl.classList.add('bad-dot');
+                    }
+                } else if (window.calendarData && window.calendarData[dateStr]) {
+                    // Fallback to quality-based coloring
+                    if (quality === 'good') {
+                        dotEl.classList.add('good-dot');
+                    } else if (quality === 'neutral') {
+                        dotEl.classList.add('neutral-dot');
+                    } else {
+                        dotEl.classList.add('bad-dot');
+                    }
+                }
+                
+                dayEl.appendChild(dotEl);
+                
+                // Add date number
+                var dateNumEl = document.createElement('span');
+                dateNumEl.classList.add('date-number');
+                dateNumEl.innerText = dateNum;
+                dayEl.appendChild(dateNumEl);
+                
+                return { domNodes: [dayEl] };
+            }
+        });
+        calendar.render();
+        
+        // Initialize calendar data cache object
+        window.calendarData = {};
+        window.dayReasons = {};
+        window.dayScores = {}; // Reset scores for the new month
+        
+        // Render the calendar first
+        calendar.render();
+        
+        // Now load data for the initial month
+        var initialYear = Number('{{ year }}');
+        var initialMonth = Number('{{ month }}');
+        
+        // Set initial values after render
+        window.isCalendarInitializing = false;
+        
+        // Load the initial data
+        loadMonthData(initialYear, initialMonth);
+        
+        // Add event listener for profile selection
+        document.getElementById('profile-select').addEventListener('change', function() {
+            updateCalendar();
+        });
+        
+        // Function to update calendar when year or month changes
+        function updateCalendar(year, month) {
+            // If year/month not provided, use current date
+            if (!year || !month) {
+                var now = new Date();
+                year = now.getFullYear();
+                month = now.getMonth() + 1;
+            }
+            
+            // Update calendar date
+            calendar.gotoDate(year + '-' + String(month).padStart(2, '0') + '-01');
+            
+            // The datesSet event will trigger and load the data
+            // But we can also load directly to be sure
+            loadMonthData(year, month);
+        }
+        
+        // Function to load month data from the server
+        function loadMonthData(year, month) {
+            console.log("Loading data for center month: " + year + "-" + month);
+            
+            // Calculate previous and next months
+            var prevYear = year;
+            var prevMonth = month - 1;
+            if (prevMonth < 1) {
+                prevMonth = 12;
+                prevYear--;
+            }
+            
+            var nextYear = year;
+            var nextMonth = month + 1;
+            if (nextMonth > 12) {
+                nextMonth = 1;
+                nextYear++;
+            }
+            
+            // Clear previous calendar data cache
+            window.calendarData = {};
+            window.dayReasons = {};
+            window.dayScores = {}; // Reset scores for the new month
+            
+            // Get selected profile
+            var profileId = document.getElementById('profile-select').value;
+            
+            // Show loading indicator
+            var loadingIndicator = document.createElement('div');
+            loadingIndicator.id = 'calendar-loading';
+            loadingIndicator.className = 'text-center my-3';
+            loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"></div><span class="ms-2">加载中...</span>';
+            
+            // Remove previous loading indicator if exists
+            var existingIndicator = document.getElementById('calendar-loading');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // Add loading indicator
+            document.getElementById('calendar').before(loadingIndicator);
+            
+            // Counter for tracking when all three months are loaded
+            var loadedMonths = 0;
+            
+            // Function to load a single month's data
+            function loadSingleMonth(yr, mnth) {
+                return new Promise((resolve, reject) => {
+                    $.ajax({
+                        url: '/calendar/data/',
+                        type: 'POST',
+                        data: {
+                            'year': yr,
+                            'month': mnth,
+                            'profile_id': profileId,
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        },
+                        success: function(data) {
+                            // Process each day
+                            data.days.forEach(function(day) {
+                                var dateStr = yr + '-' + String(mnth).padStart(2, '0') + '-' + String(day.day).padStart(2, '0');
+                                
+                                // Use day's overall quality directly
+                                var dayQuality = day.overall_quality || 'neutral';
+                                
+                                // Set day quality
+                                window.calendarData[dateStr] = dayQuality;
+                                
+                                // Store score
+                                if (day.score !== undefined) {
+                                    if (!window.dayScores) window.dayScores = {};
+                                    window.dayScores[dateStr] = day.score;
+                                    console.log("Date: " + dateStr + ", Score: " + day.score); // Debug log
+                                }
+                                
+                                // Store reasons if provided
+                                if (day.reasons) {
+                                    window.dayReasons[dateStr] = day.reasons;
+                                }
+                            });
+                            resolve();
+                        },
+                        error: function(xhr, status, error) {
+                            // Check if the error is due to no profile
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.error === 'no_profile') {
+                                    // Reject with special no_profile error
+                                    reject({type: 'no_profile', message: response.message});
+                                } else {
+                                    console.error('Error loading data for ' + yr + '-' + mnth + ': ' + error);
+                                    resolve(); // Resolve anyway to continue with other months
+                                }
+                            } catch (e) {
+                                console.error('Error loading data for ' + yr + '-' + mnth + ': ' + error);
+                                resolve(); // Resolve anyway to continue with other months
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Load all three months in parallel
+            Promise.all([
+                loadSingleMonth(prevYear, prevMonth),
+                loadSingleMonth(year, month),
+                loadSingleMonth(nextYear, nextMonth)
+            ]).then(() => {
+                // Clear loading indicator
+                document.getElementById('calendar-loading').remove();
+                
+                // Debug: log all scores
+                console.log("All loaded scores:", window.dayScores);
+                
+                // Force redraw all calendar cells to update the dots
+                var cells = document.querySelectorAll('.fc-daygrid-day');
+                cells.forEach(function(cell) {
+                    var date = cell.getAttribute('data-date');
+                    if (date) {
+                        // Set a data attribute for easier debugging
+                        var quality = window.calendarData[date] || 'neutral';
+                        cell.setAttribute('data-quality', quality);
+                        
+                        // Find or create quality dot
+                        var dotContainer = cell.querySelector('.day-content');
+                        if (dotContainer) {
+                            var dotElement = dotContainer.querySelector('.quality-dot');
+                            if (!dotElement) {
+                                dotElement = document.createElement('span');
+                                dotElement.classList.add('quality-dot');
+                                dotContainer.insertBefore(dotElement, dotContainer.firstChild);
+                            }
+                            
+                            // Reset class
+                            dotElement.className = 'quality-dot';
+                            
+                            // Get the day's score if available - use window.dayScores[date] directly
+                            var score = window.dayScores[date];
+                            
+                            // Add appropriate class based on score
+                            if (score !== undefined && score !== null) {
+                                // Store score as data attribute for debugging
+                                cell.setAttribute('data-score', score);
+                                console.log("Applying score for " + date + ": " + score);
+                                
+                                if (score > 2) {
+                                    dotElement.classList.add('good-dot');
+                                } else if (score >= -1) {
+                                    dotElement.classList.add('neutral-dot');
+                                } else {
+                                    dotElement.classList.add('bad-dot');
+                                }
+                            } else {
+                                // Fallback to quality-based coloring
+                                if (quality === 'good') {
+                                    dotElement.classList.add('good-dot');
+                                } else if (quality === 'neutral') {
+                                    dotElement.classList.add('neutral-dot');
+                                } else if (quality === 'bad') {
+                                    dotElement.classList.add('bad-dot');
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Refresh the calendar to show the dots
+                calendar.render();
+            }).catch(error => {
+                // Clear loading indicator
+                document.getElementById('calendar-loading').remove();
+                
+                // Check if this is a no_profile error
+                if (error && error.type === 'no_profile') {
+                    // Display an alert to prompt user to select a profile
+                    var alertHtml = '<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+                                   '<strong>请注意！</strong> ' + error.message +
+                                   '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                                   '</div>';
+                } else {
+                    console.error('Error loading month data:', error);
+                    
+                    // Display general error message
+                    var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                                   '<strong>加载失败！</strong> 请稍后再试。' +
+                                   '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                                   '</div>';
+                }
+                
+                // Insert the alert at the top of the calendar
+                $('#calendar').before(alertHtml);
+            });
+        }
+        
+        // Function to show day details popup
+        window.showDayDetails = function(dateStr) {
+            // Extract date components
+            var dateParts = dateStr.split('-');
+            var year = parseInt(dateParts[0]);
+            var month = parseInt(dateParts[1]);
+            var day = parseInt(dateParts[2]);
+            
+            // Get selected profile
+            var profileId = document.getElementById('profile-select').value;
+            if (!profileId) {
+                alert('请先选择一个八字资料');
+                return;
+            }
+            
+            // Get day's score and quality
+            var score = window.dayScores && window.dayScores[dateStr];
+            var quality = window.calendarData[dateStr] || 'neutral';
+            
+            // Determine quality text and class based on score
+            var qualityText = '';
+            var qualityClass = '';
+            
+            if (score !== undefined) {
+                if (score > 2) {
+                    qualityText = '吉日';
+                    qualityClass = 'text-danger';
+                } else if (score >= -1) {
+                    qualityText = '平日';
+                    qualityClass = 'text-secondary';
+                } else {
+                    qualityText = '黑日';
+                    qualityClass = 'text-dark';
+                }
+            } else {
+                // Fallback to simple quality
+                if (quality === 'good') {
+                    qualityText = '吉日';
+                    qualityClass = 'text-danger';
+                } else if (quality === 'neutral') {
+                    qualityText = '平日';
+                    qualityClass = 'text-secondary';
+                } else {
+                    qualityText = '黑日';
+                    qualityClass = 'text-dark';
+                }
+            }
+            
+            var html = '<div class="text-center">' +
+                       '<h3>' + year + '年' + month + '月' + day + '日</h3>';
+            
+            // Add score if available
+            if (score !== undefined) {
+                html += '<h4 class="' + qualityClass + '">' + qualityText + ' (评分: ' + score.toFixed(1) + ')</h4>';
+            } else {
+                html += '<h4 class="' + qualityClass + '">' + qualityText + '</h4>';
+            }
+            
+            // Add reasons if available
+            var reasons = window.dayReasons && window.dayReasons[dateStr];
+            if (reasons && reasons.length > 0) {
+                html += '<div class="mt-3">';
+                html += '<h5 class="mb-2">吉凶因素:</h5>';
+                html += '<ul class="list-group text-start">';
+                
+                // Group reasons by type (good and bad)
+                var badReasons = reasons.filter(function(r) { return r.type === 'bad'; });
+                var goodReasons = reasons.filter(function(r) { return r.type === 'good'; });
+                var neutralReasons = reasons.filter(function(r) { return r.type === 'neutral'; });
+                
+                // Show bad reasons first
+                if (badReasons.length > 0) {
+                    badReasons.forEach(function(reason) {
+                        html += '<li class="list-group-item list-group-item-danger">' + reason.text + '</li>';
+                    });
+                }
+                
+                // Show good reasons
+                if (goodReasons.length > 0) {
+                    goodReasons.forEach(function(reason) {
+                        html += '<li class="list-group-item list-group-item-success">' + reason.text + '</li>';
+                    });
+                }
+                
+                // Show neutral reasons
+                if (neutralReasons.length > 0) {
+                    neutralReasons.forEach(function(reason) {
+                        html += '<li class="list-group-item list-group-item-secondary">' + reason.text + '</li>';
+                    });
+                }
+                
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            html += '<div class="mt-4">' +
+                   '<button class="btn btn-primary" onclick="loadDetailedBazi(' + year + ', ' + month + ', ' + day + ', 12, \'' + profileId + '\')">' +
+                   '查看八字详情' +
+                   '</button>' +
+                   '</div>' +
+                   '</div>';
+            
+            // Show modal with day information
+            document.getElementById('dayDetailsModalLabel').innerText = '日期详情';
+            document.getElementById('dayDetailsModalContent').innerHTML = html;
+            
+            // Show the modal
+            var modal = new bootstrap.Modal(document.getElementById('dayDetailsModal'));
+            modal.show();
+        }
+        
+        // Function to load detailed Bazi information
+        window.loadDetailedBazi = function(year, month, day, hour, profileId) {
+            // Show loading message
+            document.getElementById('dayDetailsModalContent').innerHTML = 
+                '<div class="text-center"><div class="spinner-border" role="status"></div><p>加载中...</p></div>';
+            
+            // Load day details via AJAX
+            $.ajax({
+                url: "{% url 'bazi_detail' %}",
+                type: "POST",
+                data: {
+                    'year': year,
+                    'month': month,
+                    'day': day,
+                    'hour': hour,
+                    'profile_id': profileId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    document.getElementById('dayDetailsModalContent').innerHTML = response;
+                },
+                error: function(xhr, status, error) {
+                    document.getElementById('dayDetailsModalContent').innerHTML = 
+                        '<div class="alert alert-danger">' +
+                        '加载失败: ' + error +
+                        '</div>';
+                }
+            });
+        }
+    });
+</script>
+<style>
+    /* Custom FullCalendar Day Cell Formatting */
+    .day-content {
+        padding: 5px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+    
+    .date-number {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
+        margin-left: 4px;
+    }
+    
+    .quality-dot, .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+    }
+    
+    .legend-dot {
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+    
+    /* Dot colors */
+    .good-dot {
+        background-color: #FF0000; /* Bright red for good scores (> 1) */
+        box-shadow: 0 0 3px rgba(255, 0, 0, 0.7);
+    }
+    
+    .neutral-dot {
+        background-color: transparent;
+        border: 2px solid #999999; /* Gray outline for neutral scores (-1 to 1) */
+    }
+    
+    .bad-dot {
+        background-color: #000000; /* Black for bad scores (< -1) */
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+    }
+    
+    /* Legacy score-based dot styles (kept for compatibility) */
+    .score-very-good-dot, .score-good-dot {
+        background-color: #FF0000;
+        box-shadow: 0 0 3px rgba(255, 0, 0, 0.7);
+    }
+    
+    .score-neutral-dot {
+        background-color: transparent;
+        border: 2px solid #999999;
+    }
+    
+    .score-bad-dot, .score-very-bad-dot {
+        background-color: #000000;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+    }
+    
+    .fc-day-today {
+        background-color: #fffbe6 !important;
+    }
+    
+    /* Legend styling */
+    .calendar-legend {
+        display: flex;
+        margin-top: 15px;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .legend-item {
+        font-size: 14px;
+        vertical-align: middle;
+        margin-right: 15px;
+    }
+    
+    /* Calendar loading indicator */
+    #calendar-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Make the modal wider */
+    #dayDetailsModal .modal-dialog {
+        max-width: 600px;
+    }
+</style>
+{% endblock %} 

@@ -14,7 +14,7 @@
             crossorigin="anonymous"></script>
     <title>FengShui</title>
 </head>
-<body>
+<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
 {% block body %}
 {% endblock %}
 <script src="{% static 'js/theme.js' %}"></script>

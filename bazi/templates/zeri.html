@@ -16,44 +16,83 @@
         </div>
     </div>
     <div class="container">
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="from_date">开始日子:</label>
-                <input type="date" class="form-control datepicker" id="from_date" name="from_date"
-                       value="{{ from_date }}" required>
-
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">择日功能</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle-fill me-2"></i> 该页面用于挑选小孩出生八字，通过分析不同时间的八字组合，找出最佳的出生时辰。
+                        </div>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="from_date" class="form-label">开始日子:</label>
+                                    <input type="date" class="form-control datepicker" id="from_date" name="from_date"
+                                        value="{{ from_date }}" required>
+                                    <div class="form-text text-muted">选择查询的起始日期</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="to_date" class="form-label">结束日子:</label>
+                                    <input type="date" class="form-control datepicker" id="to_date" name="to_date" 
+                                        value="{{ to_date }}" required>
+                                    <div class="form-text text-muted">选择查询的结束日期</div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-search me-2"></i>查看吉时
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="to_date">结束日子:</label>
-                <input type="date" class="form-control datepicker" id="to_date" name="to_date" value="{{ to_date }}"
-                       required>
-            </div>
-            <button type="submit" class="btn btn-primary">查看</button>
-        </form>
+        </div>
+        
         {% if data %}
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    <th>年</th>
-                    <th>月</th>
-                    <th>日</th>
-                    <th>时</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for date in data %}
-                    <!-- Clickable row -->
-                    <tr class="clickable-row" data-bs-toggle="modal" data-bs-target="#detailsModal"
-                    onclick="showDetails('{{ date.year }}', '{{ date.month }}', '{{ date.day }}', '{{ date.hour }}')">
-                        <td>{{ date.year }}</td>
-                        <td>{{ date.month }}</td>
-                        <td>{{ date.day }}</td>
-                        <td>{{ date.hour }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">吉利时辰列表</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">以下是在所选时间范围内的吉利时辰，点击任意行查看详细八字信息</p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>年</th>
+                                <th>月</th>
+                                <th>日</th>
+                                <th>时</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for date in data %}
+                                <tr class="clickable-row">
+                                    <td>{{ date.year }}</td>
+                                    <td>{{ date.month }}</td>
+                                    <td>{{ date.day }}</td>
+                                    <td>{{ date.hour }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" 
+                                            data-bs-target="#detailsModal" 
+                                            onclick="showDetails('{{ date.year }}', '{{ date.month }}', '{{ date.day }}', '{{ date.hour }}')">
+                                            查看八字
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
         {% endif %}
     </div>
 {% endblock %}
