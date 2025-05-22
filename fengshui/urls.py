@@ -16,12 +16,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from bazi.views import bazi_view, home_view, wuxing_view, tiangan_view, yinyang_view, dizhi_view, ganzhi_view, \
-    introbazi_view, zeri_view, get_bazi_detail, feixing_view
+from bazi.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name='home'),
+    
+    # Authentication URLs
+    path('login/', user_login, name='login'),
+    path('logout/', user_logout, name='logout'),
+    path('register/', user_login, name='register'),  # Point to login view for compatibility
+    
+    # Profile management URLs
+    path('profiles/', profile_list, name='profiles'),
+    path('profiles/add/', add_profile, name='add_profile'),
+    path('profiles/edit/<int:profile_id>/', edit_profile, name='edit_profile'),
+    path('profiles/delete/<int:profile_id>/', delete_profile, name='delete_profile'),
+    path('profiles/default/<int:profile_id>/', set_default_profile, name='set_default_profile'),
+    
+    # Main app URLs
     path('bazi', bazi_view, name='bazi'),
     path('wuxing', wuxing_view, name='wuxing'),
     path('yinyang', yinyang_view, name='yinyang'),
@@ -32,4 +45,6 @@ urlpatterns = [
     path('zeri', zeri_view, name='zeri'),
     path('bazi_detail', get_bazi_detail, name='bazi_detail'),
     path('feixing',feixing_view,name='feixing'),
+    path('calendar', calendar_view, name='calendar'),
+    path('calendar/data/', calendar_data, name='calendar_data'),
 ]
