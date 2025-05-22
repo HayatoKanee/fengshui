@@ -32,6 +32,7 @@ urlpatterns = [
     path('profiles/add/', add_profile, name='add_profile'),
     path('profiles/edit/<int:profile_id>/', edit_profile, name='edit_profile'),
     path('profiles/delete/<int:profile_id>/', delete_profile, name='delete_profile'),
+    path('profiles/default/<int:profile_id>/', set_default_profile, name='set_default_profile'),
     
     # Main app URLs
     path('bazi', bazi_view, name='bazi'),

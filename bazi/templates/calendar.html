@@ -55,9 +55,9 @@
     </div>
     
     <div class="calendar-legend mb-3">
-        <span class="legend-item"><span class="legend-dot good-dot"></span> 吉日 (>1分)</span>
-        <span class="legend-item ms-3"><span class="legend-dot neutral-dot"></span> 平日 (-1至1分)</span>
-        <span class="legend-item ms-3"><span class="legend-dot bad-dot"></span> 黑日 (<-1分)</span>
+        <span class="legend-item"><span class="legend-dot good-dot"></span> 吉日</span>
+        <span class="legend-item ms-3"><span class="legend-dot neutral-dot"></span> 平日</span>
+        <span class="legend-item ms-3"><span class="legend-dot bad-dot"></span> 黑日</span>
     </div>
     
     <!-- FullCalendar will be rendered here -->
@@ -135,7 +135,7 @@
                 
                 // Add appropriate class based on score
                 if (score !== undefined && score !== null) {
-                    if (score > 1) {
+                    if (score > 2) {
                         dotEl.classList.add('good-dot');
                     } else if (score >= -1) {
                         dotEl.classList.add('neutral-dot');
@@ -351,7 +351,7 @@
                                 cell.setAttribute('data-score', score);
                                 console.log("Applying score for " + date + ": " + score);
                                 
-                                if (score > 1) {
+                                if (score > 2) {
                                     dotElement.classList.add('good-dot');
                                 } else if (score >= -1) {
                                     dotElement.classList.add('neutral-dot');
@@ -424,7 +424,7 @@
             var qualityClass = '';
             
             if (score !== undefined) {
-                if (score > 1) {
+                if (score > 2) {
                     qualityText = '吉日';
                     qualityClass = 'text-danger';
                 } else if (score >= -1) {
@@ -434,7 +434,7 @@
                     qualityText = '黑日';
                     qualityClass = 'text-dark';
                 }
-                        } else {
+            } else {
                 // Fallback to simple quality
                 if (quality === 'good') {
                     qualityText = '吉日';
@@ -447,7 +447,7 @@
                     qualityClass = 'text-dark';
                 }
             }
-                          
+            
             var html = '<div class="text-center">' +
                        '<h3>' + year + '年' + month + '月' + day + '日</h3>';
             
@@ -456,6 +456,43 @@
                 html += '<h4 class="' + qualityClass + '">' + qualityText + ' (评分: ' + score.toFixed(1) + ')</h4>';
             } else {
                 html += '<h4 class="' + qualityClass + '">' + qualityText + '</h4>';
+            }
+            
+            // Add reasons if available
+            var reasons = window.dayReasons && window.dayReasons[dateStr];
+            if (reasons && reasons.length > 0) {
+                html += '<div class="mt-3">';
+                html += '<h5 class="mb-2">吉凶因素:</h5>';
+                html += '<ul class="list-group text-start">';
+                
+                // Group reasons by type (good and bad)
+                var badReasons = reasons.filter(function(r) { return r.type === 'bad'; });
+                var goodReasons = reasons.filter(function(r) { return r.type === 'good'; });
+                var neutralReasons = reasons.filter(function(r) { return r.type === 'neutral'; });
+                
+                // Show bad reasons first
+                if (badReasons.length > 0) {
+                    badReasons.forEach(function(reason) {
+                        html += '<li class="list-group-item list-group-item-danger">' + reason.text + '</li>';
+                    });
+                }
+                
+                // Show good reasons
+                if (goodReasons.length > 0) {
+                    goodReasons.forEach(function(reason) {
+                        html += '<li class="list-group-item list-group-item-success">' + reason.text + '</li>';
+                    });
+                }
+                
+                // Show neutral reasons
+                if (neutralReasons.length > 0) {
+                    neutralReasons.forEach(function(reason) {
+                        html += '<li class="list-group-item list-group-item-secondary">' + reason.text + '</li>';
+                    });
+                }
+                
+                html += '</ul>';
+                html += '</div>';
             }
             
             html += '<div class="mt-4">' +
@@ -597,6 +634,11 @@
         padding: 10px 20px;
         border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Make the modal wider */
+    #dayDetailsModal .modal-dialog {
+        max-width: 600px;
     }
 </style>
 {% endblock %} 
