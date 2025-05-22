@@ -390,47 +390,26 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="new_birth_year" class="form-label">出生年</label>
-                                <select class="form-select" id="new_birth_year" name="birth_year" required>
-                                    {% for year in years %}
-                                        <option value="{{ year }}">{{ year }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="number" class="form-control" id="new_birth_year" name="birth_year" min="1900" max="2100" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="new_birth_month" class="form-label">出生月</label>
-                                <select class="form-select" id="new_birth_month" name="birth_month" required>
-                                    {% for month in "123456789101112"|make_list %}
-                                        <option value="{{ month }}">{{ month }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="number" class="form-control" id="new_birth_month" name="birth_month" min="1" max="12" required>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="new_birth_day" class="form-label">出生日</label>
-                                <select class="form-select" id="new_birth_day" name="birth_day" required>
-                                    {% for day in "123456789101112131415161718192021222324252627282930"|make_list %}
-                                        <option value="{{ day }}">{{ day }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="number" class="form-control" id="new_birth_day" name="birth_day" min="1" max="31" required>
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="new_birth_hour" class="form-label">出生时</label>
-                                <select class="form-select" id="new_birth_hour" name="birth_hour" required>
-                                    {% for hour in "0123456789101112131415161718192021222324"|make_list %}
-                                        <option value="{{ hour }}">{{ hour }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="number" class="form-control" id="new_birth_hour" name="birth_hour" min="0" max="23" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="new_birth_minute" class="form-label">出生分</label>
-                                <select class="form-select" id="new_birth_minute" name="birth_minute">
-                                    <option value="0">0</option>
-                                    {% for min in "1530"|make_list %}
-                                        <option value="{{ min }}">{{ min }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="number" class="form-control" id="new_birth_minute" name="birth_minute" min="0" max="59" value="0">
                             </div>
                         </div>
                         

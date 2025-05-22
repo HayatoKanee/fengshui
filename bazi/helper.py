@@ -1107,5 +1107,106 @@ def get_shensha(bazi):
 
 
 
+def is_yang_gong_taboo(lunar_date):
+    """Check if a lunar date is one of the Yang Gong Thirteen Taboos (杨公十三忌)"""
+    month = lunar_date.getMonth()
+    day = lunar_date.getDay()
+    
+    yang_gong_taboos = [
+        (1, 13),  # 正月十三
+        (2, 11),  # 二月十一
+        (3, 9),   # 三月初九
+        (4, 7),   # 四月初七
+        (5, 5),   # 五月初五
+        (6, 3),   # 六月初三
+        (7, 1),   # 七月初一
+        (7, 29),  # 七月二十九
+        (8, 27),  # 八月二十七
+        (9, 25),  # 九月二十五
+        (10, 23), # 十月二十三
+        (11, 21), # 十一月二十一
+        (12, 19)  # 十二月十九
+    ]
+    
+    return (month, day) in yang_gong_taboos
+
+def is_po_ri(lunar_date):
+    """Check if a lunar date is a breaking day (破日)
+    Each lunar month has a specific earthly branch that is considered a breaking day.
+    """
+    month = lunar_date.getMonth()
+    day_zhi = lunar_date.getDayZhi()
+    
+    # Mapping of lunar month to breaking day earthly branch
+    po_ri_mapping = {
+        1: '申',  # 正月破日 - 申日
+        2: '酉',  # 二月破日 - 酉日
+        3: '戌',  # 三月破日 - 戌日
+        4: '亥',  # 四月破日 - 亥日
+        5: '子',  # 五月破日 - 子日
+        6: '丑',  # 六月破日 - 丑日
+        7: '寅',  # 七月破日 - 寅日
+        8: '卯',  # 八月破日 - 卯日
+        9: '辰',  # 九月破日 - 辰日
+        10: '巳', # 十月破日 - 巳日
+        11: '午', # 十一月破日 - 午日
+        12: '未'  # 十二月破日 - 未日
+    }
+    
+    # Check if the day's earthly branch matches the breaking day for this lunar month
+    return day_zhi == po_ri_mapping.get(month)
+
+def is_si_jue_ri(date_solar):
+    """Check if a date is one of the '四绝日' (Four "Jue" Days)
+    These are the days before Li Chun, Li Xia, Li Qiu, and Li Dong
+    """
+    # Get the solar date
+    year = date_solar.getYear()
+    
+    # Get the JieQi table for this year
+    lunar = date_solar.getLunar()
+    jieqi_table = lunar.getJieQiTable()
+    
+    # The four "Jue" days are the days before:
+    # 立春 (Li Chun), 立夏 (Li Xia), 立秋 (Li Qiu), 立冬 (Li Dong)
+    jue_dates = []
+    
+    for jieqi_name in ["立春", "立夏", "立秋", "立冬"]:
+        if jieqi_name in jieqi_table:
+            jieqi_date = jieqi_table[jieqi_name]
+            # Get the day before
+            jue_date = jieqi_date.next(-1)
+            jue_dates.append(jue_date.toString())
+    
+    # Check if the current date is one of the "Jue" days
+    current_date_str = f"{date_solar.getYear()}-{date_solar.getMonth():02d}-{date_solar.getDay():02d}"
+    return current_date_str in jue_dates
+
+def is_si_li_ri(date_solar):
+    """Check if a date is one of the '四离日' (Four "Li" Days)
+    These are the days before Chun Fen, Xia Zhi, Qiu Fen, and Dong Zhi
+    """
+    # Get the solar date
+    year = date_solar.getYear()
+    
+    # Get the JieQi table for this year
+    lunar = date_solar.getLunar()
+    jieqi_table = lunar.getJieQiTable()
+    
+    # The four "Li" days are the days before:
+    # 春分 (Chun Fen), 夏至 (Xia Zhi), 秋分 (Qiu Fen), 冬至 (Dong Zhi)
+    li_dates = []
+    
+    for jieqi_name in ["春分", "夏至", "秋分", "冬至"]:
+        if jieqi_name in jieqi_table:
+            jieqi_date = jieqi_table[jieqi_name]
+            # Get the day before
+            li_date = jieqi_date.next(-1)
+            li_dates.append(li_date.toString())
+    
+    # Check if the current date is one of the "Li" days
+    current_date_str = f"{date_solar.getYear()}-{date_solar.getMonth():02d}-{date_solar.getDay():02d}"
+    return current_date_str in li_dates
+
 
 
