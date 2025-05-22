@@ -72,17 +72,18 @@ WSGI_APPLICATION = 'fengshui.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Check if running on Heroku (Production)
-IS_HEROKU = os.environ.get('IS_HEROKU', False)
+# Improved Heroku detection
+IS_HEROKU = 'DYNO' in os.environ or 'DATABASE_URL' in os.environ
 
 if IS_HEROKU:
-    # Production database settings
+    # Production database settings - use DATABASE_URL provided by Heroku
     DATABASES = {
         "default": dj_database_url.config(
             conn_max_age=600,
             ssl_require=True  # enforce SSL in production
         )
     }
+    print("Using PostgreSQL from DATABASE_URL on Heroku")
 else:
     # Local development database settings
     DATABASES = {
@@ -91,6 +92,7 @@ else:
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
     }
+    print("Using SQLite for local development")
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
