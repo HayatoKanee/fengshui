@@ -5,7 +5,7 @@ from .models import UserProfile
 
 
 class BirthTimeForm(forms.Form):
-    year = forms.IntegerField(min_value=1901, max_value=2100, label="出生年", required=True,
+    year = forms.IntegerField(min_value=0, label="出生年", required=True,
                               widget=forms.NumberInput(attrs={'class': 'form-control'}))
     month = forms.IntegerField(min_value=1, max_value=12, label="出生月", required=True,
                                widget=forms.NumberInput(attrs={'class': 'form-control'}))
@@ -37,7 +37,7 @@ class UserProfileForm(forms.ModelForm):
         fields = ('name', 'birth_year', 'birth_month', 'birth_day', 'birth_hour', 'birth_minute', 'is_male')
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'birth_year': forms.NumberInput(attrs={'class': 'form-control', 'min': 1901, 'max': 2100}),
+            'birth_year': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'birth_month': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 12}),
             'birth_day': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 31}),
             'birth_hour': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 23}),
