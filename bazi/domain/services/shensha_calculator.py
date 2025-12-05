@@ -5,11 +5,10 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 from ..models import (
     BaZi,
-    Pillar,
     HeavenlyStem,
     EarthlyBranch,
     ShenShaType,
