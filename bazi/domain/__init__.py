@@ -1,7 +1,7 @@
 """
 BaZi Domain Layer.
 
-Pure Python domain models with no Django dependencies.
+Pure Python domain models and services with no Django dependencies.
 This layer contains the core business logic and domain entities.
 """
 from .models import (
@@ -34,6 +34,13 @@ from .models import (
     BaZiAnalysis,
 )
 
+from .services import (
+    WuXingCalculator,
+    ShiShenCalculator,
+    DayMasterAnalyzer,
+    ShenShaCalculator,
+)
+
 __all__ = [
     # Elements
     "WuXing",
@@ -62,4 +69,9 @@ __all__ = [
     "DayMasterStrength",
     "FavorableElements",
     "BaZiAnalysis",
+    # Services
+    "WuXingCalculator",
+    "ShiShenCalculator",
+    "DayMasterAnalyzer",
+    "ShenShaCalculator",
 ]

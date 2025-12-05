@@ -214,24 +214,34 @@ Create pure Python domain models (no Django dependencies).
   - [x] `BaZiAnalysis` dataclass (complete analysis result)
 
 ### Phase 2: Domain Services
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
 Extract business logic from helper.py into focused services.
 
-- [ ] `domain/services/__init__.py`
-- [ ] `domain/services/wuxing_calculator.py`
-  - [ ] `calculate_wuxing_relationship()`
-  - [ ] `accumulate_wuxing_values()`
-- [ ] `domain/services/shishen_calculator.py`
-  - [ ] `calculate_shishen()`
-  - [ ] `calculate_shishen_for_bazi()`
-- [ ] `domain/services/day_master_analyzer.py`
-  - [ ] `analyze_strength()`
-  - [ ] `calculate_shenghao()`
-- [ ] `domain/services/shensha_calculator.py`
-  - [ ] `get_shensha()`
-  - [ ] All `is_*` and `calculate_*` functions
-- [ ] `domain/services/liunian_analyzer.py`
+- [x] `domain/services/__init__.py`
+- [x] `domain/services/wuxing_calculator.py`
+  - [x] `WuXingCalculator` class
+  - [x] `get_relationship_values()` - stem/branch relationship
+  - [x] `get_wang_xiang()` - seasonal strength
+  - [x] `accumulate_wuxing_values()` - chart totals
+  - [x] `calculate_strength()` - complete WuXingStrength
+- [x] `domain/services/shishen_calculator.py`
+  - [x] `ShiShenCalculator` class
+  - [x] `calculate_for_bazi()` - full ShiShenChart
+  - [x] `get_detailed_shishen()` - with hidden stems
+  - [x] `find_positions()` - locate specific ShiShen
+- [x] `domain/services/day_master_analyzer.py`
+  - [x] `DayMasterAnalyzer` class
+  - [x] `analyze_strength()` - DayMasterStrength
+  - [x] `calculate_shenghao()` - beneficial/harmful values
+  - [x] `determine_favorable_elements()` - 用神/忌神
+  - [x] `full_analysis()` - complete analysis
+- [x] `domain/services/shensha_calculator.py`
+  - [x] `ShenShaCalculator` class
+  - [x] All `is_*` checkers (天乙贵人, 天德, 月德, 文昌, etc.)
+  - [x] `calculate_for_bazi()` - ShenShaAnalysis
+  - [x] `get_shensha_summary()` - by category
+- [ ] `domain/services/liunian_analyzer.py` (deferred - complex OpenAI dependency)
   - [ ] `analyse_liunian()`
   - [ ] `analyse_liunian_shishen()`
 
@@ -462,6 +472,7 @@ module.exports = {
 | 2025-12-05 | - | Added frontend phases 10-12 | HTMX + Tailwind + Alpine.js |
 | 2025-12-05 | 0 | Completed Phase 0 | Removed duplicates, explicit imports |
 | 2025-12-05 | 1 | Completed Phase 1 | Domain models: WuXing, Pillar, BaZi, ShiShen, ShenSha |
+| 2025-12-05 | 2 | Completed Phase 2 | Services: WuXingCalculator, ShiShenCalculator, DayMasterAnalyzer, ShenShaCalculator |
 
 ---
 
