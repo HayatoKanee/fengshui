@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from bazi.views import (
+
+# Import from new presentation layer (Clean Architecture)
+from bazi.presentation import (
     # Auth views
     user_login,
     user_logout,

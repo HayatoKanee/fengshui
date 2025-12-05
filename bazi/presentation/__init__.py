@@ -1,23 +1,20 @@
 """
-BaZi Views - Backward Compatibility Module.
+BaZi Presentation Layer.
 
-This module provides backward compatibility for code that imports from bazi.views.
-All views have been migrated to the presentation layer following Clean Architecture.
+This layer contains views and forms for handling HTTP requests
+and rendering responses. Views follow the "thin view" pattern -
+they handle HTTP concerns and delegate business logic to
+application services via the DI container.
 
-New imports should use:
+Architecture:
+    HTTP Request → View → Application Service → Domain Service → Response
+
+Usage:
     from bazi.presentation import bazi_view, calendar_view
     # or
     from bazi.presentation.views import bazi_view
-
-This module re-exports all views from the presentation layer to maintain
-compatibility with existing code.
-
-Migration Status: Phase 7 of Clean Architecture refactoring complete.
-See REFACTORING.md for details.
 """
-
-# Re-export all views from presentation layer for backward compatibility
-from bazi.presentation import (
+from .views import (
     # Auth views
     user_login,
     user_logout,
@@ -42,9 +39,8 @@ from bazi.presentation import (
     ganzhi_view,
     wuxing_view,
     introbazi_view,
-    # FeiXing
     feixing_view,
-    # Lookup
+    # Lookup views
     bazi_lookup_view,
     zeri_view,
 )
@@ -74,7 +70,6 @@ __all__ = [
     "ganzhi_view",
     "wuxing_view",
     "introbazi_view",
-    # FeiXing
     "feixing_view",
     # Lookup
     "bazi_lookup_view",

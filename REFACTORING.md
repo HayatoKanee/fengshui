@@ -38,15 +38,18 @@ npm install -D vite
 
 ## Current State
 
-| Metric | Value | Target |
-|--------|-------|--------|
-| `views.py` lines | 1281 | <200 per module |
-| `helper.py` lines | 1358 | Split into services |
-| Domain models | 0 | 10+ |
-| Test coverage | ~0% | >80% domain |
-| Code duplication | 4 functions | 0 |
-| CSS framework | Bootstrap 5 | Tailwind + DaisyUI |
-| JS interactivity | jQuery AJAX | HTMX + Alpine.js |
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| `views.py` lines | 82 (re-export) | <200 per module | ✅ Complete |
+| `presentation/views/` | 8 modules | Modular structure | ✅ Complete |
+| `helper.py` lines | 1358 | Split into services | 🔄 Partial |
+| Domain models | 15+ | 10+ | ✅ Complete |
+| Domain services | 4 | 4+ | ✅ Complete |
+| Application services | 3 | 3 | ✅ Complete |
+| Test coverage | ~0% | >80% domain | ❌ Pending |
+| Code duplication | 0 | 0 | ✅ Complete |
+| CSS framework | Bootstrap 5 | Tailwind + DaisyUI | ❌ Pending |
+| JS interactivity | jQuery AJAX | HTMX + Alpine.js | ❌ Pending |
 
 ## Target Architecture
 
@@ -317,26 +320,38 @@ Create use case orchestrators.
 - [x] Updated DI Container with application services
 
 ### Phase 7: Presentation Layer Refactor
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
-Split views.py and make views thin.
+Split views.py into modules and make views thin.
 
-- [ ] `presentation/__init__.py`
-- [ ] `presentation/views/__init__.py`
-- [ ] `presentation/views/auth.py`
-  - [ ] `user_login`, `user_logout`, `user_register`
-- [ ] `presentation/views/profile.py`
-  - [ ] `profile_list`, `add_profile`, `edit_profile`, `delete_profile`
-- [ ] `presentation/views/bazi.py`
-  - [ ] `bazi_view`, `get_bazi_detail`
-- [ ] `presentation/views/calendar.py`
-  - [ ] `calendar_view`, `calendar_data`
-- [ ] `presentation/views/static_pages.py`
-  - [ ] `home_view`, `tiangan_view`, `yinyang_view`, etc.
-- [ ] `presentation/views/lookup.py`
-  - [ ] `bazi_lookup_view`, `zeri_view`
-- [ ] `presentation/forms/__init__.py`
-- [ ] Move `forms.py` to `presentation/forms/`
+- [x] `presentation/__init__.py` - Main entry point with re-exports
+- [x] `presentation/views/__init__.py` - Aggregates all view modules
+- [x] `presentation/views/auth.py`
+  - [x] `user_login`, `user_logout`, `user_register`
+- [x] `presentation/views/profile.py`
+  - [x] `profile_list`, `add_profile`, `edit_profile`, `delete_profile`, `set_default_profile`
+  - [x] `_calculate_and_save_profile_attributes()` - adapter function (TODO: move to ProfileService)
+- [x] `presentation/views/bazi.py`
+  - [x] `bazi_view`, `get_bazi_detail`
+  - [x] `_build_bazi_context()` - template adapter function
+- [x] `presentation/views/calendar.py`
+  - [x] `calendar_view`, `calendar_data`
+  - [x] Extracted 15+ helper functions from 442-line monolith
+- [x] `presentation/views/static_pages.py`
+  - [x] `home_view`, `tiangan_view`, `yinyang_view`, `dizhi_view`, `ganzhi_view`, `wuxing_view`, `introbazi_view`
+- [x] `presentation/views/lookup.py`
+  - [x] `bazi_lookup_view`, `zeri_view`
+  - [x] `_search_matching_dates()`, `_check_bazi_match()`, `_load_auspicious_dates()`
+- [x] `presentation/views/feixing.py`
+  - [x] `feixing_view`
+  - [x] `_build_flying_star_grids()`, `_find_duplicate_grid()`
+- [x] `presentation/forms/__init__.py` - Re-exports all forms
+- [x] `presentation/forms/auth_forms.py` - UserRegistrationForm
+- [x] `presentation/forms/bazi_forms.py` - BirthTimeForm
+- [x] `presentation/forms/profile_forms.py` - UserProfileForm
+- [x] Updated `fengshui/urls.py` to import from presentation layer
+- [x] Created backward-compatible `bazi/views.py` (re-exports from presentation)
+- [x] Created backward-compatible `bazi/forms.py` (re-exports from presentation)
 
 ### Phase 8: Tests
 > **Status**: [ ] Not Started
@@ -499,6 +514,8 @@ module.exports = {
 | 2025-12-05 | 3 | Completed Phase 3 | Ports: LunarPort, ProfileRepository, ProfileData |
 | 2025-12-05 | 4 | Completed Phase 4 | Adapters: LunarPythonAdapter, DjangoProfileRepository |
 | 2025-12-05 | 5 | Completed Phase 5 | DI Container: Container, get_container(), reset_container() |
+| 2025-12-05 | 6 | Completed Phase 6 | Application Services: BaziAnalysisService, CalendarService, ProfileService |
+| 2025-12-05 | 7 | Completed Phase 7 | Presentation Layer: Split 1220-line views.py into 8 modules, moved forms |
 
 ---
 
