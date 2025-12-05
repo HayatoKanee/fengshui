@@ -292,18 +292,29 @@ Set up dependency injection.
   - [x] `reset_container()` for testing
 
 ### Phase 6: Application Services
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
 Create use case orchestrators.
 
-- [ ] `application/__init__.py`
-- [ ] `application/services/__init__.py`
-- [ ] `application/services/bazi_analysis.py`
-  - [ ] `BaziAnalysisService`
-- [ ] `application/services/calendar_service.py`
-  - [ ] `CalendarService`
-- [ ] `application/services/profile_service.py`
-  - [ ] `ProfileService`
+- [x] `application/__init__.py`
+- [x] `application/services/__init__.py`
+- [x] `application/services/bazi_analysis.py`
+  - [x] `BaziAnalysisService` - complete BaZi analysis workflow
+  - [x] `BaziAnalysisResult` dataclass - comprehensive analysis DTO
+  - [x] `analyze()` - full analysis from birth data
+  - [x] `analyze_for_year()` - with LiuNian context
+  - [x] `get_quick_summary()` - lightweight summary
+- [x] `application/services/calendar_service.py`
+  - [x] `CalendarService` - generate calendar with day quality
+  - [x] `CalendarDay`, `CalendarMonth` dataclasses
+  - [x] `DayQuality` enum (EXCELLENT, GOOD, NEUTRAL, BAD, TERRIBLE)
+  - [x] `generate_month()` - month calendar with quality scores
+  - [x] `get_favorable_elements_for_profile()` - convenience method
+- [x] `application/services/profile_service.py`
+  - [x] `ProfileService` - profile management
+  - [x] `ProfileSummary` dataclass with BaZi info
+  - [x] CRUD operations + set_default
+- [x] Updated DI Container with application services
 
 ### Phase 7: Presentation Layer Refactor
 > **Status**: [ ] Not Started

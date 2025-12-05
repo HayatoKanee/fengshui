@@ -21,6 +21,11 @@ from bazi.infrastructure.adapters import LunarPythonAdapter
 if TYPE_CHECKING:
     from bazi.domain.ports import LunarPort, ProfileRepository
     from bazi.infrastructure.repositories import DjangoProfileRepository
+    from bazi.application.services import (
+        BaziAnalysisService,
+        CalendarService,
+        ProfileService,
+    )
 
 
 @dataclass
@@ -32,11 +37,12 @@ class Container:
     This container holds:
     - Infrastructure adapters (ports implementations)
     - Domain services (pure business logic)
+    - Application services (use case orchestrators)
 
     Usage in views:
         container = get_container()
-        bazi = container.lunar_adapter.get_bazi(birth_data)
-        strength = container.wuxing_calculator.calculate_strength(bazi)
+        result = container.bazi_service.analyze(birth_data)
+        calendar = container.calendar_service.generate_month(2024, 12, favorable)
     """
 
     # Infrastructure adapters (implements domain ports)
@@ -48,6 +54,11 @@ class Container:
     shishen_calculator: ShiShenCalculator
     day_master_analyzer: DayMasterAnalyzer
     shensha_calculator: ShenShaCalculator
+
+    # Application services (use case orchestrators)
+    bazi_service: BaziAnalysisService
+    calendar_service: CalendarService
+    profile_service: ProfileService
 
     @classmethod
     def create(cls) -> Container:
@@ -70,6 +81,33 @@ class Container:
         day_master_analyzer = DayMasterAnalyzer()
         shensha_calc = ShenShaCalculator()
 
+        # Application services (import here to avoid circular imports)
+        from bazi.application.services import (
+            BaziAnalysisService,
+            CalendarService,
+            ProfileService,
+        )
+
+        bazi_service = BaziAnalysisService(
+            lunar_adapter=lunar,
+            wuxing_calculator=wuxing_calc,
+            shishen_calculator=shishen_calc,
+            day_master_analyzer=day_master_analyzer,
+            shensha_calculator=shensha_calc,
+        )
+
+        calendar_service = CalendarService(
+            lunar_adapter=lunar,
+            wuxing_calculator=wuxing_calc,
+            day_master_analyzer=day_master_analyzer,
+        )
+
+        profile_service = ProfileService(
+            profile_repo=profile_repo,
+            lunar_adapter=lunar,
+            bazi_service=bazi_service,
+        )
+
         return cls(
             lunar_adapter=lunar,
             profile_repo=profile_repo,
@@ -77,6 +115,9 @@ class Container:
             shishen_calculator=shishen_calc,
             day_master_analyzer=day_master_analyzer,
             shensha_calculator=shensha_calc,
+            bazi_service=bazi_service,
+            calendar_service=calendar_service,
+            profile_service=profile_service,
         )
 
 
