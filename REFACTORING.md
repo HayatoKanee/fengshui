@@ -258,17 +258,26 @@ Define abstract interfaces for external dependencies.
   - [x] `ProfileRepository` Protocol - CRUD operations for user profiles
 
 ### Phase 4: Infrastructure Adapters
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
 Implement ports with concrete adapters.
 
-- [ ] `infrastructure/__init__.py`
-- [ ] `infrastructure/adapters/__init__.py`
-- [ ] `infrastructure/adapters/lunar_adapter.py`
-  - [ ] `LunarPythonAdapter` (wraps lunar_python)
-- [ ] `infrastructure/repositories/__init__.py`
-- [ ] `infrastructure/repositories/profile_repo.py`
-  - [ ] `DjangoProfileRepository` (wraps Django ORM)
+- [x] `infrastructure/__init__.py` (lazy imports to avoid Django config on module load)
+- [x] `infrastructure/adapters/__init__.py`
+- [x] `infrastructure/adapters/lunar_adapter.py`
+  - [x] `LunarPythonAdapter` - wraps lunar_python library
+  - [x] `get_bazi()` - calculate BaZi from BirthData
+  - [x] `get_bazi_from_datetime()` - calculate from datetime
+  - [x] `solar_to_lunar()` / `lunar_to_solar()` - date conversions
+  - [x] `get_*_pillar()` - individual pillar lookups
+  - [x] `get_jieqi()` / `get_next_jieqi()` / `days_until_next_jieqi()`
+  - [x] `is_earth_dominant_period()` - 土旺 period detection
+- [x] `infrastructure/repositories/__init__.py`
+- [x] `infrastructure/repositories/profile_repo.py`
+  - [x] `DjangoProfileRepository` - wraps Django ORM UserProfile
+  - [x] CRUD operations (get_by_id, get_by_user, save, delete)
+  - [x] `set_default()` with atomic transaction
+  - [x] `_to_profile_data()` - Django model → domain DTO conversion
 
 ### Phase 5: DI Container
 > **Status**: [ ] Not Started
@@ -475,6 +484,7 @@ module.exports = {
 | 2025-12-05 | 1 | Completed Phase 1 | Domain models: WuXing, Pillar, BaZi, ShiShen, ShenSha |
 | 2025-12-05 | 2 | Completed Phase 2 | Services: WuXingCalculator, ShiShenCalculator, DayMasterAnalyzer, ShenShaCalculator |
 | 2025-12-05 | 3 | Completed Phase 3 | Ports: LunarPort, ProfileRepository, ProfileData |
+| 2025-12-05 | 4 | Completed Phase 4 | Adapters: LunarPythonAdapter, DjangoProfileRepository |
 
 ---
 
