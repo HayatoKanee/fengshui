@@ -163,15 +163,17 @@ def test_bazi_analysis():
 ## Migration Phases
 
 ### Phase 0: Quick Wins (Pre-refactor cleanup)
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
-- [ ] Delete duplicated functions from `views.py`
+- [x] Delete duplicated functions from `views.py`
   - `is_yang_gong_taboo` (use helper.py version)
   - `is_po_ri` (use helper.py version)
   - `is_si_jue_ri` (use helper.py version)
   - `is_si_li_ri` (use helper.py version)
-- [ ] Replace `from .helper import *` with explicit imports
-- [ ] Add `.gitignore` entry for `.serena/`
+- [x] Replace `from .helper import *` with explicit imports
+- [x] Replace `from .feixing import *` with explicit imports
+- [x] Replace `from bazi.views import *` in urls.py with explicit imports
+- [x] Add `.gitignore` entry for `.serena/` and `data/`
 
 ### Phase 1: Domain Models
 > **Status**: [ ] Not Started
@@ -451,7 +453,7 @@ module.exports = {
 |------|-------|---------|-------|
 | 2025-12-05 | - | Created REFACTORING.md | Architecture plan + DI strategy |
 | 2025-12-05 | - | Added frontend phases 10-12 | HTMX + Tailwind + Alpine.js |
-| 2025-12-05 | 0 | Starting Phase 0 | Quick wins cleanup |
+| 2025-12-05 | 0 | Completed Phase 0 | Removed duplicates, explicit imports |
 
 ---
 

@@ -16,7 +16,32 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from bazi.views import *
+from bazi.views import (
+    # Auth views
+    user_login,
+    user_logout,
+    # Profile views
+    profile_list,
+    add_profile,
+    edit_profile,
+    delete_profile,
+    set_default_profile,
+    # Main app views
+    home_view,
+    bazi_view,
+    wuxing_view,
+    yinyang_view,
+    tiangan_view,
+    dizhi_view,
+    ganzhi_view,
+    introbazi_view,
+    zeri_view,
+    bazi_lookup_view,
+    get_bazi_detail,
+    feixing_view,
+    calendar_view,
+    calendar_data,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
