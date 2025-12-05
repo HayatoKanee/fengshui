@@ -43,6 +43,7 @@ urlpatterns = [
     path('ganzhi', ganzhi_view, name='ganzhi'),
     path('introbazi', introbazi_view, name='introbazi'),
     path('zeri', zeri_view, name='zeri'),
+    path('bazi_lookup', bazi_lookup_view, name='bazi_lookup'),
     path('bazi_detail', get_bazi_detail, name='bazi_detail'),
     path('feixing',feixing_view,name='feixing'),
     path('calendar', calendar_view, name='calendar'),

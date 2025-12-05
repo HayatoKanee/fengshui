@@ -1135,3 +1135,147 @@ def is_si_li_ri(date_solar):
     current_date_str = f"{date_solar.getYear()}-{date_solar.getMonth():02d}-{date_solar.getDay():02d}"
     return current_date_str in li_dates
 
+
+def bazi_lookup_view(request):
+    """
+    BaZi to Solar lookup - find all dates matching a given BaZi pattern
+    """
+    data = []
+    target_bazi = ''
+    start_year = datetime.datetime.now().year
+    end_year = start_year + 100
+
+    # 天干 (10 Heavenly Stems) and 地支 (12 Earthly Branches)
+    tiangan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+    dizhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+
+    if request.method == 'POST':
+        # Get the 8 individual characters from form
+        year_gan = request.POST.get('year_gan', '').strip()
+        year_zhi = request.POST.get('year_zhi', '').strip()
+        month_gan = request.POST.get('month_gan', '').strip()
+        month_zhi = request.POST.get('month_zhi', '').strip()
+        day_gan = request.POST.get('day_gan', '').strip()
+        day_zhi = request.POST.get('day_zhi', '').strip()
+        hour_gan = request.POST.get('hour_gan', '').strip()
+        hour_zhi = request.POST.get('hour_zhi', '').strip()
+
+        start_year = int(request.POST.get('start_year', start_year))
+        end_year = int(request.POST.get('end_year', end_year))
+
+        # Validate year range
+        if end_year - start_year > 2000:
+            messages.warning(request, '搜索范围最多2000年')
+            end_year = start_year + 2000
+
+        if start_year > end_year:
+            messages.warning(request, '开始年份不能晚于结束年份')
+            return redirect('bazi_lookup')
+
+        # Build target BaZi pattern from individual characters (display order: 时 日 月 年)
+        year_pillar = year_gan + year_zhi if (year_gan or year_zhi) else ''
+        month_pillar = month_gan + month_zhi if (month_gan or month_zhi) else ''
+        day_pillar = day_gan + day_zhi if (day_gan or day_zhi) else ''
+        hour_pillar = hour_gan + hour_zhi if (hour_gan or hour_zhi) else ''
+        target_bazi = f"{hour_pillar} {day_pillar} {month_pillar} {year_pillar}"
+
+        # Check if at least one search criterion is provided
+        has_criteria = any([year_gan, year_zhi, month_gan, month_zhi,
+                           day_gan, day_zhi, hour_gan, hour_zhi])
+
+        if not has_criteria:
+            messages.warning(request, '请至少选择一个八字字符进行搜索')
+        else:
+            # Search for matches using Solar date iteration (more reliable)
+            # Chinese hour periods: 子(23-1), 丑(1-3), 寅(3-5), 卯(5-7), 辰(7-9), 巳(9-11),
+            #                       午(11-13), 未(13-15), 申(15-17), 酉(17-19), 戌(19-21), 亥(21-23)
+            hours = [0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
+            max_results = 10000  # Limit results to prevent memory issues
+
+            for year in range(start_year, end_year + 1):
+                if len(data) >= max_results:
+                    messages.warning(request, f'结果过多，只显示前 {max_results} 个匹配')
+                    break
+
+                for month in range(1, 13):
+                    if len(data) >= max_results:
+                        break
+
+                    # Calculate days in month using datetime (matches existing pattern)
+                    if month == 12:
+                        last_day = datetime.datetime(year + 1, 1, 1) - datetime.timedelta(days=1)
+                    else:
+                        last_day = datetime.datetime(year, month + 1, 1) - datetime.timedelta(days=1)
+                    days_in_month = last_day.day
+
+                    for day in range(1, days_in_month + 1):
+                        if len(data) >= max_results:
+                            break
+
+                        for hour in hours:
+                            if len(data) >= max_results:
+                                break
+
+                            try:
+                                # Create Solar date and convert to Lunar to get BaZi
+                                solar = Solar.fromYmdHms(year, month, day, hour, 0, 0)
+                                lunar = solar.getLunar()
+                                bazi = lunar.getEightChar()
+
+                                bazi_str = bazi.toString()
+                                bazi_parts = bazi_str.split()
+
+                                # Check each character individually
+                                is_match = True
+
+                                # Year pillar check (bazi_parts[0])
+                                if year_gan and bazi_parts[0][0] != year_gan:
+                                    is_match = False
+                                if year_zhi and bazi_parts[0][1] != year_zhi:
+                                    is_match = False
+
+                                # Month pillar check (bazi_parts[1])
+                                if is_match and month_gan and bazi_parts[1][0] != month_gan:
+                                    is_match = False
+                                if is_match and month_zhi and bazi_parts[1][1] != month_zhi:
+                                    is_match = False
+
+                                # Day pillar check (bazi_parts[2])
+                                if is_match and day_gan and bazi_parts[2][0] != day_gan:
+                                    is_match = False
+                                if is_match and day_zhi and bazi_parts[2][1] != day_zhi:
+                                    is_match = False
+
+                                # Hour pillar check (bazi_parts[3])
+                                if is_match and hour_gan and bazi_parts[3][0] != hour_gan:
+                                    is_match = False
+                                if is_match and hour_zhi and bazi_parts[3][1] != hour_zhi:
+                                    is_match = False
+
+                                if is_match:
+                                    # Reverse bazi order for display: 年月日时 -> 时日月年
+                                    bazi_display = ' '.join(reversed(bazi_parts))
+                                    data.append({
+                                        'year': year,
+                                        'month': month,
+                                        'day': day,
+                                        'hour': hour,
+                                        'bazi': bazi_display
+                                    })
+                            except Exception:
+                                # Skip invalid dates
+                                continue
+
+            if not data:
+                messages.info(request, f'在 {start_year}-{end_year} 年间未找到匹配的八字')
+
+    return render(request, 'bazi_lookup.html', {
+        'data': data,
+        'target_bazi': target_bazi,
+        'start_year': start_year,
+        'end_year': end_year,
+        'tiangan': tiangan,
+        'dizhi': dizhi,
+        'total_matches': len(data)
+    })
+

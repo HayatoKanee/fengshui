@@ -1,0 +1,216 @@
+{% extends 'base_content.html' %}
+{% block content %}
+    <!-- Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">八字详细</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modalContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">八字查日期</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            输入八字四柱，查找所有匹配的日期时辰。留空表示通配（任意匹配）。
+                        </div>
+
+                        <form method="post">
+                            {% csrf_token %}
+
+                            <!-- 八字排盘 Table Layout -->
+                            <div class="table-responsive mb-4">
+                                <table class="table table-bordered text-center">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th style="width: 15%"></th>
+                                            <th style="width: 21.25%">时柱</th>
+                                            <th style="width: 21.25%">日柱</th>
+                                            <th style="width: 21.25%">月柱</th>
+                                            <th style="width: 21.25%">年柱</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th class="table-light">天干</th>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="hour_gan" name="hour_gan">
+                                                    <option value="">任意</option>
+                                                    {% for g in tiangan %}
+                                                    <option value="{{ g }}">{{ g }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="day_gan" name="day_gan">
+                                                    <option value="">任意</option>
+                                                    {% for g in tiangan %}
+                                                    <option value="{{ g }}">{{ g }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="month_gan" name="month_gan">
+                                                    <option value="">任意</option>
+                                                    {% for g in tiangan %}
+                                                    <option value="{{ g }}">{{ g }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="year_gan" name="year_gan">
+                                                    <option value="">任意</option>
+                                                    {% for g in tiangan %}
+                                                    <option value="{{ g }}">{{ g }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th class="table-light">地支</th>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="hour_zhi" name="hour_zhi">
+                                                    <option value="">任意</option>
+                                                    {% for z in dizhi %}
+                                                    <option value="{{ z }}">{{ z }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="day_zhi" name="day_zhi">
+                                                    <option value="">任意</option>
+                                                    {% for z in dizhi %}
+                                                    <option value="{{ z }}">{{ z }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="month_zhi" name="month_zhi">
+                                                    <option value="">任意</option>
+                                                    {% for z in dizhi %}
+                                                    <option value="{{ z }}">{{ z }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-lg text-center" id="year_zhi" name="year_zhi">
+                                                    <option value="">任意</option>
+                                                    {% for z in dizhi %}
+                                                    <option value="{{ z }}">{{ z }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="start_year" class="form-label">开始年份</label>
+                                    <input type="number" class="form-control" id="start_year" name="start_year"
+                                        value="{{ start_year }}" min="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="end_year" class="form-label">结束年份</label>
+                                    <input type="number" class="form-control" id="end_year" name="end_year"
+                                        value="{{ end_year }}" min="0" required>
+                                    <div class="form-text text-muted">搜索范围最多2000年</div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-search me-2"></i>查找日期
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if data %}
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">匹配结果 (共 {{ total_matches }} 个)</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    目标八字: <strong>{{ target_bazi }}</strong>
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>年</th>
+                                <th>月</th>
+                                <th>日</th>
+                                <th>时</th>
+                                <th>八字</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in data %}
+                                <tr class="clickable-row">
+                                    <td>{{ item.year }}</td>
+                                    <td>{{ item.month }}</td>
+                                    <td>{{ item.day }}</td>
+                                    <td>{{ item.hour }}:00</td>
+                                    <td><code>{{ item.bazi }}</code></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#detailsModal"
+                                            onclick="showDetails('{{ item.year }}', '{{ item.month }}', '{{ item.day }}', '{{ item.hour }}')">
+                                            查看详细
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function showDetails(year, month, day, hour) {
+            $.ajax({
+                url: `{% url 'bazi_detail' %}`,
+                type: 'POST',
+                data: {
+                    'year': year,
+                    'month': month,
+                    'day': day,
+                    'hour': hour,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function (html) {
+                    $('#modalContent').html(html);
+                    $('#detailsModal').show();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading the date details:', error);
+                }
+            });
+        }
+    </script>
+{% endblock %}
