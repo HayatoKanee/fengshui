@@ -176,35 +176,42 @@ def test_bazi_analysis():
 - [x] Add `.gitignore` entry for `.serena/` and `data/`
 
 ### Phase 1: Domain Models
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
 Create pure Python domain models (no Django dependencies).
 
 #### 1.1 Core Value Objects
-- [ ] `domain/models/__init__.py`
-- [ ] `domain/models/elements.py`
-  - [ ] `WuXing` enum (木火土金水)
-  - [ ] `YinYang` enum (阴阳)
-- [ ] `domain/models/stems_branches.py`
-  - [ ] `HeavenlyStem` enum (天干: 甲乙丙丁戊己庚辛壬癸)
-  - [ ] `EarthlyBranch` enum (地支: 子丑寅卯辰巳午未申酉戌亥)
-- [ ] `domain/models/pillar.py`
-  - [ ] `Pillar` dataclass (frozen, immutable)
+- [x] `domain/models/__init__.py`
+- [x] `domain/models/elements.py`
+  - [x] `WuXing` enum (木火土金水)
+  - [x] `YinYang` enum (阴阳)
+  - [x] `WangXiang` enum (旺相休囚死)
+- [x] `domain/models/stems_branches.py`
+  - [x] `HeavenlyStem` enum (天干: 甲乙丙丁戊己庚辛壬癸)
+  - [x] `EarthlyBranch` enum (地支: 子丑寅卯辰巳午未申酉戌亥)
+  - [x] `StemBranchRelations` (六合、五合、相冲)
+- [x] `domain/models/pillar.py`
+  - [x] `Pillar` dataclass (frozen, immutable)
 
 #### 1.2 BaZi Aggregate
-- [ ] `domain/models/bazi.py`
-  - [ ] `BaZi` dataclass (year, month, day, hour pillars)
-  - [ ] `BirthData` dataclass (input DTO)
+- [x] `domain/models/bazi.py`
+  - [x] `BaZi` dataclass (year, month, day, hour pillars)
+  - [x] `BirthData` dataclass (input DTO)
 
 #### 1.3 Analysis Models
-- [ ] `domain/models/shishen.py`
-  - [ ] `ShiShen` enum (十神)
-  - [ ] `ShiShenChart` dataclass
-- [ ] `domain/models/shensha.py`
-  - [ ] `ShenSha` dataclass (神煞)
-- [ ] `domain/models/analysis.py`
-  - [ ] `DayMasterStrength` dataclass
-  - [ ] `BaziAnalysis` dataclass (complete analysis result)
+- [x] `domain/models/shishen.py`
+  - [x] `ShiShen` enum (十神)
+  - [x] `ShiShenChart` dataclass
+  - [x] `calculate_shishen()` function
+- [x] `domain/models/shensha.py`
+  - [x] `ShenShaType` enum (神煞类型)
+  - [x] `ShenSha` dataclass (神煞)
+  - [x] `ShenShaAnalysis` dataclass
+- [x] `domain/models/analysis.py`
+  - [x] `WuXingStrength` dataclass
+  - [x] `DayMasterStrength` dataclass
+  - [x] `FavorableElements` dataclass (用神/忌神)
+  - [x] `BaZiAnalysis` dataclass (complete analysis result)
 
 ### Phase 2: Domain Services
 > **Status**: [ ] Not Started
@@ -454,6 +461,7 @@ module.exports = {
 | 2025-12-05 | - | Created REFACTORING.md | Architecture plan + DI strategy |
 | 2025-12-05 | - | Added frontend phases 10-12 | HTMX + Tailwind + Alpine.js |
 | 2025-12-05 | 0 | Completed Phase 0 | Removed duplicates, explicit imports |
+| 2025-12-05 | 1 | Completed Phase 1 | Domain models: WuXing, Pillar, BaZi, ShiShen, ShenSha |
 
 ---
 
