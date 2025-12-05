@@ -246,15 +246,16 @@ Extract business logic from helper.py into focused services.
   - [ ] `analyse_liunian_shishen()`
 
 ### Phase 3: Ports (Interfaces)
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
 Define abstract interfaces for external dependencies.
 
-- [ ] `domain/ports/__init__.py`
-- [ ] `domain/ports/lunar_port.py`
-  - [ ] `LunarPort` Protocol
-- [ ] `domain/ports/profile_port.py`
-  - [ ] `ProfileRepository` Protocol
+- [x] `domain/ports/__init__.py`
+- [x] `domain/ports/lunar_port.py`
+  - [x] `LunarPort` Protocol - BaZi calculation, solar/lunar conversion, jieqi
+- [x] `domain/ports/profile_port.py`
+  - [x] `ProfileData` data transfer object
+  - [x] `ProfileRepository` Protocol - CRUD operations for user profiles
 
 ### Phase 4: Infrastructure Adapters
 > **Status**: [ ] Not Started
@@ -473,6 +474,7 @@ module.exports = {
 | 2025-12-05 | 0 | Completed Phase 0 | Removed duplicates, explicit imports |
 | 2025-12-05 | 1 | Completed Phase 1 | Domain models: WuXing, Pillar, BaZi, ShiShen, ShenSha |
 | 2025-12-05 | 2 | Completed Phase 2 | Services: WuXingCalculator, ShiShenCalculator, DayMasterAnalyzer, ShenShaCalculator |
+| 2025-12-05 | 3 | Completed Phase 3 | Ports: LunarPort, ProfileRepository, ProfileData |
 
 ---
 
