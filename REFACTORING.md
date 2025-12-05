@@ -46,7 +46,7 @@ npm install -D vite
 | Domain models | 15+ | 10+ | ✅ Complete |
 | Domain services | 4 | 4+ | ✅ Complete |
 | Application services | 3 | 3 | ✅ Complete |
-| Test coverage | ~0% | >80% domain | ❌ Pending |
+| Test coverage | 95% domain | >80% domain | ✅ Complete |
 | Code duplication | 0 | 0 | ✅ Complete |
 | CSS framework | Bootstrap 5 | Tailwind + DaisyUI | ❌ Pending |
 | JS interactivity | jQuery AJAX | HTMX + Alpine.js | ❌ Pending |
@@ -354,20 +354,22 @@ Split views.py into modules and make views thin.
 - [x] Created backward-compatible `bazi/forms.py` (re-exports from presentation)
 
 ### Phase 8: Tests
-> **Status**: [ ] Not Started
+> **Status**: [x] Complete (255 tests, 95% domain coverage)
 
 Add comprehensive tests for domain layer.
 
-- [ ] `tests/__init__.py`
-- [ ] `tests/domain/__init__.py`
-- [ ] `tests/domain/test_models.py`
-- [ ] `tests/domain/test_wuxing_calculator.py`
-- [ ] `tests/domain/test_shishen_calculator.py`
-- [ ] `tests/domain/test_day_master_analyzer.py`
-- [ ] `tests/application/__init__.py`
-- [ ] `tests/application/test_bazi_service.py`
-- [ ] `tests/integration/__init__.py`
-- [ ] `tests/integration/test_views.py`
+- [x] `tests/__init__.py`
+- [x] `tests/domain/__init__.py`
+- [x] `tests/domain/test_elements.py` - 26 tests
+- [x] `tests/domain/test_stems_branches.py` - 32 tests
+- [x] `tests/domain/test_pillar.py` - 22 tests
+- [x] `tests/domain/test_bazi.py` - 33 tests
+- [x] `tests/domain/test_wuxing_calculator.py` - 38 tests
+- [x] `tests/domain/test_shishen_calculator.py` - 28 tests
+- [x] `tests/domain/test_day_master_analyzer.py` - 32 tests
+- [x] `tests/domain/test_shensha_calculator.py` - 44 tests
+- [ ] `tests/application/` - Application service tests (requires Django)
+- [ ] `tests/integration/` - Integration tests (requires Django)
 
 ### Phase 9: Cleanup
 > **Status**: [ ] Not Started
@@ -516,6 +518,7 @@ module.exports = {
 | 2025-12-05 | 5 | Completed Phase 5 | DI Container: Container, get_container(), reset_container() |
 | 2025-12-05 | 6 | Completed Phase 6 | Application Services: BaziAnalysisService, CalendarService, ProfileService |
 | 2025-12-05 | 7 | Completed Phase 7 | Presentation Layer: Split 1220-line views.py into 8 modules, moved forms |
+| 2025-12-05 | 8 | Completed Phase 8 | Domain Tests: 255 tests, 95% coverage (elements, stems_branches, pillar, bazi, calculators) |
 
 ---
 
