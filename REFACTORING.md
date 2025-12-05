@@ -280,14 +280,16 @@ Implement ports with concrete adapters.
   - [x] `_to_profile_data()` - Django model → domain DTO conversion
 
 ### Phase 5: DI Container
-> **Status**: [ ] Not Started
+> **Status**: [x] Completed
 
 Set up dependency injection.
 
-- [ ] `infrastructure/di/__init__.py`
-- [ ] `infrastructure/di/container.py`
-  - [ ] `Container` dataclass
-  - [ ] `get_container()` function
+- [x] `infrastructure/di/__init__.py`
+- [x] `infrastructure/di/container.py`
+  - [x] `Container` dataclass - holds all adapters and services
+  - [x] `Container.create()` factory method - composition root
+  - [x] `get_container()` singleton accessor
+  - [x] `reset_container()` for testing
 
 ### Phase 6: Application Services
 > **Status**: [ ] Not Started
@@ -485,6 +487,7 @@ module.exports = {
 | 2025-12-05 | 2 | Completed Phase 2 | Services: WuXingCalculator, ShiShenCalculator, DayMasterAnalyzer, ShenShaCalculator |
 | 2025-12-05 | 3 | Completed Phase 3 | Ports: LunarPort, ProfileRepository, ProfileData |
 | 2025-12-05 | 4 | Completed Phase 4 | Adapters: LunarPythonAdapter, DjangoProfileRepository |
+| 2025-12-05 | 5 | Completed Phase 5 | DI Container: Container, get_container(), reset_container() |
 
 ---
 

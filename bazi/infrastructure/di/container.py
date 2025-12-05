@@ -1,0 +1,115 @@
+"""
+Dependency Injection Container.
+
+Simple DI container that wires up all dependencies at application startup.
+This approach is explicit, easy to understand, and doesn't require
+additional libraries.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from bazi.domain.services import (
+    WuXingCalculator,
+    ShiShenCalculator,
+    DayMasterAnalyzer,
+    ShenShaCalculator,
+)
+from bazi.infrastructure.adapters import LunarPythonAdapter
+
+if TYPE_CHECKING:
+    from bazi.domain.ports import LunarPort, ProfileRepository
+    from bazi.infrastructure.repositories import DjangoProfileRepository
+
+
+@dataclass
+class Container:
+    """
+    Simple DI container - instantiate once at app startup.
+
+    All dependencies are wired up in the create() factory method.
+    This container holds:
+    - Infrastructure adapters (ports implementations)
+    - Domain services (pure business logic)
+
+    Usage in views:
+        container = get_container()
+        bazi = container.lunar_adapter.get_bazi(birth_data)
+        strength = container.wuxing_calculator.calculate_strength(bazi)
+    """
+
+    # Infrastructure adapters (implements domain ports)
+    lunar_adapter: LunarPort
+    profile_repo: ProfileRepository
+
+    # Domain services (pure business logic)
+    wuxing_calculator: WuXingCalculator
+    shishen_calculator: ShiShenCalculator
+    day_master_analyzer: DayMasterAnalyzer
+    shensha_calculator: ShenShaCalculator
+
+    @classmethod
+    def create(cls) -> Container:
+        """
+        Factory method - wire up all dependencies.
+
+        This is the composition root where all dependencies are assembled.
+        Call this once at application startup.
+        """
+        # Infrastructure adapters
+        lunar = LunarPythonAdapter()
+
+        # Import DjangoProfileRepository here to avoid Django config at module load
+        from bazi.infrastructure.repositories import DjangoProfileRepository
+        profile_repo = DjangoProfileRepository()
+
+        # Domain services (no external dependencies)
+        wuxing_calc = WuXingCalculator()
+        shishen_calc = ShiShenCalculator()
+        day_master_analyzer = DayMasterAnalyzer()
+        shensha_calc = ShenShaCalculator()
+
+        return cls(
+            lunar_adapter=lunar,
+            profile_repo=profile_repo,
+            wuxing_calculator=wuxing_calc,
+            shishen_calculator=shishen_calc,
+            day_master_analyzer=day_master_analyzer,
+            shensha_calculator=shensha_calc,
+        )
+
+
+# Singleton instance
+_container: Container | None = None
+
+
+def get_container() -> Container:
+    """
+    Get or create the DI container singleton.
+
+    Thread-safe for Django's typical request handling,
+    as Django handles concurrent requests in separate threads
+    and Python's GIL ensures atomic pointer assignments.
+
+    Usage:
+        from bazi.infrastructure.di import get_container
+
+        def my_view(request):
+            container = get_container()
+            # Use container.lunar_adapter, container.wuxing_calculator, etc.
+    """
+    global _container
+    if _container is None:
+        _container = Container.create()
+    return _container
+
+
+def reset_container() -> None:
+    """
+    Reset the container singleton (useful for testing).
+
+    In tests, call this in setUp/tearDown to get fresh instances.
+    """
+    global _container
+    _container = None
