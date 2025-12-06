@@ -12,18 +12,13 @@ from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from lunar_python import Solar
 
-from bazi.constants import (
-    gan_wuxing,
-    gan_yinyang,
-    hidden_gan_ratios,
-    liu_he,
-    peiou_xingge,
-    tigang,
-    wu_he,
-)
-# Import handlers from dedicated module
-from bazi.application.services.shishen_handlers import shishen_handler
+# Domain layer imports (DIP-compliant)
+from bazi.domain.constants import HIDDEN_GAN_RATIOS, is_harmony
 from bazi.domain.models import HeavenlyStem, ShiShen, calculate_shishen
+
+# Application layer imports
+from bazi.application.content import TIGANG_TEXT, PARTNER_TEXT
+from bazi.application.services.shishen_handlers import shishen_handler
 
 if TYPE_CHECKING:
     from lunar_python import EightChar
@@ -48,7 +43,7 @@ class LiunianAnalysisService:
         Returns:
             Personality description text or None
         """
-        return tigang.get(month_zhi)
+        return TIGANG_TEXT.get(month_zhi)
 
     def analyse_partner(
         self,
@@ -68,7 +63,7 @@ class LiunianAnalysisService:
         ratios = self._get_day_gan_ratio(hidden_gan, shishen_list)
         if ratios:
             first_key = list(ratios.items())[0][0]
-            return peiou_xingge.get(first_key)
+            return PARTNER_TEXT.get(first_key)
         return None
 
     def analyse_liunian(
@@ -150,7 +145,7 @@ class LiunianAnalysisService:
     ) -> List:
         """Calculate ShiShen for a given year's pillars."""
         year_gan = year_bazi.getYearGan()
-        year_hidden_gans = hidden_gan_ratios.get(year_bazi.getYearZhi(), {})
+        year_hidden_gans = HIDDEN_GAN_RATIOS.get(year_bazi.getYearZhi(), {})
 
         # Convert Chinese characters to HeavenlyStem objects
         daymaster_stem = HeavenlyStem.from_chinese(daymaster_gan)
@@ -283,12 +278,7 @@ class LiunianAnalysisService:
 
     def _check_he(self, ganzhi1: str, ganzhi2: str) -> bool:
         """Check if two characters form a harmony relationship."""
-        return (
-            (ganzhi1, ganzhi2) in liu_he
-            or (ganzhi2, ganzhi1) in liu_he
-            or (ganzhi1, ganzhi2) in wu_he
-            or (ganzhi2, ganzhi1) in wu_he
-        )
+        return is_harmony(ganzhi1, ganzhi2)
 
     def _contain_shishen(
         self,
