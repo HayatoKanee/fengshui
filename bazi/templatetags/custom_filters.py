@@ -1,6 +1,6 @@
 from django import template
 
-from bazi.feixing import mountains_24
+from bazi.domain.feixing.constants import MOUNTAINS_24 as mountains_24
 
 register = template.Library()
 

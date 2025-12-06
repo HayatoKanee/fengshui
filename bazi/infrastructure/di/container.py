@@ -16,6 +16,7 @@ from bazi.domain.services import (
     DayMasterAnalyzer,
     ShenShaCalculator,
 )
+from bazi.domain.feixing import FeiXingCalculator
 from bazi.infrastructure.adapters import LunarPythonAdapter
 
 if TYPE_CHECKING:
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     from bazi.application.services import (
         BaziAnalysisService,
         CalendarService,
+        FeiXingService,
         LiunianAnalysisService,
         ProfileService,
     )
@@ -55,10 +57,12 @@ class Container:
     shishen_calculator: ShiShenCalculator
     day_master_analyzer: DayMasterAnalyzer
     shensha_calculator: ShenShaCalculator
+    feixing_calculator: FeiXingCalculator
 
     # Application services (use case orchestrators)
     bazi_service: BaziAnalysisService
     calendar_service: CalendarService
+    feixing_service: FeiXingService
     liunian_service: LiunianAnalysisService
     profile_service: ProfileService
 
@@ -82,11 +86,13 @@ class Container:
         shishen_calc = ShiShenCalculator()
         day_master_analyzer = DayMasterAnalyzer()
         shensha_calc = ShenShaCalculator()
+        feixing_calc = FeiXingCalculator()
 
         # Application services (import here to avoid circular imports)
         from bazi.application.services import (
             BaziAnalysisService,
             CalendarService,
+            FeiXingService,
             LiunianAnalysisService,
             ProfileService,
         )
@@ -113,6 +119,8 @@ class Container:
 
         liunian_service = LiunianAnalysisService()
 
+        feixing_service = FeiXingService(calculator=feixing_calc)
+
         return cls(
             lunar_adapter=lunar,
             profile_repo=profile_repo,
@@ -120,8 +128,10 @@ class Container:
             shishen_calculator=shishen_calc,
             day_master_analyzer=day_master_analyzer,
             shensha_calculator=shensha_calc,
+            feixing_calculator=feixing_calc,
             bazi_service=bazi_service,
             calendar_service=calendar_service,
+            feixing_service=feixing_service,
             liunian_service=liunian_service,
             profile_service=profile_service,
         )
