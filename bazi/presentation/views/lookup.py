@@ -4,6 +4,8 @@ BaZi Lookup Views.
 Views for BaZi pattern lookup and date searching functionality.
 These views handle searching for solar dates matching given BaZi patterns
 and finding auspicious dates from pre-calculated CSV files.
+
+Uses DI container for all infrastructure access (DIP-compliant).
 """
 import csv
 import datetime
@@ -13,7 +15,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 
 from fengshui import settings
-from lunar_python import Solar
+from bazi.infrastructure.di import get_container
 
 
 def bazi_lookup_view(request):
@@ -81,11 +83,13 @@ def bazi_lookup_view(request):
         if not has_criteria:
             messages.warning(request, '请至少选择一个八字字符进行搜索')
         else:
+            container = get_container()
             data = _search_matching_dates(
                 start_year, end_year,
                 year_gan, year_zhi, month_gan, month_zhi,
                 day_gan, day_zhi, hour_gan, hour_zhi,
-                request
+                request,
+                container
             )
 
             if not data:
@@ -113,13 +117,16 @@ def _search_matching_dates(
     day_zhi: str,
     hour_gan: str,
     hour_zhi: str,
-    request
+    request,
+    container
 ) -> list:
     """
     Search for dates matching the given BaZi pattern.
 
     Iterates through all dates in the specified year range, checking
     each hour period for matching BaZi pillars.
+
+    Uses container for DI-compliant access to lunar adapter (DIP-compliant).
 
     Args:
         start_year: Beginning of search range
@@ -133,6 +140,7 @@ def _search_matching_dates(
         hour_gan: Target hour Heavenly Stem (optional)
         hour_zhi: Target hour Earthly Branch (optional)
         request: Django request for warning messages
+        container: DI container for service access
 
     Returns:
         List of dictionaries containing matching dates with their BaZi
@@ -165,7 +173,8 @@ def _search_matching_dates(
                     match_result = _check_bazi_match(
                         year, month, day, hour,
                         year_gan, year_zhi, month_gan, month_zhi,
-                        day_gan, day_zhi, hour_gan, hour_zhi
+                        day_gan, day_zhi, hour_gan, hour_zhi,
+                        container
                     )
                     if match_result:
                         data.append(match_result)
@@ -194,19 +203,22 @@ def _check_bazi_match(
     day_gan: str,
     day_zhi: str,
     hour_gan: str,
-    hour_zhi: str
+    hour_zhi: str,
+    container
 ) -> dict | None:
     """
     Check if a specific date/time matches the given BaZi pattern.
+
+    Uses container for DI-compliant access to lunar adapter (DIP-compliant).
 
     Returns:
         Dictionary with date info and BaZi if match, None otherwise
     """
     try:
-        # Create Solar date and convert to Lunar to get BaZi
-        solar = Solar.fromYmdHms(year, month, day, hour, 0, 0)
-        lunar = solar.getLunar()
-        bazi = lunar.getEightChar()
+        # Get BaZi via LunarPort (DIP-compliant)
+        lunar, bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+            year, month, day, hour, 0
+        )
 
         bazi_str = bazi.toString()
         bazi_parts = bazi_str.split()

@@ -1,25 +1,110 @@
 {% extends 'base_content.html' %}
 {% block content %}
-    <section class="py-5 text-center container">
-        <div class="row py-lg-5 lang" data-lang="zh">
-            <div class="col-lg-6 col-md-8 mx-auto">
-                <h1 class="fw-light">致访客</h1>
-                <p class="lead text-body-secondary">
-                    欢迎访问我的网站！本人偶得机会学习一些风水五行皮毛。通过这个平台，我希望分享所学，帮助大家了解风水堪舆和命理的知识。如有错误或建议，请联系我，我会尽快调整。
-                <p>
+<div class="hero min-h-[60vh] bg-base-200">
+    <div class="hero-content text-center">
+        <div class="max-w-2xl" x-data="{ lang: 'zh' }">
+            <!-- Language Toggle -->
+            <div class="tabs tabs-boxed justify-center mb-6">
+                <a class="tab" :class="{ 'tab-active': lang === 'zh' }" @click="lang = 'zh'">中文</a>
+                <a class="tab" :class="{ 'tab-active': lang === 'en' }" @click="lang = 'en'">English</a>
             </div>
-        </div>
-        <div class="row py-lg-5 lang" data-lang="en" style="display: none;">
-            <div class="col-lg-6 col-md-8 mx-auto">
-                <h1 class="fw-light">To Visitors</h1>
-                <p class="lead text-body-secondary">
+
+            <!-- Chinese Content -->
+            <div x-show="lang === 'zh'" x-transition>
+                <h1 class="text-5xl font-bold mb-6">致访客</h1>
+                <p class="text-lg mb-6 text-base-content/80">
+                    欢迎访问我的网站！本人偶得机会学习一些风水五行皮毛。通过这个平台，我希望分享所学，帮助大家了解风水堪舆和命理的知识。如有错误或建议，请联系我，我会尽快调整。
+                </p>
+                <div class="flex flex-wrap gap-4 justify-center">
+                    <a href="{% url 'bazi' %}" class="btn btn-primary">八字排盘</a>
+                    <a href="{% url 'calendar' %}" class="btn btn-secondary">择日查询</a>
+                    <a href="{% url 'introbazi' %}" class="btn btn-outline">了解八字</a>
+                </div>
+            </div>
+
+            <!-- English Content -->
+            <div x-show="lang === 'en'" x-transition>
+                <h1 class="text-5xl font-bold mb-6">To Visitors</h1>
+                <p class="text-lg mb-6 text-base-content/80">
                     Welcome to my website! I've had the fortunate opportunity to delve into the basics of Feng Shui and
                     the Five Elements. Through this platform, I aim to share my learnings and help individuals
                     understand the knowledge of geomancy and fengshui. If you spot any inaccuracies or have
                     suggestions, please reach out to me, and I'll make adjustments promptly.
-                <p>
-                <h2>Still working on the english version as it takes ages to translate... will use AI to help me out</h2>
+                </p>
+                <div class="alert alert-warning mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>English version still in progress - translation takes time!</span>
+                </div>
+                <div class="flex flex-wrap gap-4 justify-center">
+                    <a href="{% url 'bazi' %}" class="btn btn-primary">BaZi Chart</a>
+                    <a href="{% url 'calendar' %}" class="btn btn-secondary">Date Selection</a>
+                    <a href="{% url 'introbazi' %}" class="btn btn-outline">Learn BaZi</a>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
+</div>
+
+<!-- Feature Cards -->
+<div class="container mx-auto py-12 px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- BaZi Card -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <span class="text-2xl">八字</span>
+                    <div class="badge badge-primary">核心</div>
+                </h2>
+                <p>八字排盘与分析，了解命理格局</p>
+                <div class="card-actions justify-end">
+                    <a href="{% url 'bazi' %}" class="btn btn-primary btn-sm">查看</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Card -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <span class="text-2xl">择日</span>
+                    <div class="badge badge-secondary">实用</div>
+                </h2>
+                <p>根据八字选择吉日良辰</p>
+                <div class="card-actions justify-end">
+                    <a href="{% url 'calendar' %}" class="btn btn-secondary btn-sm">查看</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flying Star Card -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <span class="text-2xl">飞星</span>
+                    <div class="badge badge-accent">风水</div>
+                </h2>
+                <p>玄空飞星盘的计算与分析</p>
+                <div class="card-actions justify-end">
+                    <a href="{% url 'feixing' %}" class="btn btn-accent btn-sm">查看</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Card -->
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <h2 class="card-title">
+                    <span class="text-2xl">学习</span>
+                    <div class="badge badge-info">入门</div>
+                </h2>
+                <p>五行、天干地支基础知识</p>
+                <div class="card-actions justify-end">
+                    <a href="{% url 'wuxing' %}" class="btn btn-info btn-sm">查看</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

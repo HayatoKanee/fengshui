@@ -1,28 +1,44 @@
 {% extends 'intro.html' %}
 {% block introContent %}
-    <h2>干支</h2>
-    <p>
-        干支是十干与十二支的合称，由两者经一定的组合方式搭配成六十对，为一周期，循环往复，称为一甲子或花甲之年。
-        古代中国用以记录年、月、日子及时期。
-    </p>
-    <h3>干支的例子</h3>
-    <p>
-        干支的组合是按照特定的顺序进行的。例如：
-    </p>
-    <ul>
-        <li>甲子</li>
-        <li>乙丑</li>
-        <li>丙寅</li>
-        <li>丁卯</li>
-        <li>戊辰</li>
-        <li>...</li>
-        <!-- ... -->
-        <li>癸亥</li>
-    </ul>
-    <p>
-        在这60个组合完成后，会重新回到“甲子”开始新的一个循环。这种组合方式确保了每一个天干和地支都能够与其他的天干和地支配对。
-    </p>
-    <p>
-        在古代，人们使用干支来记录日期，例如：“乙丑年、己卯月、庚申日”。这种表示方法在一些传统的日历和农历中仍然可以看到。
-    </p>
+<h2>干支</h2>
+<p>
+    干支是十干与十二支的合称，由两者经一定的组合方式搭配成六十对，为一周期，循环往复，称为一甲子或花甲之年。
+    古代中国用以记录年、月、日子及时期。
+</p>
+
+<h3>干支的例子</h3>
+<p>
+    干支的组合是按照特定的顺序进行的。例如：
+</p>
+
+<div class="not-prose my-6">
+    <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-10 gap-2">
+        <div class="badge badge-lg badge-outline p-3">甲子</div>
+        <div class="badge badge-lg badge-outline p-3">乙丑</div>
+        <div class="badge badge-lg badge-outline p-3">丙寅</div>
+        <div class="badge badge-lg badge-outline p-3">丁卯</div>
+        <div class="badge badge-lg badge-outline p-3">戊辰</div>
+        <div class="badge badge-lg badge-outline p-3">己巳</div>
+        <div class="badge badge-lg badge-outline p-3">庚午</div>
+        <div class="badge badge-lg badge-outline p-3">辛未</div>
+        <div class="badge badge-lg badge-outline p-3">壬申</div>
+        <div class="badge badge-lg badge-outline p-3">癸酉</div>
+        <div class="badge badge-lg badge-ghost p-3">...</div>
+        <div class="badge badge-lg badge-outline p-3">癸亥</div>
+    </div>
+</div>
+
+<div class="alert alert-info shadow-lg my-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <div>
+        <h4 class="font-bold">六十甲子循环</h4>
+        <p>在这60个组合完成后，会重新回到"甲子"开始新的一个循环。这种组合方式确保了每一个天干和地支都能够与其他的天干和地支配对。</p>
+    </div>
+</div>
+
+<p>
+    在古代，人们使用干支来记录日期，例如：<span class="badge badge-primary">乙丑年</span>、<span class="badge badge-secondary">己卯月</span>、<span class="badge badge-accent">庚申日</span>。这种表示方法在一些传统的日历和农历中仍然可以看到。
+</p>
 {% endblock %}

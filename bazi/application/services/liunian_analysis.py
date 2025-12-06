@@ -123,18 +123,32 @@ class LiunianAnalysisService:
         hidden_gan: List,
         shishen_list: List,
     ) -> Dict[str, float]:
-        """Calculate ShiShen ratio for day pillar hidden stems."""
-        if len(hidden_gan) < 3:
+        """
+        Calculate ShiShen ratio for day branch's hidden stems.
+
+        The spouse personality is determined by the ShiShen relationship
+        between the day master and the day branch's main hidden stem.
+
+        Args:
+            hidden_gan: List of hidden stem dicts per pillar
+            shishen_list: List of (stem_shishen, [hidden_shishens]) per pillar
+
+        Returns:
+            Dict mapping ShiShen name to ratio (currently main stem = 1.0)
+        """
+        if len(hidden_gan) < 3 or len(shishen_list) < 3:
             return {}
 
-        day_hidden = hidden_gan[2]  # Day pillar is index 2
         result = {}
 
-        # Get the main ShiShen from the day pillar
-        if len(shishen_list) > 2:
-            main_shishen = shishen_list[2][0]
-            if main_shishen:
-                result[main_shishen] = 1.0
+        # shishen_list[2] = ('日主', [hidden_stem_shishens for day branch])
+        # We need the ShiShen for the day branch's main hidden stem
+        day_branch_shishens = shishen_list[2][1]  # List of hidden stem ShiShens
+        if day_branch_shishens:
+            # Get the first (main) hidden stem's ShiShen
+            main_hidden_shishen = day_branch_shishens[0]
+            if main_hidden_shishen:
+                result[main_hidden_shishen] = 1.0
 
         return result
 

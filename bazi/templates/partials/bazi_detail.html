@@ -1,119 +1,171 @@
-<div class="container mt-5">
-    <table class="table">
-        <h3>八字</h3>
-        <thead>
-        <tr>
-            <th scope="col"></th>
-            <th scope="col">日柱</th>
-            <th scope="col">月柱</th>
-            <th scope="col">年柱</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <th scope="row">天干</th>
-            <td>{{ bazi.getDayGan }}</td>
-            <td>{{ bazi.getMonthGan }}</td>
-            <td>{{ bazi.getYearGan }}</td>
-        </tr>
-        <tr>
-            <th scope="row">地支</th>
-            <td>{{ bazi.getDayZhi }}</td>
-            <td>{{ bazi.getMonthZhi }}</td>
-            <td>{{ bazi.getYearZhi }}</td>
-        </tr>
-        </tbody>
-    </table>
-</div>
-<div class="container mt-5">
-    <h3>五行值</h3>
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col">五行</th>
-            <th scope="col">值</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for wx, value in wuxing_value.items %}
-            <tr>
-                <td>{{ wx }}</td>
-                <td>{{ value|floatformat:2 }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
-<div class="container mt-5">
-    <h3>生耗值</h3>
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col"></th>
-            <th scope="col"></th>
-            <th scope="col">值</th>
-            <th scope="col">占比</th>
+<!-- 八字详细信息 - Loaded via HTMX/fetch into modals -->
+<div class="space-y-6">
+    <!-- 八字四柱 -->
+    <div class="card bg-base-200">
+        <div class="card-body p-4">
+            <h3 class="card-title text-lg">八字四柱</h3>
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead>
+                        <tr class="bg-neutral text-neutral-content">
+                            <th></th>
+                            <th class="text-center">时柱</th>
+                            <th class="text-center">日柱</th>
+                            <th class="text-center">月柱</th>
+                            <th class="text-center">年柱</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th class="bg-base-300">天干</th>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getHourGan }}</td>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getDayGan }}</td>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getMonthGan }}</td>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getYearGan }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-base-300">地支</th>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getHourZhi }}</td>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getDayZhi }}</td>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getMonthZhi }}</td>
+                            <td class="text-center font-semibold text-lg">{{ bazi.getYearZhi }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <th scope="row"></th>
-            <td> 生总值</td>
-            <td> {{ sheng_hao.0|floatformat:2 }}</td>
-            <td> {{ sheng_hao_percentage.0|floatformat:2 }}%</td>
-        </tr>
-        <tr>
-            <th scope="row"></th>
-            <td>耗总值</td>
-            <td> {{ sheng_hao.1|floatformat:2 }}</td>
-            <td> {{ sheng_hao_percentage.1|floatformat:2 }}%</td>
-        </tr>
-        </tbody>
-    </table>
-</div>
-<div class="container mt-5">
-    <h3>吉星</h3>
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col"></th>
-            <th scope="col"></th>
-            <th scope="col">数量</th>
+    <!-- 五行值 -->
+    <div class="card bg-base-200">
+        <div class="card-body p-4">
+            <h3 class="card-title text-lg">五行分布</h3>
+            <div class="grid grid-cols-5 gap-2">
+                {% for wx, value in wuxing_value.items %}
+                <div class="stat bg-base-100 rounded-box p-2 text-center">
+                    <div class="stat-title text-xs">
+                        {% if wx == '木' %}
+                        <span class="badge bg-wood text-white">{{ wx }}</span>
+                        {% elif wx == '火' %}
+                        <span class="badge bg-fire text-white">{{ wx }}</span>
+                        {% elif wx == '土' %}
+                        <span class="badge bg-earth text-white">{{ wx }}</span>
+                        {% elif wx == '金' %}
+                        <span class="badge bg-metal text-black">{{ wx }}</span>
+                        {% elif wx == '水' %}
+                        <span class="badge bg-water text-white">{{ wx }}</span>
+                        {% else %}
+                        <span class="badge">{{ wx }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="stat-value text-lg">{{ value|floatformat:1 }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <th scope="row"></th>
-            <td> 贵人</td>
-            <td> {{ gui_ren }}</td>
-        </tr>
-        <tr>
-            <th scope="row"></th>
-            <td>天德</td>
-            <td> {{ tian_de }}</td>
-        </tr>
-        <tr>
-            <th scope="row"></th>
-            <td>月德</td>
-            <td> {{ yue_de }}</td>
-        </tr>
-        <tr>
-            <th scope="row"></th>
-            <td>文昌</td>
-            <td> {{ wen_chang }}</td>
-        </tr>
-{#        <tr>#}
-{#            <th scope="row"></th>#}
-{#            <td>年贵人</td>#}
-{#            <td> {{ year_gui_ren }}</td>#}
-{#        </tr>#}
-        <tr>
-            <th scope="row"></th>
-            <td>祿神</td>
-            <td> {{ lu_shen }}</td>
-        </tr>
-        </tbody>
-    </table>
+    <!-- 生耗值 -->
+    <div class="card bg-base-200">
+        <div class="card-body p-4">
+            <h3 class="card-title text-lg">生耗分析</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="stat bg-success/10 rounded-box p-3">
+                    <div class="stat-title text-success">生总值 (帮身)</div>
+                    <div class="stat-value text-success text-2xl">{{ sheng_hao.0|floatformat:2 }}</div>
+                    <div class="stat-desc">占比 {{ sheng_hao_percentage.0|floatformat:1 }}%</div>
+                </div>
+                <div class="stat bg-error/10 rounded-box p-3">
+                    <div class="stat-title text-error">耗总值 (克泄)</div>
+                    <div class="stat-value text-error text-2xl">{{ sheng_hao.1|floatformat:2 }}</div>
+                    <div class="stat-desc">占比 {{ sheng_hao_percentage.1|floatformat:1 }}%</div>
+                </div>
+            </div>
+            <!-- 身强身弱指示 -->
+            <div class="mt-3">
+                {% if sheng_hao_percentage.0 > 50 %}
+                <div class="alert alert-success py-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>日主身强，喜克泄耗</span>
+                </div>
+                {% else %}
+                <div class="alert alert-warning py-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <span>日主身弱，喜生扶帮</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 吉星 -->
+    <div class="card bg-base-200">
+        <div class="card-body p-4">
+            <h3 class="card-title text-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                吉星统计
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="table table-sm table-zebra">
+                    <thead>
+                        <tr>
+                            <th>吉星</th>
+                            <th class="text-center">数量</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <span class="badge badge-primary">贵人</span>
+                            </td>
+                            <td class="text-center font-semibold">{{ gui_ren }}</td>
+                            <td class="text-xs text-base-content/70">逢凶化吉，遇难呈祥</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="badge badge-secondary">天德</span>
+                            </td>
+                            <td class="text-center font-semibold">{{ tian_de }}</td>
+                            <td class="text-xs text-base-content/70">天降福德，化解灾煞</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="badge badge-accent">月德</span>
+                            </td>
+                            <td class="text-center font-semibold">{{ yue_de }}</td>
+                            <td class="text-xs text-base-content/70">月中德神，逢凶化吉</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="badge badge-info">文昌</span>
+                            </td>
+                            <td class="text-center font-semibold">{{ wen_chang }}</td>
+                            <td class="text-xs text-base-content/70">利于读书，考试顺利</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="badge badge-success">祿神</span>
+                            </td>
+                            <td class="text-center font-semibold">{{ lu_shen }}</td>
+                            <td class="text-xs text-base-content/70">衣禄丰足，财源稳定</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- 吉星总数 -->
+            {% with total_stars=gui_ren|add:tian_de|add:yue_de|add:wen_chang|add:lu_shen %}
+            <div class="mt-3 flex justify-end">
+                <div class="badge badge-lg badge-warning gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    吉星总数: {{ total_stars }}
+                </div>
+            </div>
+            {% endwith %}
+        </div>
+    </div>
 </div>

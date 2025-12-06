@@ -24,6 +24,14 @@ ZHI_XIANG_CHONG: FrozenSet[Tuple[str, str]] = frozenset([
     ('巳', '亥'), ('亥', '巳'),
 ])
 
+# 五不遇时 - Wu Bu Yu Shi (Five Misfortune Hours)
+# Unfavorable day stem + hour branch combinations
+WU_BU_YU_SHI: FrozenSet[Tuple[str, str]] = frozenset([
+    ('甲', '午'), ('乙', '巳'), ('丙', '辰'), ('丁', '卯'),
+    ('戊', '寅'), ('己', '丑'), ('己', '亥'), ('庚', '子'),
+    ('庚', '戌'), ('辛', '酉'), ('壬', '申'), ('癸', '未'),
+])
+
 
 def is_gan_clash(gan1: str, gan2: str) -> bool:
     """Check if two heavenly stems clash."""
@@ -39,3 +47,8 @@ def is_clash(char1: str, char2: str) -> bool:
     """Check if two characters (stems or branches) clash."""
     pair = (char1, char2)
     return pair in GAN_XIANG_CHONG or pair in ZHI_XIANG_CHONG
+
+
+def is_wu_bu_yu_shi(day_gan: str, hour_zhi: str) -> bool:
+    """Check if day stem and hour branch form Wu Bu Yu Shi."""
+    return (day_gan, hour_zhi) in WU_BU_YU_SHI

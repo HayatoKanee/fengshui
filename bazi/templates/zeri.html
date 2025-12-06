@@ -1,69 +1,80 @@
 {% extends 'base_content.html' %}
 {% block content %}
-    <!-- Modal -->
-    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="detailsModalLabel">八字详细</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Dynamic content will be loaded here -->
-                    <div id="modalContent"></div>
-                </div>
+<div x-data="zeriApp()">
+    <!-- Alpine.js Modal -->
+    <div class="modal" :class="{ 'modal-open': showModal }">
+        <div class="modal-box max-w-4xl">
+            <h3 class="font-bold text-lg">八字详细</h3>
+            <div class="py-4" x-html="modalContent"></div>
+            <div class="modal-action">
+                <button class="btn" @click="showModal = false">关闭</button>
             </div>
         </div>
+        <div class="modal-backdrop" @click="showModal = false"></div>
     </div>
-    <div class="container">
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="mb-0">择日功能</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info mb-4">
-                            <i class="bi bi-info-circle-fill me-2"></i> 该页面用于挑选小孩出生八字，通过分析不同时间的八字组合，找出最佳的出生时辰。
-                        </div>
-                        
-                        <form method="post">
-                            {% csrf_token %}
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="from_date" class="form-label">开始日子:</label>
-                                    <input type="date" class="form-control datepicker" id="from_date" name="from_date"
-                                        value="{{ from_date }}" required>
-                                    <div class="form-text text-muted">选择查询的起始日期</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="to_date" class="form-label">结束日子:</label>
-                                    <input type="date" class="form-control datepicker" id="to_date" name="to_date" 
-                                        value="{{ to_date }}" required>
-                                    <div class="form-text text-muted">选择查询的结束日期</div>
-                                </div>
-                            </div>
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="bi bi-search me-2"></i>查看吉时
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <div class="card bg-base-100 shadow-xl mb-6">
+            <div class="card-body">
+                <h2 class="card-title text-2xl">择日功能</h2>
+
+                <div class="alert alert-info mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>该页面用于挑选小孩出生八字，通过分析不同时间的八字组合，找出最佳的出生时辰。</span>
                 </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="form-control">
+                            <label class="label" for="from_date">
+                                <span class="label-text">开始日子</span>
+                            </label>
+                            <input type="date" class="input input-bordered" id="from_date" name="from_date"
+                                value="{{ from_date }}" required>
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/70">选择查询的起始日期</span>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label" for="to_date">
+                                <span class="label-text">结束日子</span>
+                            </label>
+                            <input type="date" class="input input-bordered" id="to_date" name="to_date"
+                                value="{{ to_date }}" required>
+                            <label class="label">
+                                <span class="label-text-alt text-base-content/70">选择查询的结束日期</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            查看吉时
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-        
+
         {% if data %}
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0">吉利时辰列表</h4>
-            </div>
+        <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
-                <p class="text-muted mb-3">以下是在所选时间范围内的吉利时辰，点击任意行查看详细八字信息</p>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
+                <h2 class="card-title text-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    吉利时辰列表
+                </h2>
+                <p class="text-base-content/70 mb-4">以下是在所选时间范围内的吉利时辰，点击任意行查看详细八字信息</p>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra">
+                        <thead>
                             <tr>
                                 <th>年</th>
                                 <th>月</th>
@@ -74,19 +85,18 @@
                         </thead>
                         <tbody>
                             {% for date in data %}
-                                <tr class="clickable-row">
-                                    <td>{{ date.year }}</td>
-                                    <td>{{ date.month }}</td>
-                                    <td>{{ date.day }}</td>
-                                    <td>{{ date.hour }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" 
-                                            data-bs-target="#detailsModal" 
-                                            onclick="showDetails('{{ date.year }}', '{{ date.month }}', '{{ date.day }}', '{{ date.hour }}')">
-                                            查看八字
-                                        </button>
-                                    </td>
-                                </tr>
+                            <tr class="hover">
+                                <td>{{ date.year }}</td>
+                                <td>{{ date.month }}</td>
+                                <td>{{ date.day }}</td>
+                                <td>{{ date.hour }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline btn-primary"
+                                        @click="showDetails('{{ date.year }}', '{{ date.month }}', '{{ date.day }}', '{{ date.hour }}')">
+                                        查看八字
+                                    </button>
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -95,30 +105,45 @@
         </div>
         {% endif %}
     </div>
+</div>
 {% endblock %}
-{% block scripts %}
-    <script>
-        function showDetails(year, month, day, hour) {
-            // Make a POST request using jQuery's AJAX
-            $.ajax({
-                url: `{% url 'bazi_detail' %}`,
-                type: 'POST',
-                data: {
-                    'year': year,
-                    'month': month,
-                    'day': day,
-                    'hour': hour,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'  // Ensure CSRF token is included if not exempt
-                },
-                success: function (html) {
-                    // Insert the HTML into the modal and show it
-                    $('#modalContent').html(html);
-                    $('#detailsModal').show();
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error loading the date details:', error);
+
+{% block extra_scripts %}
+<script>
+function zeriApp() {
+    return {
+        showModal: false,
+        modalContent: '',
+        csrfToken: '{{ csrf_token }}',
+
+        async showDetails(year, month, day, hour) {
+            this.modalContent = '<div class="flex justify-center items-center py-8"><span class="loading loading-spinner loading-lg"></span></div>';
+            this.showModal = true;
+
+            const formData = new FormData();
+            formData.append('year', year);
+            formData.append('month', month);
+            formData.append('day', day);
+            formData.append('hour', hour);
+            formData.append('csrfmiddlewaretoken', this.csrfToken);
+
+            try {
+                const response = await fetch("{% url 'bazi_detail' %}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    this.modalContent = await response.text();
+                } else {
+                    throw new Error('Network error');
                 }
-            });
+            } catch (error) {
+                this.modalContent = '<div class="alert alert-error">加载失败，请稍后再试。</div>';
+                console.error('Error loading details:', error);
+            }
         }
-    </script>
+    };
+}
+</script>
 {% endblock %}

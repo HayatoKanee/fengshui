@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/**
+  * A catch-all path to Django template files, JavaScript, and Python files
+  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
+  *
+  * If your final CSS file is not being updated after code changes, you may want to broaden or narrow
+  * the scope of this path.
+  */
+@source "../../../**/*.{html,py,js}";
+
+/* WuXing (五行) Colors - Custom Theme */
+@theme {
+  /* Wood 木 - Green */
+  --color-wuxing-wood: #228B22;
+  --color-wuxing-wood-light: #90EE90;
+  --color-wuxing-wood-dark: #006400;
+
+  /* Fire 火 - Red */
+  --color-wuxing-fire: #DC143C;
+  --color-wuxing-fire-light: #FF6B6B;
+  --color-wuxing-fire-dark: #8B0000;
+
+  /* Earth 土 - Yellow/Brown */
+  --color-wuxing-earth: #DAA520;
+  --color-wuxing-earth-light: #FFD700;
+  --color-wuxing-earth-dark: #B8860B;
+
+  /* Metal 金 - White/Silver */
+  --color-wuxing-metal: #C0C0C0;
+  --color-wuxing-metal-light: #E8E8E8;
+  --color-wuxing-metal-dark: #808080;
+
+  /* Water 水 - Blue/Black */
+  --color-wuxing-water: #1E90FF;
+  --color-wuxing-water-light: #87CEEB;
+  --color-wuxing-water-dark: #000080;
+}
+
+/* DaisyUI Custom Themes for BaZi app */
+@plugin "daisyui/theme" {
+  name: "fengshui-light";
+  default: true;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f8f9fa;
+  --color-base-300: #e9ecef;
+  --color-base-content: #212529;
+  --color-primary: #2563eb;
+  --color-primary-content: #ffffff;
+  --color-secondary: #6c757d;
+  --color-accent: #ffc107;
+  --color-neutral: #343a40;
+  --color-info: #17a2b8;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
+}
+
+@plugin "daisyui/theme" {
+  name: "fengshui-dark";
+  color-scheme: dark;
+  --color-base-100: #1d232a;
+  --color-base-200: #191e24;
+  --color-base-300: #15191e;
+  --color-base-content: #f8f9fa;
+  --color-primary: #3b82f6;
+  --color-primary-content: #ffffff;
+  --color-secondary: #6c757d;
+  --color-accent: #ffc107;
+  --color-neutral: #6c757d;
+  --color-info: #3abff8;
+  --color-success: #36d399;
+  --color-warning: #fbbd23;
+  --color-error: #f87272;
+}
+
+/* WuXing Element Utility Classes */
+.bg-wood {
+  background-color: var(--color-wuxing-wood);
+}
+.bg-fire {
+  background-color: var(--color-wuxing-fire);
+}
+.bg-earth {
+  background-color: var(--color-wuxing-earth);
+}
+.bg-metal {
+  background-color: var(--color-wuxing-metal);
+}
+.bg-water {
+  background-color: var(--color-wuxing-water);
+}
+
+.text-wood {
+  color: var(--color-wuxing-wood);
+}
+.text-fire {
+  color: var(--color-wuxing-fire);
+}
+.text-earth {
+  color: var(--color-wuxing-earth);
+}
+.text-metal {
+  color: var(--color-wuxing-metal);
+}
+.text-water {
+  color: var(--color-wuxing-water);
+}

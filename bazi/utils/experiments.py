@@ -13,13 +13,11 @@ from typing import TYPE_CHECKING, List
 
 from lunar_python import Lunar, EightChar
 
-from bazi.constants import (
-    gan_xiang_chong,
-    gan_wuxing,
-    relationships,
-    wu_bu_yu_shi,
-    wuxing,
-    zhi_xiang_chong,
+from bazi.domain.constants import (
+    GAN_XIANG_CHONG,
+    WU_BU_YU_SHI,
+    GANZHI_WUXING,
+    ZHI_XIANG_CHONG,
 )
 from fengshui.settings import DATA_DIR
 
@@ -141,7 +139,7 @@ def is_bazi_contain_all_wuxing(bazi: EightChar) -> bool:
 
     for pillar in bazi.toString().split():
         for char in pillar:
-            element = wuxing.get(char)
+            element = GANZHI_WUXING.get(char)
             if element:
                 wuxing_count[element] += 1
 
@@ -162,7 +160,7 @@ def is_wu_bu_yu_shi_check(bazi: EightChar, hour: int) -> bool:
     Returns:
         True if the condition is present (unfavorable)
     """
-    if (bazi.getDayGan(), bazi.getTimeZhi()) in wu_bu_yu_shi:
+    if (bazi.getDayGan(), bazi.getTimeZhi()) in WU_BU_YU_SHI:
         return True
 
     # Special case: 戊日子时 after 23:00
@@ -183,7 +181,7 @@ def tian_gan_or_di_zhi_xiang_chong(bazi: EightChar, check_gan: int = 0) -> bool:
     Returns:
         True if there are clashing pairs
     """
-    clashing_pairs = gan_xiang_chong if check_gan == 0 else zhi_xiang_chong
+    clashing_pairs = GAN_XIANG_CHONG if check_gan == 0 else ZHI_XIANG_CHONG
     chars = _get_gan_or_zhi(bazi, check_gan)
 
     for i in range(len(chars)):

@@ -152,10 +152,12 @@ class BaziAnalysisService:
         # Step 5: Calculate ShenSha
         shensha_analysis = self._shensha_calc.calculate_for_bazi(bazi)
 
-        # Step 6: Get lunar calendar info (zodiac animal)
-        # Note: shengxiao is from the lunar library, we'd need to add this to the adapter
-        # For now, we'll leave it as empty string
-        shengxiao = ""  # TODO: Add to LunarPort if needed
+        # Step 6: Get Chinese zodiac animal (生肖)
+        shengxiao = self._lunar.get_shengxiao(
+            birth_data.year,
+            birth_data.month,
+            birth_data.day,
+        )
 
         return BaziAnalysisResult(
             bazi=bazi,

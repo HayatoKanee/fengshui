@@ -256,3 +256,48 @@ class LunarPort(Protocol):
             List of dates when those solar terms occur
         """
         ...
+
+    @abstractmethod
+    def get_raw_lunar_and_bazi(
+        self,
+        year: int,
+        month: int,
+        day: int,
+        hour: int,
+        minute: int = 0,
+    ) -> tuple:
+        """
+        Get raw library-specific Lunar and EightChar objects.
+
+        This method returns the underlying library objects for use in
+        the presentation layer where library-specific formatting is needed.
+
+        Args:
+            year: Solar year
+            month: Solar month
+            day: Solar day
+            hour: Hour (0-23)
+            minute: Minute (0-59)
+
+        Returns:
+            Tuple of (Lunar, EightChar) objects from the underlying library
+        """
+        ...
+
+    @abstractmethod
+    def get_shengxiao(self, year: int, month: int, day: int) -> str:
+        """
+        Get the Chinese zodiac animal (生肖) for a given date.
+
+        Note: The zodiac year changes at Lichun (立春), not Jan 1 or
+        Lunar New Year. This follows the BaZi convention.
+
+        Args:
+            year: Solar year
+            month: Solar month
+            day: Solar day
+
+        Returns:
+            Chinese zodiac animal name (e.g., '鼠', '牛', '虎', etc.)
+        """
+        ...

@@ -2,17 +2,15 @@
 BaZi Analysis Views.
 
 Main views for BaZi (Four Pillars) analysis and display.
-Uses BaziAnalysisService for business logic.
+Uses DI container for all infrastructure access (DIP-compliant).
 """
 import datetime
 
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
-from lunar_python import Solar
 
 from bazi.infrastructure.di import get_container
-from bazi.models import UserProfile
 from bazi.presentation.presenters import BaziPresenter, get_shensha
 from bazi.presentation.forms import BirthTimeForm
 
@@ -79,6 +77,14 @@ def _build_bazi_context(
     }
 
 
+def _get_user_profiles(request):
+    """Get profiles for authenticated user via ProfileRepository."""
+    if not request.user.is_authenticated:
+        return None
+    container = get_container()
+    return container.profile_repo.get_by_user(request.user.id)
+
+
 def bazi_view(request):
     """
     Main BaZi analysis view.
@@ -91,6 +97,7 @@ def bazi_view(request):
         profile_id: Optional profile ID to load birth data from
         year: Optional year for LiuNian (yearly fortune) analysis
     """
+    container = get_container()
     current_year = datetime.datetime.now().year
     years = range(current_year - 20, current_year + 50)
 
@@ -99,41 +106,35 @@ def bazi_view(request):
     profile_id = request.GET.get("profile_id")
 
     if profile_id and request.user.is_authenticated:
-        try:
-            profile = UserProfile.objects.get(id=profile_id, user=request.user)
+        # Use ProfileRepository via container (DIP-compliant)
+        profile_data = container.profile_repo.get_by_id(int(profile_id))
 
-            # Calculate BaZi for the profile
-            is_male = profile.is_male
+        if profile_data and profile_data.user_id == request.user.id:
+            # Calculate BaZi for the profile using LunarPort (DIP-compliant)
+            is_male = profile_data.birth_data.is_male
             selected_year = request.GET.get("year", str(current_year))
 
-            solar = Solar.fromYmdHms(
-                profile.birth_year,
-                profile.birth_month,
-                profile.birth_day,
-                profile.birth_hour,
-                profile.birth_minute or 0,
-                0,
+            lunar, bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+                profile_data.birth_data.year,
+                profile_data.birth_data.month,
+                profile_data.birth_data.day,
+                profile_data.birth_data.hour,
+                profile_data.birth_data.minute,
             )
-            lunar = solar.getLunar()
-            bazi = lunar.getEightChar()
 
             # Pre-fill form with profile data
             initial_data = {
-                "year": profile.birth_year,
-                "month": profile.birth_month,
-                "day": profile.birth_day,
-                "hour": profile.birth_hour,
-                "minute": profile.birth_minute,
-                "gender": "male" if profile.is_male else "female",
+                "year": profile_data.birth_data.year,
+                "month": profile_data.birth_data.month,
+                "day": profile_data.birth_data.day,
+                "hour": profile_data.birth_data.hour,
+                "minute": profile_data.birth_data.minute,
+                "gender": "male" if is_male else "female",
             }
             form = BirthTimeForm(initial=initial_data)
 
             # Get user's other profiles for the dropdown
-            profiles = (
-                UserProfile.objects.filter(user=request.user)
-                if request.user.is_authenticated
-                else None
-            )
+            profiles = _get_user_profiles(request)
 
             context = _build_bazi_context(
                 form=form,
@@ -145,13 +146,10 @@ def bazi_view(request):
             )
             return render(request, "bazi.html", context)
 
-        except UserProfile.DoesNotExist:
-            pass
-
     if request.method == "POST":
         form = BirthTimeForm(request.POST)
         if form.is_valid():
-            # Extract form data inline (was extract_form_data)
+            # Extract form data
             year = form.cleaned_data['year']
             month = form.cleaned_data['month']
             day = form.cleaned_data['day']
@@ -161,22 +159,12 @@ def bazi_view(request):
             selected_year = request.POST.get("liunian", str(current_year))
             is_male = request.POST.get("gender") == "male"
 
-            solar = Solar.fromYmdHms(
-                year,
-                month,
-                day,
-                hour,
-                minute,
-                0,
+            # Use LunarPort via container (DIP-compliant)
+            lunar, bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+                year, month, day, hour, minute
             )
-            lunar = solar.getLunar()
-            bazi = lunar.getEightChar()
 
-            profiles = (
-                UserProfile.objects.filter(user=request.user)
-                if request.user.is_authenticated
-                else None
-            )
+            profiles = _get_user_profiles(request)
 
             context = _build_bazi_context(
                 form=form,
@@ -201,11 +189,7 @@ def bazi_view(request):
             }
         form = BirthTimeForm(initial=initial_data)
 
-    profiles = (
-        UserProfile.objects.filter(user=request.user)
-        if request.user.is_authenticated
-        else None
-    )
+    profiles = _get_user_profiles(request)
 
     return render(
         request,
@@ -233,24 +217,25 @@ def get_bazi_detail(request):
     if request.method != "POST":
         return HttpResponse(status=404)
 
+    container = get_container()
+
     year = request.POST.get("year")
     month = request.POST.get("month")
     day = request.POST.get("day")
     hour = request.POST.get("hour")
     profile_id = request.POST.get("profile_id")
 
-    # Get profile if provided
+    # Get profile if provided (via ProfileRepository - DIP-compliant)
     profile = None
     if profile_id and request.user.is_authenticated:
-        try:
-            profile = UserProfile.objects.get(id=profile_id, user=request.user)
-        except UserProfile.DoesNotExist:
-            pass
+        profile_data = container.profile_repo.get_by_id(int(profile_id))
+        if profile_data and profile_data.user_id == request.user.id:
+            profile = profile_data
 
-    # Calculate BaZi
-    solar = Solar.fromYmdHms(int(year), int(month), int(day), int(hour), 0, 0)
-    lunar = solar.getLunar()
-    bazi = lunar.getEightChar()
+    # Calculate BaZi using LunarPort (DIP-compliant)
+    lunar, bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+        int(year), int(month), int(day), int(hour), 0
+    )
 
     # Use presenter for template-specific data formatting
     presenter = BaziPresenter()

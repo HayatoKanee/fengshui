@@ -14,8 +14,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 # Import from new presentation layer (Clean Architecture)
 from bazi.presentation import (
@@ -76,3 +77,9 @@ urlpatterns = [
     path('calendar', calendar_view, name='calendar'),
     path('calendar/data/', calendar_data, name='calendar_data'),
 ]
+
+# Add browser-reload for development hot-reloading
+if settings.DEBUG:
+    urlpatterns += [
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]

@@ -12,7 +12,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from lunar_python import Solar
 
 # Domain layer imports (DIP-compliant)
 from bazi.domain.constants import (
@@ -28,7 +27,6 @@ from bazi.domain.constants import (
 )
 from bazi.domain.models import BirthData, check_he
 from bazi.infrastructure.di import get_container
-from bazi.models import UserProfile
 
 
 @login_required(login_url="/login/")
@@ -40,10 +38,12 @@ def calendar_view(request):
     based on the user's selected BaZi profile.
 
     Requires user to have at least one profile.
+    Uses ProfileRepository via DI container (DIP-compliant).
     """
-    profiles = UserProfile.objects.filter(user=request.user)
+    container = get_container()
+    profiles = container.profile_repo.get_by_user(request.user.id)
 
-    if not profiles.exists():
+    if not profiles:
         messages.warning(
             request, "您需要先创建八字资料才能使用日历功能。请先创建一个资料。"
         )
@@ -80,8 +80,14 @@ def calendar_data(request):
     Returns:
         JSON with days array, month/year scores, and pillar info
 
-    TODO: This contains ~400 lines of business logic that should
-    be migrated to CalendarService for better separation of concerns.
+    NOTE: This view contains business logic that could be migrated to
+    CalendarService for better separation of concerns. Migration scope:
+    - _calculate_year_score() -> CalendarService
+    - _calculate_month_score() -> CalendarService
+    - _calculate_day_quality() -> CalendarService
+    - _check_* helper functions -> CalendarService
+    This would require creating new DTOs to transport the complex
+    calendar data structure between service and view.
     """
     if request.method != "POST":
         return JsonResponse({"error": "Invalid request"}, status=400)
@@ -96,21 +102,18 @@ def calendar_data(request):
 
     profile_id = request.POST.get("profile_id")
 
-    # Get user's profile
+    # Get user's profile via ProfileRepository (DIP-compliant)
+    container = get_container()
     profile = None
     if request.user.is_authenticated:
         if profile_id:
-            try:
-                profile = UserProfile.objects.get(id=profile_id, user=request.user)
-            except UserProfile.DoesNotExist:
-                pass
+            profile_data = container.profile_repo.get_by_id(int(profile_id))
+            if profile_data and profile_data.user_id == request.user.id:
+                profile = profile_data
 
         # Fall back to default profile
         if not profile:
-            try:
-                profile = UserProfile.objects.get(user=request.user, is_default=True)
-            except UserProfile.DoesNotExist:
-                pass
+            profile = container.profile_repo.get_default_for_user(request.user.id)
 
     if not profile:
         return JsonResponse(
@@ -129,17 +132,14 @@ def calendar_data(request):
         last_day = datetime.datetime(year, month + 1, 1) - datetime.timedelta(days=1)
     num_days = last_day.day
 
-    # Get profile's BaZi
-    profile_solar = Solar.fromYmdHms(
-        profile.birth_year,
-        profile.birth_month,
-        profile.birth_day,
-        profile.birth_hour,
-        profile.birth_minute or 0,
-        0,
+    # Get profile's BaZi via LunarPort (DIP-compliant)
+    profile_lunar, profile_bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+        profile.birth_data.year,
+        profile.birth_data.month,
+        profile.birth_data.day,
+        profile.birth_data.hour,
+        profile.birth_data.minute or 0,
     )
-    profile_lunar = profile_solar.getLunar()
-    profile_bazi = profile_lunar.getEightChar()
 
     # Get profile's pillars
     profile_day_gan = profile_bazi.getDayGan()
@@ -166,47 +166,27 @@ def calendar_data(request):
     ]
 
     # Get profile's day master wuxing
-    if profile.day_master_wuxing:
-        profile_day_wuxing = profile.day_master_wuxing
-    else:
-        profile_day_wuxing = GAN_WUXING.get(profile_day_gan)
+    profile_day_wuxing = GAN_WUXING.get(profile_day_gan)
 
-    # Get favorable/unfavorable elements
-    if (
-        profile.is_day_master_strong is not None
-        and profile.favorable_wuxing
-        and profile.unfavorable_wuxing
-    ):
-        is_strong = profile.is_day_master_strong
-        good_wuxing_list = profile.favorable_wuxing.split(",")
-        bad_wuxing_list = profile.unfavorable_wuxing.split(",")
-    else:
-        # Calculate if not stored using domain services
-        container = get_container()
-        birth_data = BirthData(
-            year=profile.birth_year,
-            month=profile.birth_month,
-            day=profile.birth_day,
-            hour=profile.birth_hour,
-            minute=profile.birth_minute or 0,
-            is_male=getattr(profile, 'is_male', True),
-        )
-        summary = container.bazi_service.get_quick_summary(birth_data)
-        is_strong = summary["is_strong"]
-        good_wuxing_list = summary["favorable_wuxing"]
-        bad_wuxing_list = summary["unfavorable_wuxing"]
+    # Calculate favorable/unfavorable elements using domain services (DIP-compliant)
+    # ProfileData doesn't store cached wuxing values, so we always calculate fresh
+    birth_data = BirthData(
+        year=profile.birth_data.year,
+        month=profile.birth_data.month,
+        day=profile.birth_data.day,
+        hour=profile.birth_data.hour,
+        minute=profile.birth_data.minute or 0,
+        is_male=profile.birth_data.is_male,
+    )
+    summary = container.bazi_service.get_quick_summary(birth_data)
+    is_strong = summary["is_strong"]
+    good_wuxing_list = summary["favorable_wuxing"]
+    bad_wuxing_list = summary["unfavorable_wuxing"]
 
-        # Save for future use
-        profile.day_master_wuxing = summary["day_master_wuxing"]
-        profile.is_day_master_strong = is_strong
-        profile.favorable_wuxing = ",".join(good_wuxing_list)
-        profile.unfavorable_wuxing = ",".join(bad_wuxing_list)
-        profile.save()
-
-    # Get year and month pillars
-    month_solar = Solar.fromYmdHms(year, month, 1, 12, 0, 0)
-    month_lunar = month_solar.getLunar()
-    month_bazi = month_lunar.getEightChar()
+    # Get year and month pillars via LunarPort (DIP-compliant)
+    month_lunar, month_bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+        year, month, 1, 12, 0
+    )
     month_gan = month_bazi.getMonthGan()
     month_zhi = month_bazi.getMonthZhi()
     year_gan = month_bazi.getYearGan()
@@ -253,6 +233,7 @@ def calendar_data(request):
             bad_wuxing_list,
             year_score_adjustment,
             month_score_adjustment,
+            container,
         )
         calendar_days.append(day_data)
 
@@ -361,11 +342,13 @@ def _calculate_day_quality(
     bad_wuxing_list,
     year_score_adjustment,
     month_score_adjustment,
+    container,
 ):
     """
     Calculate quality assessment for a single day.
 
     Returns dict with day info, quality, score, and reasons.
+    Uses container for DI-compliant access to services (DIP-compliant).
     """
     day_reasons = []
     day_score = year_score_adjustment + month_score_adjustment
@@ -384,10 +367,10 @@ def _calculate_day_quality(
             {"type": reason_type, "text": f"月度因素: {month_score_adjustment:+.1f}分"}
         )
 
-    # Get day's BaZi
-    date_solar = Solar.fromYmdHms(year, month, day, 12, 0, 0)
-    date_lunar = date_solar.getLunar()
-    date_bazi = date_lunar.getEightChar()
+    # Get day's BaZi via LunarPort (DIP-compliant)
+    date_lunar, date_bazi = container.lunar_adapter.get_raw_lunar_and_bazi(
+        year, month, day, 12, 0
+    )
 
     # Get lunar date for display
     lunar_month = date_lunar.getMonthInChinese()
@@ -398,7 +381,6 @@ def _calculate_day_quality(
     day_zhi = date_bazi.getDayZhi()
 
     # Check special inauspicious days using domain services
-    container = get_container()
     day_score, day_overall_quality, day_reasons = _check_special_days(
         year,
         month,

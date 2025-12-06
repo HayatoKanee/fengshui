@@ -1,62 +1,63 @@
 {% load custom_filters %}
-<table class="table">
-    <thead>
-    <tr>
-        <th scope="col"></th>
-        <th scope="col">干支</th>
-        <th scope="col">地支藏干</th>
-        <th scope="col">阴阳</th>
-        <th scope="col">五行</th>
-        <th scope="col">十神</th>
-        <th scope="col">生克比数</th>
-        <th scope="col">支占比例</th>
-        <th scope="col">旺囚度</th>
-        <th scope="col">干量值</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <th scope="row"></th>
-        <td>{{ gan }}</td>
-        <td>{{ gan }}</td>
-        <td>{{ yinyang.0 }}</td>
-        <td>{{ wuxing.0 }}</td>
-        <td>{{ shishen.0 }}</td>
-        <td>{{ gan_value|floatformat:2 }}</td>
-        <td>1.00</td>
-        <td>{{ wx_value.0|floatformat:2 }}</td>
-        <td>{{ gl_value.0 |floatformat:2 }}</td>
-    </tr>
-    <tr>
-        <th scope="row"></th>
-        <td>{{ zhi }}</td>
-        <td>{{ hidden_gans|keys_to_list|first }}</td>
-        <td>{{ yinyang.1.0 }}</td>
-        <td>{{ wuxing.1.0 }}</td>
-        <td>{{ shishen.1.0 }}</td>
-        <td>{{ zhi_value|floatformat:2 }}</td>
-        <td>{{ hidden_gans|first_value|floatformat:2 }}</td>
-        <td>{{ wx_value.1.0|floatformat:2 }}</td>
-        <td>{{ gl_value.1.0 |floatformat:2 }}</td>
-    </tr>
-    {% for gan, ratio in hidden_gans.items %}
-        {% if not forloop.first %}
-            {% with i=forloop.counter0 %}
-                <tr>
-                    <th scope="row"></th>
-                    <td></td>
-                    <td>{{ gan }}</td>
-                    <td>{{ yinyang.1|get_item:i }}</td>
-                    <td>{{ wuxing.1|get_item:i }}</td>
-                    <td>{{ shishen.1|get_item:i }}</td>
-                    <td>{{ zhi_value|floatformat:2 }}</td>
-                    <td>{{ ratio|floatformat:2 }}</td>
-                    <td>{{ wx_value.1|get_item:i|floatformat:2 }}</td>
-                    <td>{{ gl_value.1|get_item:i|floatformat:2 }}</td>
-                </tr>
-            {% endwith %}
-        {% endif %}
-    {% endfor %}
-
-    </tbody>
-</table>
+<div class="overflow-x-auto">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th></th>
+                <th>干支</th>
+                <th>地支藏干</th>
+                <th>阴阳</th>
+                <th>五行</th>
+                <th>十神</th>
+                <th>生克比数</th>
+                <th>支占比例</th>
+                <th>旺囚度</th>
+                <th>干量值</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th></th>
+                <td class="font-semibold">{{ gan }}</td>
+                <td>{{ gan }}</td>
+                <td>{{ yinyang.0 }}</td>
+                <td>{{ wuxing.0 }}</td>
+                <td>{{ shishen.0 }}</td>
+                <td>{{ gan_value|floatformat:2 }}</td>
+                <td>1.00</td>
+                <td>{{ wx_value.0|floatformat:2 }}</td>
+                <td>{{ gl_value.0|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <th></th>
+                <td class="font-semibold">{{ zhi }}</td>
+                <td>{{ hidden_gans|keys_to_list|first }}</td>
+                <td>{{ yinyang.1.0 }}</td>
+                <td>{{ wuxing.1.0 }}</td>
+                <td>{{ shishen.1.0 }}</td>
+                <td>{{ zhi_value|floatformat:2 }}</td>
+                <td>{{ hidden_gans|first_value|floatformat:2 }}</td>
+                <td>{{ wx_value.1.0|floatformat:2 }}</td>
+                <td>{{ gl_value.1.0|floatformat:2 }}</td>
+            </tr>
+            {% for gan, ratio in hidden_gans.items %}
+                {% if not forloop.first %}
+                    {% with i=forloop.counter0 %}
+                        <tr class="text-base-content/70">
+                            <th></th>
+                            <td></td>
+                            <td>{{ gan }}</td>
+                            <td>{{ yinyang.1|get_item:i }}</td>
+                            <td>{{ wuxing.1|get_item:i }}</td>
+                            <td>{{ shishen.1|get_item:i }}</td>
+                            <td>{{ zhi_value|floatformat:2 }}</td>
+                            <td>{{ ratio|floatformat:2 }}</td>
+                            <td>{{ wx_value.1|get_item:i|floatformat:2 }}</td>
+                            <td>{{ gl_value.1|get_item:i|floatformat:2 }}</td>
+                        </tr>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

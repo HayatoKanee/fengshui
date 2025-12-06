@@ -1,60 +1,84 @@
 {% extends 'base_content.html' %}
 
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">个人资料管理</h2>
-    
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">已保存的八字资料</h5>
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6">个人资料管理</h2>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h3 class="card-title text-xl mb-4">已保存的八字资料</h3>
+
+            {% if profiles %}
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>出生日期</th>
+                                <th>性别</th>
+                                <th>默认</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for profile in profiles %}
+                                <tr class="hover">
+                                    <td class="font-medium">{{ profile.name }}</td>
+                                    <td>
+                                        {{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日
+                                        {{ profile.birth_hour }}时{% if profile.birth_minute %}{{ profile.birth_minute }}分{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if profile.is_male %}
+                                            <span class="badge badge-info">男</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">女</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if profile.is_default %}
+                                            <span class="badge badge-success">默认</span>
+                                        {% else %}
+                                            <a href="{% url 'set_default_profile' profile.id %}"
+                                               class="btn btn-ghost btn-xs">
+                                                设为默认
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="flex flex-wrap gap-2">
+                                            <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
+                                               class="btn btn-info btn-sm">
+                                                查看八字
+                                            </a>
+                                            <a href="{% url 'edit_profile' profile.id %}"
+                                               class="btn btn-warning btn-sm">
+                                                编辑
+                                            </a>
+                                            <a href="{% url 'delete_profile' profile.id %}"
+                                               class="btn btn-error btn-sm"
+                                               onclick="return confirm('确定要删除此资料吗?')">
+                                                删除
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-body">
-                    {% if profiles %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>姓名</th>
-                                        <th>出生日期</th>
-                                        <th>性别</th>
-                                        <th>默认</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for profile in profiles %}
-                                        <tr>
-                                            <td>{{ profile.name }}</td>
-                                            <td>{{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日 {{ profile.birth_hour }}时{% if profile.birth_minute %}{{ profile.birth_minute }}分{% endif %}</td>
-                                            <td>{% if profile.is_male %}男{% else %}女{% endif %}</td>
-                                            <td>
-                                                {% if profile.is_default %}
-                                                    <span class="badge bg-success">默认</span>
-                                                {% else %}
-                                                    <a href="{% url 'set_default_profile' profile.id %}" class="btn btn-sm btn-outline-secondary">设为默认</a>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'bazi' %}?profile_id={{ profile.id }}" class="btn btn-sm btn-info">查看八字</a>
-                                                <a href="{% url 'edit_profile' profile.id %}" class="btn btn-sm btn-warning">编辑</a>
-                                                <a href="{% url 'delete_profile' profile.id %}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除此资料吗?')">删除</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-3">
-                            <p class="text-muted">您还没有保存任何八字资料</p>
-                            <a href="{% url 'bazi' %}" class="btn btn-primary">添加八字资料</a>
-                        </div>
-                    {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <p class="text-base-content/60 mb-4">您还没有保存任何八字资料</p>
+                    <a href="{% url 'bazi' %}" class="btn btn-primary">
+                        添加八字资料
+                    </a>
                 </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

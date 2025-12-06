@@ -2,49 +2,17 @@
 Profile Management Views.
 
 Handles CRUD operations for user BaZi profiles.
-Uses BaziAnalysisService from the DI container for business logic.
+Uses ProfileService and ProfileRepository from the DI container (DIP-compliant).
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import Http404
+from django.shortcuts import redirect, render
 
 from bazi.domain.models import BirthData
+from bazi.domain.ports import ProfileData
 from bazi.infrastructure.di import get_container
-from bazi.models import UserProfile
 from bazi.presentation.forms import UserProfileForm
-
-
-def _calculate_and_save_profile_attributes(profile):
-    """
-    Calculate and save day master strength and favorable elements.
-
-    Uses BaziAnalysisService to perform domain calculations.
-    """
-    try:
-        container = get_container()
-
-        # Create BirthData from profile
-        birth_data = BirthData(
-            year=profile.birth_year,
-            month=profile.birth_month,
-            day=profile.birth_day,
-            hour=profile.birth_hour,
-            minute=profile.birth_minute or 0,
-            is_male=getattr(profile, 'is_male', True),
-        )
-
-        # Get quick summary from BaziAnalysisService
-        summary = container.bazi_service.get_quick_summary(birth_data)
-
-        # Store results in profile
-        profile.day_master_wuxing = summary["day_master_wuxing"]
-        profile.is_day_master_strong = summary["is_strong"]
-        profile.favorable_wuxing = ",".join(summary["favorable_wuxing"])
-        profile.unfavorable_wuxing = ",".join(summary["unfavorable_wuxing"])
-
-    except Exception as e:
-        # Log error but don't stop profile creation
-        print(f"Error calculating profile attributes: {str(e)}")
 
 
 @login_required(login_url="/login/")
@@ -54,8 +22,10 @@ def profile_list(request):
 
     Displays a list of BaZi profiles with options to
     add, edit, delete, and set default profile.
+    Uses ProfileRepository via DI container (DIP-compliant).
     """
-    profiles = UserProfile.objects.filter(user=request.user)
+    container = get_container()
+    profiles = container.profile_repo.get_by_user(request.user.id)
     return render(request, "profiles.html", {"profiles": profiles})
 
 
@@ -66,29 +36,46 @@ def add_profile(request):
 
     After creation, calculates and stores the day master
     strength and favorable/unfavorable elements.
+    Uses ProfileRepository via DI container (DIP-compliant).
     """
+    container = get_container()
+
     if request.method == "POST":
         form = UserProfileForm(request.POST)
         if form.is_valid():
-            profile = form.save(commit=False)
-            profile.user = request.user
+            # Extract data from form
+            cleaned = form.cleaned_data
 
-            # Set as default if first profile
-            user_profiles_count = UserProfile.objects.filter(
-                user=request.user
-            ).count()
-            if user_profiles_count == 0:
-                profile.is_default = True
+            # Create BirthData from form
+            birth_data = BirthData(
+                year=cleaned['birth_year'],
+                month=cleaned['birth_month'],
+                day=cleaned['birth_day'],
+                hour=cleaned['birth_hour'],
+                minute=cleaned.get('birth_minute') or 0,
+                is_male=cleaned.get('is_male', True),
+            )
 
-            # Calculate BaZi attributes before saving
-            _calculate_and_save_profile_attributes(profile)
-            profile.save()
+            # Check if this is the first profile (set as default)
+            is_first = container.profile_repo.count_for_user(request.user.id) == 0
+
+            # Create ProfileData
+            profile_data = ProfileData(
+                id=None,
+                user_id=request.user.id,
+                name=cleaned['name'],
+                birth_data=birth_data,
+                is_default=is_first,
+            )
+
+            # Save via repository
+            saved_profile = container.profile_repo.save(profile_data)
 
             messages.success(request, "个人资料添加成功!")
 
             # Redirect to BaZi page if requested
             if "redirect_to_bazi" in request.POST:
-                return redirect(f"/bazi?profile_id={profile.id}")
+                return redirect(f"/bazi?profile_id={saved_profile.id}")
             return redirect("profiles")
     else:
         form = UserProfileForm()
@@ -103,24 +90,57 @@ def edit_profile(request, profile_id):
 
     Recalculates day master strength and favorable elements
     if birth data is changed.
+    Uses ProfileRepository via DI container (DIP-compliant).
     """
-    profile = get_object_or_404(
-        UserProfile, id=profile_id, user=request.user
-    )
+    container = get_container()
+
+    # Get profile via repository
+    profile_data = container.profile_repo.get_by_id(profile_id)
+    if not profile_data or profile_data.user_id != request.user.id:
+        raise Http404("Profile not found")
 
     if request.method == "POST":
-        form = UserProfileForm(request.POST, instance=profile)
+        form = UserProfileForm(request.POST)
         if form.is_valid():
-            updated_profile = form.save(commit=False)
+            # Extract data from form
+            cleaned = form.cleaned_data
 
-            # Recalculate BaZi attributes
-            _calculate_and_save_profile_attributes(updated_profile)
-            updated_profile.save()
+            # Create updated BirthData
+            birth_data = BirthData(
+                year=cleaned['birth_year'],
+                month=cleaned['birth_month'],
+                day=cleaned['birth_day'],
+                hour=cleaned['birth_hour'],
+                minute=cleaned.get('birth_minute') or 0,
+                is_male=cleaned.get('is_male', True),
+            )
+
+            # Create updated ProfileData (preserve ID and is_default)
+            updated_profile = ProfileData(
+                id=profile_id,
+                user_id=request.user.id,
+                name=cleaned['name'],
+                birth_data=birth_data,
+                is_default=profile_data.is_default,
+            )
+
+            # Save via repository
+            container.profile_repo.save(updated_profile)
 
             messages.success(request, "个人资料更新成功!")
             return redirect("profiles")
     else:
-        form = UserProfileForm(instance=profile)
+        # Pre-populate form with existing data
+        initial_data = {
+            'name': profile_data.name,
+            'birth_year': profile_data.birth_data.year,
+            'birth_month': profile_data.birth_data.month,
+            'birth_day': profile_data.birth_data.day,
+            'birth_hour': profile_data.birth_data.hour,
+            'birth_minute': profile_data.birth_data.minute,
+            'is_male': profile_data.birth_data.is_male,
+        }
+        form = UserProfileForm(initial=initial_data)
 
     return render(request, "profile_form.html", {"form": form})
 
@@ -131,11 +151,16 @@ def delete_profile(request, profile_id):
     Delete a BaZi profile.
 
     Permanently removes the profile from the database.
+    Uses ProfileRepository via DI container (DIP-compliant).
     """
-    profile = get_object_or_404(
-        UserProfile, id=profile_id, user=request.user
-    )
-    profile.delete()
+    container = get_container()
+
+    # Verify profile belongs to user before deleting
+    profile_data = container.profile_repo.get_by_id(profile_id)
+    if not profile_data or profile_data.user_id != request.user.id:
+        raise Http404("Profile not found")
+
+    container.profile_repo.delete(profile_id)
     messages.success(request, "个人资料已删除。")
     return redirect("profiles")
 
@@ -147,17 +172,17 @@ def set_default_profile(request, profile_id):
 
     Only one profile can be default at a time. Setting a new
     default automatically unsets the previous default.
+    Uses ProfileRepository via DI container (DIP-compliant).
     """
-    profile = get_object_or_404(
-        UserProfile, id=profile_id, user=request.user
-    )
+    container = get_container()
 
-    # Clear default from all other profiles
-    UserProfile.objects.filter(user=request.user).update(is_default=False)
+    # Verify profile belongs to user
+    profile_data = container.profile_repo.get_by_id(profile_id)
+    if not profile_data or profile_data.user_id != request.user.id:
+        raise Http404("Profile not found")
 
-    # Set this profile as default
-    profile.is_default = True
-    profile.save()
+    # Set as default via repository (handles unsetting previous default)
+    container.profile_repo.set_default(profile_id, request.user.id)
 
-    messages.success(request, f"已将 {profile.name} 设置为默认资料")
+    messages.success(request, f"已将 {profile_data.name} 设置为默认资料")
     return redirect("profiles")

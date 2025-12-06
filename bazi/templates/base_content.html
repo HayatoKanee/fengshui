@@ -1,14 +1,3 @@
 {% extends 'base.html' %}
-{% block body %}
-    {% include 'partials/navbar.html' %}
-    {% include 'partials/messages.html' %}
-    <div class="d-flex flex-column min-vh-100">
-        <div class="flex-grow-1">
-            {% block content %}
-            {% endblock %}
-        </div>
-        {% include 'partials/footer.html' %}
-    </div>
-    {% block scripts %}
-    {% endblock %}
-{% endblock %}
+{# base_content.html - Simple passthrough to new Tailwind base.html #}
+{# Templates extending this only need to define the content block #}

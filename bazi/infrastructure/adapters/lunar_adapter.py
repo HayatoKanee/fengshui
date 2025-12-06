@@ -94,11 +94,15 @@ class LunarPythonAdapter:
         solar = Solar.fromYmd(year, month, day)
         lunar = solar.getLunar()
 
+        # In lunar_python, negative month values indicate leap months
+        lunar_month = lunar.getMonth()
+        is_leap = lunar_month < 0
+
         return (
             lunar.getYear(),
-            lunar.getMonth(),
+            abs(lunar_month),  # Return absolute month value
             lunar.getDay(),
-            lunar.isLeap(),
+            is_leap,
         )
 
     def lunar_to_solar(
@@ -362,6 +366,55 @@ class LunarPythonAdapter:
                     jieqi_solar.getDay(),
                 ))
         return result
+
+    def get_raw_lunar_and_bazi(
+        self,
+        year: int,
+        month: int,
+        day: int,
+        hour: int,
+        minute: int = 0,
+    ) -> Tuple:
+        """
+        Get raw library-specific Lunar and EightChar objects.
+
+        This method returns the underlying library objects for use in
+        the presentation layer where library-specific formatting is needed.
+
+        Args:
+            year: Solar year
+            month: Solar month
+            day: Solar day
+            hour: Hour (0-23)
+            minute: Minute (0-59)
+
+        Returns:
+            Tuple of (Lunar, EightChar) objects from lunar_python
+        """
+        solar = Solar.fromYmdHms(year, month, day, hour, minute, 0)
+        lunar = solar.getLunar()
+        eight_char = lunar.getEightChar()
+        return (lunar, eight_char)
+
+    def get_shengxiao(self, year: int, month: int, day: int) -> str:
+        """
+        Get the Chinese zodiac animal (生肖) for a given date.
+
+        Note: The zodiac year changes at Lichun (立春), not Jan 1 or
+        Lunar New Year. This follows the BaZi convention.
+
+        Args:
+            year: Solar year
+            month: Solar month
+            day: Solar day
+
+        Returns:
+            Chinese zodiac animal name (e.g., '鼠', '牛', '虎', etc.)
+        """
+        solar = Solar.fromYmd(year, month, day)
+        lunar = solar.getLunar()
+        # Use BaZi year's zodiac (based on Lichun, not lunar new year)
+        return lunar.getYearShengXiaoByLiChun()
 
     def _eight_char_to_bazi(self, eight_char) -> BaZi:
         """

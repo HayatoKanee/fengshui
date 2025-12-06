@@ -1,23 +1,168 @@
-{% load static %}
+{% load static tailwind_tags django_htmx %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN" data-theme="fengshui-light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
-    <link href="{% static  'css/language.css' %}" rel="stylesheet">
-   <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm"
-            crossorigin="anonymous"></script>
-    <title>FengShui</title>
+    <meta name="htmx-config" content='{"historyCacheSize": 0}'>
+    <title>{% block title %}FengShui - BaZi{% endblock %}</title>
+
+    <!-- Tailwind CSS + DaisyUI -->
+    {% tailwind_css %}
+
+    <!-- Custom WuXing element colors -->
+    <style>
+        /* WuXing element text colors */
+        .text-wood { color: var(--color-wuxing-wood); }
+        .text-fire { color: var(--color-wuxing-fire); }
+        .text-earth { color: var(--color-wuxing-earth); }
+        .text-metal { color: var(--color-wuxing-metal-dark); }
+        .text-water { color: var(--color-wuxing-water); }
+
+        /* WuXing element background colors */
+        .bg-wood { background-color: var(--color-wuxing-wood); color: white; }
+        .bg-fire { background-color: var(--color-wuxing-fire); color: white; }
+        .bg-earth { background-color: var(--color-wuxing-earth); color: white; }
+        .bg-metal { background-color: var(--color-wuxing-metal); color: black; }
+        .bg-water { background-color: var(--color-wuxing-water); color: white; }
+
+        /* HTMX loading indicator */
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-indicator { display: none; }
+    </style>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+    {% block extra_head %}{% endblock %}
 </head>
-<body data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
+<body class="min-h-screen bg-base-200"
+      data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
+      x-data="{ darkMode: localStorage.getItem('theme') === 'fengshui-dark' }"
+      x-init="$watch('darkMode', val => {
+          document.documentElement.setAttribute('data-theme', val ? 'fengshui-dark' : 'fengshui-light');
+          localStorage.setItem('theme', val ? 'fengshui-dark' : 'fengshui-light');
+      })">
+
 {% block body %}
+<!-- Navbar -->
+<div class="navbar bg-base-100 shadow-lg">
+    <div class="navbar-start">
+        <div class="dropdown">
+            <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+                </svg>
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow">
+                <li><a href="{% url 'home' %}">首页</a></li>
+                <li><a href="{% url 'bazi' %}">八字排盘</a></li>
+                <li>
+                    <details>
+                        <summary>基础知识</summary>
+                        <ul class="p-2">
+                            <li><a href="{% url 'yinyang' %}">阴阳</a></li>
+                            <li><a href="{% url 'wuxing' %}">五行</a></li>
+                            <li><a href="{% url 'tiangan' %}">天干</a></li>
+                            <li><a href="{% url 'dizhi' %}">地支</a></li>
+                            <li><a href="{% url 'ganzhi' %}">干支</a></li>
+                            <li><a href="{% url 'introbazi' %}">八字介绍</a></li>
+                        </ul>
+                    </details>
+                </li>
+                <li><a href="{% url 'calendar' %}">择日</a></li>
+                <li><a href="{% url 'feixing' %}">飞星</a></li>
+            </ul>
+        </div>
+        <a href="{% url 'home' %}" class="btn btn-ghost text-xl">FengShui</a>
+    </div>
+
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1">
+            <li><a href="{% url 'home' %}">首页</a></li>
+            <li><a href="{% url 'bazi' %}">八字排盘</a></li>
+            <li>
+                <details>
+                    <summary>基础知识</summary>
+                    <ul class="p-2 bg-base-100 rounded-box z-50 shadow">
+                        <li><a href="{% url 'yinyang' %}">阴阳</a></li>
+                        <li><a href="{% url 'wuxing' %}">五行</a></li>
+                        <li><a href="{% url 'tiangan' %}">天干</a></li>
+                        <li><a href="{% url 'dizhi' %}">地支</a></li>
+                        <li><a href="{% url 'ganzhi' %}">干支</a></li>
+                        <li><a href="{% url 'introbazi' %}">八字介绍</a></li>
+                    </ul>
+                </details>
+            </li>
+            <li><a href="{% url 'calendar' %}">择日</a></li>
+            <li><a href="{% url 'feixing' %}">飞星</a></li>
+        </ul>
+    </div>
+
+    <div class="navbar-end gap-2">
+        <!-- Theme toggle -->
+        <label class="swap swap-rotate btn btn-ghost btn-circle">
+            <input type="checkbox" x-model="darkMode" />
+            <!-- sun icon -->
+            <svg class="swap-off h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/>
+            </svg>
+            <!-- moon icon -->
+            <svg class="swap-on h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"/>
+            </svg>
+        </label>
+
+        {% if user.is_authenticated %}
+        <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
+                <div class="bg-neutral text-neutral-content w-10 rounded-full">
+                    <span class="text-sm">{{ user.username|slice:":2"|upper }}</span>
+                </div>
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow">
+                <li><a href="{% url 'profiles' %}">个人资料</a></li>
+                <li><a href="{% url 'logout' %}">退出登录</a></li>
+            </ul>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}" class="btn btn-primary btn-sm">登录</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Toast messages -->
+{% if messages %}
+<div class="toast toast-top toast-end z-50" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}">
+        <span>{{ message }}</span>
+        <button class="btn btn-ghost btn-xs" @click="show = false">X</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main content -->
+<main class="container mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="footer footer-center bg-base-300 text-base-content p-4">
+    <aside>
+        <p>FengShui BaZi - 八字命理分析</p>
+    </aside>
+</footer>
 {% endblock %}
-<script src="{% static 'js/theme.js' %}"></script>
-<script src="{% static 'js/language.js' %}"></script>
+
+<!-- Browser reload for dev -->
+{% load django_browser_reload %}
+{% django_browser_reload_script %}
+
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

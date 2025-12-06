@@ -1,95 +1,88 @@
 {% extends 'base_content.html' %}
 {% load custom_filters %}
 {% block content %}
-<div class="container mt-3">
-  <h1 class="mb-4">飞星图</h1>
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold mb-6">飞星图</h1>
 
-  <!-- Dropdown that auto-submits via GET -->
-  <form method="get" action="{% url 'feixing' %}">
-    <div class="mb-3">
-      <label for="centerSelect" class="form-label">请选择第几运:</label>
-      <select id="centerSelect" name="center" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
-        {% for i in "123456789"|make_list %}
-          <option value="{{ i }}" {% if i == main_center %}selected{% endif %}>{{ i }}</option>
-        {% endfor %}
-      </select>
-    </div>
-  </form>
-
-  <h2 class="mt-5">【各山位飞星】</h2>
-
-  <!-- Bootstrap row to display multiple charts side by side -->
-  <div class="row">
-    {% for item in table_data %}
-      <div class="col-md-3 mb-3">
-
-        <!-- 1) Get the direction labels for this star -->
-        {% get_direction_grid item.star as direction_grid %}
-        {% get_direction_grid item.second_star as direction_second_grid %}
-        <!-- 2) Display the "top" direction outside/above the grid -->
-        <div style="text-align: center; font-weight: bold; margin-bottom: 4px;">
-          {{ direction_grid.top }}
-            {{ direction_second_grid.top }}
+    <!-- Dropdown selector -->
+    <form method="get" action="{% url 'feixing' %}" class="mb-8">
+        <div class="form-control w-full max-w-xs">
+            <label class="label" for="centerSelect">
+                <span class="label-text">请选择第几运:</span>
+            </label>
+            <select id="centerSelect"
+                    name="center"
+                    class="select select-bordered w-full max-w-xs"
+                    onchange="this.form.submit()">
+                {% for i in "123456789"|make_list %}
+                    <option value="{{ i }}" {% if i == main_center %}selected{% endif %}>第 {{ i }} 运</option>
+                {% endfor %}
+            </select>
         </div>
+    </form>
 
-        <!-- 3) Middle row: left label, the 3×3 table, and right label side by side -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-          <!-- Left label -->
-          <div style="font-weight: bold; width: 30px; text-align: left;">
-            {{ direction_grid.left }}
-            {{ direction_second_grid.left }}
+    <h2 class="text-2xl font-semibold mb-6">各山位飞星</h2>
 
-          </div>
+    <!-- Flying Star Charts Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for item in table_data %}
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body p-4">
+                {% get_direction_grid item.star as direction_grid %}
+                {% get_direction_grid item.second_star as direction_second_grid %}
 
-          <!-- The 3×3 table of numbers -->
-          <div style="margin: auto;">  <!-- centers it horizontally in the flex row -->
-            <table class="table table-bordered" style="width: 240px; text-align: center;">
-              {% for r in 3|to_range %}
-                <tr>
-                  {% for c in 3|to_range %}
-                    <td style="vertical-align: middle; padding: 6px;">
-                      <!-- Top line: the main_grid digit -->
-                      <div style="font-size: 1.1rem; margin-bottom: 4px;">
-                        {{ item.main_grid|index:r|index:c }}
-                      </div>
-                      <!-- Bottom line: the star & opposite star side by side -->
-                      <div style="width: 100%;">
-                        <table style="width:100%; border-collapse: collapse;">
-                          <tr>
-                            <td style="text-align: right; width:50%; padding-right: 3px;">
-                              {{ item.grid_star|index:r|index:c }}
-                            </td>
-                            <td style="text-align: left; width:50%; padding-left: 3px;">
-                              {{ item.grid_opposite_star|index:r|index:c }}
-                            </td>
-                          </tr>
+                <!-- Top direction label -->
+                <div class="text-center font-bold text-sm mb-2">
+                    <span class="text-primary">{{ direction_grid.top }}</span>
+                    <span class="text-secondary ml-1">{{ direction_second_grid.top }}</span>
+                </div>
+
+                <!-- Middle row: left label, grid, right label -->
+                <div class="flex items-center justify-between gap-2">
+                    <!-- Left label -->
+                    <div class="font-bold text-xs text-left w-8 shrink-0">
+                        <div class="text-primary">{{ direction_grid.left }}</div>
+                        <div class="text-secondary">{{ direction_second_grid.left }}</div>
+                    </div>
+
+                    <!-- 3x3 Flying Star Grid -->
+                    <div class="flex-1 overflow-x-auto">
+                        <table class="table table-sm table-bordered w-full text-center">
+                            {% for r in 3|to_range %}
+                            <tr>
+                                {% for c in 3|to_range %}
+                                <td class="p-1 border border-base-300">
+                                    <!-- Main grid number (top) -->
+                                    <div class="text-base font-semibold text-base-content">
+                                        {{ item.main_grid|index:r|index:c }}
+                                    </div>
+                                    <!-- Star numbers (bottom - side by side) -->
+                                    <div class="flex justify-center gap-1 text-xs">
+                                        <span class="text-primary">{{ item.grid_star|index:r|index:c }}</span>
+                                        <span class="text-secondary">{{ item.grid_opposite_star|index:r|index:c }}</span>
+                                    </div>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
                         </table>
-                      </div>
-                    </td>
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            </table>
-          </div>
+                    </div>
 
-          <!-- Right label -->
-          <div style="font-weight: bold; width: 30px; text-align: right;">
-            {{ direction_grid.right }}
-              {{ direction_second_grid.right }}
-          </div>
+                    <!-- Right label -->
+                    <div class="font-bold text-xs text-right w-8 shrink-0">
+                        <div class="text-primary">{{ direction_grid.right }}</div>
+                        <div class="text-secondary">{{ direction_second_grid.right }}</div>
+                    </div>
+                </div>
+
+                <!-- Bottom direction label -->
+                <div class="text-center font-bold text-sm mt-2">
+                    <span class="text-primary">{{ direction_grid.bottom }}</span>
+                    <span class="text-secondary ml-1">{{ direction_second_grid.bottom }}</span>
+                </div>
+            </div>
         </div>
-
-        <!-- 4) The "bottom" direction under the grid -->
-        <div style="text-align: center; font-weight: bold; margin-top: 4px;">
-          {{ direction_grid.bottom }}
-           {{ direction_second_grid.bottom }}
-        </div>
-      </div>
-
-      {% if forloop.counter|divisibleby:4 and not forloop.last %}
-        </div><div class="row">
-      {% endif %}
-    {% endfor %}
-  </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

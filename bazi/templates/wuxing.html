@@ -1,47 +1,130 @@
 {% extends 'intro.html' %}
 {% block introContent %}
-    <h2>五行</h2>
-    <p>
-        五行，常被翻译为“五元素”，是中国古代哲学和文化的核心概念，代表了能量转化的不同阶段或状态。这五个元素包括：木、火、土、金和水。
-    </p>
-    <p>
-        每个元素都与特定的属性、现象和生物过程相对应。五行之间存在相生和相克的关系，这种关系描述了它们之间的互动和平衡。
-    </p>
-    <ul>
-        <li><strong>木</strong>：代表生长和扩张。它与春季和早晨相对应。</li>
-        <li><strong>火</strong>：代表热情和动力。它与夏季和中午相对应。</li>
-        <li><strong>土</strong>：代表稳定和中心。它与长夏和黄昏相对应。</li>
-        <li><strong>金</strong>：代表收割和收缩。它与秋季和傍晚相对应。</li>
-        <li><strong>水</strong>：代表冷静和智慧。它与冬季和夜晚相对应。</li>
-    </ul>
-    <h3>五行的生克关系</h3>
-    <p>
-        五行的“生克”描述了五行之间的相互作用。"生" 指的是生产或增强，而 "克" 指的是克制或削弱。这些关系如下：
-    </p>
-    {% load static %}
-    <img src="{% static 'image/wuxing.jpg' %}" alt="wuxing">
-    <h4>相生关系：</h4>
-    <ul>
-        <li>木生火</li>
-        <li>火生土</li>
-        <li>土生金</li>
-        <li>金生水</li>
-        <li>水生木</li>
-    </ul>
-    <h4>相克关系：</h4>
-    <ul>
-        <li>木克土</li>
-        <li>土克水</li>
-        <li>水克火</li>
-        <li>火克金</li>
-        <li>金克木</li>
-    </ul>
-    <p>
-        在实际应用中，五行的生克关系被用于多个领域，如医学、风水和命理学，以解释和平衡各种现象和能量。
-    </p>
+{% load static %}
+<h2>五行</h2>
+<p>
+    五行，常被翻译为"五元素"，是中国古代哲学和文化的核心概念，代表了能量转化的不同阶段或状态。这五个元素包括：木、火、土、金和水。
+</p>
+<p>
+    每个元素都与特定的属性、现象和生物过程相对应。五行之间存在相生和相克的关系，这种关系描述了它们之间的互动和平衡。
+</p>
+
+<div class="not-prose grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 my-6">
+    <div class="card bg-wood text-white shadow-lg">
+        <div class="card-body p-4 text-center">
+            <h3 class="card-title justify-center text-lg">木</h3>
+            <p class="text-sm">生长、扩张</p>
+            <p class="text-xs opacity-80">春季 / 早晨</p>
+        </div>
+    </div>
+    <div class="card bg-fire text-white shadow-lg">
+        <div class="card-body p-4 text-center">
+            <h3 class="card-title justify-center text-lg">火</h3>
+            <p class="text-sm">热情、动力</p>
+            <p class="text-xs opacity-80">夏季 / 中午</p>
+        </div>
+    </div>
+    <div class="card bg-earth text-white shadow-lg">
+        <div class="card-body p-4 text-center">
+            <h3 class="card-title justify-center text-lg">土</h3>
+            <p class="text-sm">稳定、中心</p>
+            <p class="text-xs opacity-80">长夏 / 黄昏</p>
+        </div>
+    </div>
+    <div class="card bg-metal text-black shadow-lg">
+        <div class="card-body p-4 text-center">
+            <h3 class="card-title justify-center text-lg">金</h3>
+            <p class="text-sm">收割、收缩</p>
+            <p class="text-xs opacity-80">秋季 / 傍晚</p>
+        </div>
+    </div>
+    <div class="card bg-water text-white shadow-lg">
+        <div class="card-body p-4 text-center">
+            <h3 class="card-title justify-center text-lg">水</h3>
+            <p class="text-sm">冷静、智慧</p>
+            <p class="text-xs opacity-80">冬季 / 夜晚</p>
+        </div>
+    </div>
+</div>
+
+<h3>五行的生克关系</h3>
+<p>
+    五行的"生克"描述了五行之间的相互作用。"生" 指的是生产或增强，而 "克" 指的是克制或削弱。这些关系如下：
+</p>
+
+<figure class="my-6">
+    <img src="{% static 'image/wuxing.jpg' %}" alt="五行生克关系图" class="rounded-lg shadow-lg mx-auto max-w-full">
+    <figcaption class="text-center text-sm text-base-content/70 mt-2">五行生克关系图</figcaption>
+</figure>
+
+<div class="not-prose grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+    <div class="card bg-base-100 shadow-md border border-success/30">
+        <div class="card-body">
+            <h4 class="card-title text-success">相生关系</h4>
+            <ul class="space-y-2">
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-wood text-white">木</span>
+                    <span>生</span>
+                    <span class="badge bg-fire text-white">火</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-fire text-white">火</span>
+                    <span>生</span>
+                    <span class="badge bg-earth text-white">土</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-earth text-white">土</span>
+                    <span>生</span>
+                    <span class="badge bg-metal text-black">金</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-metal text-black">金</span>
+                    <span>生</span>
+                    <span class="badge bg-water text-white">水</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-water text-white">水</span>
+                    <span>生</span>
+                    <span class="badge bg-wood text-white">木</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="card bg-base-100 shadow-md border border-error/30">
+        <div class="card-body">
+            <h4 class="card-title text-error">相克关系</h4>
+            <ul class="space-y-2">
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-wood text-white">木</span>
+                    <span>克</span>
+                    <span class="badge bg-earth text-white">土</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-earth text-white">土</span>
+                    <span>克</span>
+                    <span class="badge bg-water text-white">水</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-water text-white">水</span>
+                    <span>克</span>
+                    <span class="badge bg-fire text-white">火</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-fire text-white">火</span>
+                    <span>克</span>
+                    <span class="badge bg-metal text-black">金</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="badge bg-metal text-black">金</span>
+                    <span>克</span>
+                    <span class="badge bg-wood text-white">木</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<p>
+    在实际应用中，五行的生克关系被用于多个领域，如医学、风水和命理学，以解释和平衡各种现象和能量。
+</p>
 {% endblock %}
-
-
-
-
-

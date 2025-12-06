@@ -8,23 +8,23 @@ from __future__ import annotations
 
 from typing import List, Tuple, TYPE_CHECKING
 
-from bazi.constants import (
-    gui_ren,
-    gu_chen,
-    gua_su,
-    hong_yan_sha,
-    hua_gai,
-    jie_sha,
-    jiang_xing,
-    lu_shen,
-    tao_hua,
-    tian_de,
-    wang_shen,
-    wen_chang,
-    xun_kong,
-    yang_ren,
-    yi_ma,
-    yue_de,
+from bazi.domain.constants import (
+    GUI_REN,
+    GU_CHEN,
+    GUA_SU,
+    HONG_YAN_SHA,
+    HUA_GAI,
+    JIE_SHA,
+    JIANG_XING,
+    LU_SHEN,
+    TAO_HUA,
+    TIAN_DE,
+    WANG_SHEN,
+    WEN_CHANG,
+    XUN_KONG,
+    YANG_REN,
+    YI_MA,
+    YUE_DE,
 )
 
 if TYPE_CHECKING:
@@ -59,56 +59,56 @@ def _calculate_tian_de(bazi: EightChar) -> int:
     """天德贵人: month branch vs four pillar stems."""
     month_zhi = bazi.getMonthZhi()
     gan_list = _get_gan_or_zhi(bazi, 0)
-    return _count_shensha(month_zhi, gan_list, tian_de)
+    return _count_shensha(month_zhi, gan_list, TIAN_DE)
 
 
 def _calculate_yue_de(bazi: EightChar) -> int:
     """月德贵人: month branch vs four pillar stems."""
     month_zhi = bazi.getMonthZhi()
     gan_list = _get_gan_or_zhi(bazi, 0)
-    return _count_shensha(month_zhi, gan_list, yue_de)
+    return _count_shensha(month_zhi, gan_list, YUE_DE)
 
 
 def _calculate_day_guiren(bazi: EightChar) -> int:
     """天乙贵人（日干）: day stem vs four pillar branches."""
     day_gan = bazi.getDayGan()
     zhi_list = _get_gan_or_zhi(bazi, 1)
-    return _count_shensha(day_gan, zhi_list, gui_ren)
+    return _count_shensha(day_gan, zhi_list, GUI_REN)
 
 
 def _calculate_year_guiren(bazi: EightChar) -> int:
     """天乙贵人（年干）: year stem vs four pillar branches."""
     year_gan = bazi.getYearGan()
     zhi_list = _get_gan_or_zhi(bazi, 1)
-    return _count_shensha(year_gan, zhi_list, gui_ren)
+    return _count_shensha(year_gan, zhi_list, GUI_REN)
 
 
 def _calculate_lu_shen(bazi: EightChar) -> int:
     """禄神: day stem vs four pillar branches."""
     day_gan = bazi.getDayGan()
     zhi_list = _get_gan_or_zhi(bazi, 1)
-    return _count_shensha(day_gan, zhi_list, lu_shen)
+    return _count_shensha(day_gan, zhi_list, LU_SHEN)
 
 
 def _calculate_wen_chang(bazi: EightChar) -> int:
     """文昌: day stem vs four pillar branches."""
     day_gan = bazi.getDayGan()
     zhi_list = _get_gan_or_zhi(bazi, 1)
-    return _count_shensha(day_gan, zhi_list, wen_chang)
+    return _count_shensha(day_gan, zhi_list, WEN_CHANG)
 
 
 def _calculate_yang_ren(bazi: EightChar) -> int:
     """羊刃: day stem vs four pillar branches."""
     day_gan = bazi.getDayGan()
     zhi_list = _get_gan_or_zhi(bazi, 1)
-    return _count_shensha(day_gan, zhi_list, yang_ren)
+    return _count_shensha(day_gan, zhi_list, YANG_REN)
 
 
 def _calculate_hong_yan_sha(bazi: EightChar) -> int:
     """红艳煞: day stem vs four pillar branches."""
     day_gan = bazi.getDayGan()
     zhi_list = _get_gan_or_zhi(bazi, 1)
-    return _count_shensha(day_gan, zhi_list, hong_yan_sha)
+    return _count_shensha(day_gan, zhi_list, HONG_YAN_SHA)
 
 
 def _calculate_jiang_xing(bazi: EightChar) -> int:
@@ -120,8 +120,8 @@ def _calculate_jiang_xing(bazi: EightChar) -> int:
     day_zhi_list = _filter_zhi_from_list(all_zhi, day_zhi)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
 
-    count_day = _count_shensha(day_zhi, day_zhi_list, jiang_xing)
-    count_year = _count_shensha(year_zhi, year_zhi_list, jiang_xing)
+    count_day = _count_shensha(day_zhi, day_zhi_list, JIANG_XING)
+    count_year = _count_shensha(year_zhi, year_zhi_list, JIANG_XING)
     return count_day + count_year
 
 
@@ -134,8 +134,8 @@ def _calculate_hua_gai(bazi: EightChar) -> int:
     day_zhi_list = _filter_zhi_from_list(all_zhi, day_zhi)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
 
-    count_day = _count_shensha(day_zhi, day_zhi_list, hua_gai)
-    count_year = _count_shensha(year_zhi, year_zhi_list, hua_gai)
+    count_day = _count_shensha(day_zhi, day_zhi_list, HUA_GAI)
+    count_year = _count_shensha(year_zhi, year_zhi_list, HUA_GAI)
     return count_day + count_year
 
 
@@ -148,8 +148,8 @@ def _calculate_yi_ma(bazi: EightChar) -> int:
     day_zhi_list = _filter_zhi_from_list(all_zhi, day_zhi)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
 
-    count_day = _count_shensha(day_zhi, day_zhi_list, yi_ma)
-    count_year = _count_shensha(year_zhi, year_zhi_list, yi_ma)
+    count_day = _count_shensha(day_zhi, day_zhi_list, YI_MA)
+    count_year = _count_shensha(year_zhi, year_zhi_list, YI_MA)
     return count_day + count_year
 
 
@@ -162,8 +162,8 @@ def _calculate_jie_sha(bazi: EightChar) -> int:
     day_zhi_list = _filter_zhi_from_list(all_zhi, day_zhi)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
 
-    count_day = _count_shensha(day_zhi, day_zhi_list, jie_sha)
-    count_year = _count_shensha(year_zhi, year_zhi_list, jie_sha)
+    count_day = _count_shensha(day_zhi, day_zhi_list, JIE_SHA)
+    count_year = _count_shensha(year_zhi, year_zhi_list, JIE_SHA)
     return count_day + count_year
 
 
@@ -176,8 +176,8 @@ def _calculate_wang_shen(bazi: EightChar) -> int:
     day_zhi_list = _filter_zhi_from_list(all_zhi, day_zhi)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
 
-    count_day = _count_shensha(day_zhi, day_zhi_list, wang_shen)
-    count_year = _count_shensha(year_zhi, year_zhi_list, wang_shen)
+    count_day = _count_shensha(day_zhi, day_zhi_list, WANG_SHEN)
+    count_year = _count_shensha(year_zhi, year_zhi_list, WANG_SHEN)
     return count_day + count_year
 
 
@@ -190,8 +190,8 @@ def _calculate_tao_hua(bazi: EightChar) -> int:
     day_zhi_list = _filter_zhi_from_list(all_zhi, day_zhi)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
 
-    count_day = _count_shensha(day_zhi, day_zhi_list, tao_hua)
-    count_year = _count_shensha(year_zhi, year_zhi_list, tao_hua)
+    count_day = _count_shensha(day_zhi, day_zhi_list, TAO_HUA)
+    count_year = _count_shensha(year_zhi, year_zhi_list, TAO_HUA)
     return count_day + count_year
 
 
@@ -200,7 +200,7 @@ def _calculate_gu_chen(bazi: EightChar) -> int:
     year_zhi = bazi.getYearZhi()
     all_zhi = _get_gan_or_zhi(bazi, 1)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
-    return _count_shensha(year_zhi, year_zhi_list, gu_chen)
+    return _count_shensha(year_zhi, year_zhi_list, GU_CHEN)
 
 
 def _calculate_gua_su(bazi: EightChar) -> int:
@@ -208,7 +208,7 @@ def _calculate_gua_su(bazi: EightChar) -> int:
     year_zhi = bazi.getYearZhi()
     all_zhi = _get_gan_or_zhi(bazi, 1)
     year_zhi_list = _filter_zhi_from_list(all_zhi, year_zhi)
-    return _count_shensha(year_zhi, year_zhi_list, gua_su)
+    return _count_shensha(year_zhi, year_zhi_list, GUA_SU)
 
 
 # --- Boolean checker functions ---
@@ -295,7 +295,7 @@ def _is_gua_su(bazi: EightChar) -> bool:
 def _is_kong_wang(bazi: EightChar) -> bool:
     """空亡: day pillar vs other branches."""
     day_ganzhi = bazi.getDayGan() + bazi.getDayZhi()
-    kong_list = xun_kong.get(day_ganzhi)
+    kong_list = XUN_KONG.get(day_ganzhi)
     if not kong_list:
         return False
     year_zhi = bazi.getYearZhi()

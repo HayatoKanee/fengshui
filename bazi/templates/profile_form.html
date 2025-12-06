@@ -1,117 +1,173 @@
 {% extends 'base_content.html' %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="text-center">{% if form.instance.id %}编辑{% else %}添加{% endif %}八字资料</h3>
-                </div>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-center">
+        <div class="w-full max-w-2xl">
+            <div class="card bg-base-100 shadow-xl">
                 <div class="card-body">
-                    <form method="post" novalidate>
+                    <h2 class="card-title text-2xl justify-center mb-6">
+                        {% if form.instance.id %}编辑{% else %}添加{% endif %}八字资料
+                    </h2>
+
+                    <form method="post" novalidate class="space-y-4">
                         {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.name.id_for_label }}" class="form-label">姓名</label>
-                            {{ form.name }}
+
+                        <!-- Name Field -->
+                        <div class="form-control w-full">
+                            <label class="label" for="{{ form.name.id_for_label }}">
+                                <span class="label-text">姓名</span>
+                            </label>
+                            <input type="text"
+                                   name="name"
+                                   id="{{ form.name.id_for_label }}"
+                                   value="{{ form.name.value|default:'' }}"
+                                   class="input input-bordered w-full {% if form.name.errors %}input-error{% endif %}"
+                                   required>
                             {% if form.name.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.name.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <label class="label">
+                                    <span class="label-text-alt text-error">
+                                        {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                    </span>
+                                </label>
                             {% endif %}
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.birth_year.id_for_label }}" class="form-label">出生年</label>
-                                {{ form.birth_year }}
+
+                        <!-- Birth Date Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-control w-full">
+                                <label class="label" for="{{ form.birth_year.id_for_label }}">
+                                    <span class="label-text">出生年</span>
+                                </label>
+                                <input type="number"
+                                       name="birth_year"
+                                       id="{{ form.birth_year.id_for_label }}"
+                                       value="{{ form.birth_year.value|default:'' }}"
+                                       class="input input-bordered w-full {% if form.birth_year.errors %}input-error{% endif %}"
+                                       min="0"
+                                       required>
                                 {% if form.birth_year.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.birth_year.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">
+                                            {% for error in form.birth_year.errors %}{{ error }}{% endfor %}
+                                        </span>
+                                    </label>
                                 {% endif %}
                             </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.birth_month.id_for_label }}" class="form-label">出生月</label>
-                                {{ form.birth_month }}
+
+                            <div class="form-control w-full">
+                                <label class="label" for="{{ form.birth_month.id_for_label }}">
+                                    <span class="label-text">出生月</span>
+                                </label>
+                                <input type="number"
+                                       name="birth_month"
+                                       id="{{ form.birth_month.id_for_label }}"
+                                       value="{{ form.birth_month.value|default:'' }}"
+                                       class="input input-bordered w-full {% if form.birth_month.errors %}input-error{% endif %}"
+                                       min="1" max="12"
+                                       required>
                                 {% if form.birth_month.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.birth_month.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">
+                                            {% for error in form.birth_month.errors %}{{ error }}{% endfor %}
+                                        </span>
+                                    </label>
                                 {% endif %}
                             </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <label for="{{ form.birth_day.id_for_label }}" class="form-label">出生日</label>
-                                {{ form.birth_day }}
+
+                            <div class="form-control w-full">
+                                <label class="label" for="{{ form.birth_day.id_for_label }}">
+                                    <span class="label-text">出生日</span>
+                                </label>
+                                <input type="number"
+                                       name="birth_day"
+                                       id="{{ form.birth_day.id_for_label }}"
+                                       value="{{ form.birth_day.value|default:'' }}"
+                                       class="input input-bordered w-full {% if form.birth_day.errors %}input-error{% endif %}"
+                                       min="1" max="31"
+                                       required>
                                 {% if form.birth_day.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.birth_day.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">
+                                            {% for error in form.birth_day.errors %}{{ error }}{% endfor %}
+                                        </span>
+                                    </label>
                                 {% endif %}
                             </div>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.birth_hour.id_for_label }}" class="form-label">出生时</label>
-                                {{ form.birth_hour }}
+
+                        <!-- Birth Time Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-control w-full">
+                                <label class="label" for="{{ form.birth_hour.id_for_label }}">
+                                    <span class="label-text">出生时</span>
+                                </label>
+                                <input type="number"
+                                       name="birth_hour"
+                                       id="{{ form.birth_hour.id_for_label }}"
+                                       value="{{ form.birth_hour.value|default:'' }}"
+                                       class="input input-bordered w-full {% if form.birth_hour.errors %}input-error{% endif %}"
+                                       min="0" max="23"
+                                       required>
                                 {% if form.birth_hour.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.birth_hour.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">
+                                            {% for error in form.birth_hour.errors %}{{ error }}{% endfor %}
+                                        </span>
+                                    </label>
                                 {% endif %}
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.birth_minute.id_for_label }}" class="form-label">出生分</label>
-                                {{ form.birth_minute }}
+
+                            <div class="form-control w-full">
+                                <label class="label" for="{{ form.birth_minute.id_for_label }}">
+                                    <span class="label-text">出生分</span>
+                                </label>
+                                <input type="number"
+                                       name="birth_minute"
+                                       id="{{ form.birth_minute.id_for_label }}"
+                                       value="{{ form.birth_minute.value|default:'0' }}"
+                                       class="input input-bordered w-full {% if form.birth_minute.errors %}input-error{% endif %}"
+                                       min="0" max="59">
                                 {% if form.birth_minute.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.birth_minute.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">
+                                            {% for error in form.birth_minute.errors %}{{ error }}{% endfor %}
+                                        </span>
+                                    </label>
                                 {% endif %}
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">性别</label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="is_male" id="is_male_true" value="True" {% if form.instance.is_male %}checked{% elif not form.instance.id %}checked{% endif %}>
-                                    <label class="form-check-label" for="is_male_true">男</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="is_male" id="is_male_false" value="False" {% if form.instance.id and not form.instance.is_male %}checked{% endif %}>
-                                    <label class="form-check-label" for="is_male_false">女</label>
-                                </div>
+
+                        <!-- Gender Field -->
+                        <div class="form-control w-full">
+                            <label class="label">
+                                <span class="label-text">性别</span>
+                            </label>
+                            <div class="flex gap-4">
+                                {% for radio in form.is_male %}
+                                    <label class="label cursor-pointer gap-2">
+                                        {{ radio.tag }}
+                                        <span class="label-text">{{ radio.choice_label }}</span>
+                                    </label>
+                                {% endfor %}
                             </div>
                             {% if form.is_male.errors %}
-                                <div class="text-danger">
-                                    {% for error in form.is_male.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
+                                <label class="label">
+                                    <span class="label-text-alt text-error">
+                                        {% for error in form.is_male.errors %}{{ error }}{% endfor %}
+                                    </span>
+                                </label>
                             {% endif %}
                         </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'profiles' %}" class="btn btn-secondary me-md-2">返回</a>
-                            <button type="submit" class="btn btn-primary">保存</button>
+
+                        <!-- Buttons -->
+                        <div class="flex justify-end gap-4 mt-6">
+                            <a href="{% url 'profiles' %}" class="btn btn-ghost">
+                                返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                保存
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -119,4 +175,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
