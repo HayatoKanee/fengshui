@@ -77,7 +77,7 @@ class BaziViewData:
     wang_xiang: Dict[str, str]
 
     # Seasonal phase values per position
-    WANG_XIANG_VALUEs: List[Tuple[float, List[float]]]
+    wang_xiang_values: List[Tuple[float, List[float]]]
 
     # Stem strength values per position
     gan_liang_values: List[Tuple[float, List[float]]]
@@ -143,9 +143,9 @@ class BaziPresenter:
         wuxing = self._calculate_wuxing_values(pillars)
         yinyang = self._calculate_yinyang_values(pillars)
         wang_xiang = self._get_wang_xiang(bazi.getMonthZhi(), lunar)
-        WANG_XIANG_VALUEs = self._calculate_WANG_XIANG_VALUEs(pillars, wang_xiang)
+        wang_xiang_values = self._calculate_wang_xiang_values(pillars, wang_xiang)
         gan_liang_values = self._calculate_gan_liang_values(
-            values, hidden_gans, WANG_XIANG_VALUEs
+            values, hidden_gans, wang_xiang_values
         )
         wuxing_value = self._accumulate_wuxing_values(wuxing, gan_liang_values)
         sheng_hao = self._calculate_shenghao(wuxing_value, main_wuxing)
@@ -166,7 +166,7 @@ class BaziPresenter:
             yinyang=yinyang,
             shishen=shishen,
             wang_xiang=wang_xiang,
-            WANG_XIANG_VALUEs=WANG_XIANG_VALUEs,
+            wang_xiang_values=wang_xiang_values,
             gan_liang_values=gan_liang_values,
             wuxing_value=wuxing_value,
             sheng_hao=sheng_hao,
@@ -177,7 +177,7 @@ class BaziPresenter:
             sheng_hao_relations=sheng_hao_relations,
         )
 
-    def _WUXING_RELATIONShip(self, gan: str, zhi: str) -> Tuple[int, int]:
+    def _calculate_relationship(self, gan: str, zhi: str) -> Tuple[int, int]:
         """Calculate relationship values between stem and branch elements."""
         element1 = GAN_WUXING.get(gan)
         element2 = ZHI_WUXING.get(zhi)
@@ -202,7 +202,7 @@ class BaziPresenter:
         values = []
         for pillar in pillars:
             gan, zhi = pillar[0], pillar[1]
-            gan_value, zhi_value = self._WUXING_RELATIONShip(gan, zhi)
+            gan_value, zhi_value = self._calculate_relationship(gan, zhi)
             values.append((gan_value, zhi_value))
         return values
 
@@ -264,55 +264,49 @@ class BaziPresenter:
                 return {'土': '旺', '金': '相', '火': '休', '木': '囚', '水': '死'}
         return SEASON_PHASES.get(season, {})
 
-    def _calculate_WANG_XIANG_VALUEs(
+    def _calculate_wang_xiang_values(
         self,
         pillars: List[str],
         wang_xiang: Dict[str, str],
     ) -> List[Tuple[float, List[float]]]:
         """Calculate seasonal phase values for each position."""
-        WANG_XIANG_VALUEs_list = []
+        result = []
 
         for pillar in pillars:
             gan, zhi = pillar[0], pillar[1]
 
-            # Calculate WANG_XIANG_VALUE for gan
+            # Calculate wang_xiang_value for gan
             gan_element = GAN_WUXING.get(gan)
-            wang_xiang_for_gan = wang_xiang.get(gan_element)
-            WANG_XIANG_VALUE_for_gan = WANG_XIANG_VALUE.get(wang_xiang_for_gan, 1.0)
+            phase_for_gan = wang_xiang.get(gan_element)
+            value_for_gan = WANG_XIANG_VALUE.get(phase_for_gan, 1.0)
 
-            # Calculate WANG_XIANG_VALUE for each hidden gan in zhi
+            # Calculate wang_xiang_value for each hidden gan in zhi
             hidden_gans_for_zhi = HIDDEN_GAN_RATIOS.get(zhi, {})
-            WANG_XIANG_VALUEs_for_zhi = []
-            for hidden_gan in hidden_gans_for_zhi.keys():
-                hidden_element = GAN_WUXING.get(hidden_gan)
-                wang_xiang_for_hidden = wang_xiang.get(hidden_element)
-                WANG_XIANG_VALUE_for_hidden = WANG_XIANG_VALUE.get(
-                    wang_xiang_for_hidden, 1.0
-                )
-                WANG_XIANG_VALUEs_for_zhi.append(WANG_XIANG_VALUE_for_hidden)
+            values_for_zhi = [
+                WANG_XIANG_VALUE.get(wang_xiang.get(GAN_WUXING.get(hg)), 1.0)
+                for hg in hidden_gans_for_zhi.keys()
+            ]
 
-            WANG_XIANG_VALUEs_list.append(
-                (WANG_XIANG_VALUE_for_gan, WANG_XIANG_VALUEs_for_zhi)
-            )
+            result.append((value_for_gan, values_for_zhi))
 
-        return WANG_XIANG_VALUEs_list
+        return result
 
     def _calculate_gan_liang_values(
         self,
         values: List[Tuple[int, int]],
         hidden_gans: List[Dict[str, float]],
-        WANG_XIANG_VALUEs: List[Tuple[float, List[float]]],
+        wang_xiang_values: List[Tuple[float, List[float]]],
     ) -> List[Tuple[float, List[float]]]:
         """Calculate stem strength values."""
         result = []
 
         for (v_gan, v_zhi), gans, (wx_gan, wx_zhis) in zip(
-            values, hidden_gans, WANG_XIANG_VALUEs
+            values, hidden_gans, wang_xiang_values
         ):
             zhi_values = [
                 v_zhi * g * wx for g, wx in zip(gans.values(), wx_zhis)
             ]
-            result.append((v_gan * 1 * wx_gan, zhi_values))
+            result.append((v_gan * wx_gan, zhi_values))
 
         return result
 
@@ -378,19 +372,19 @@ class BaziPresenter:
             if day_master_yinyang == stem_yinyang:
                 return '比肩'
             return '比劫'
-        elif relationships['生'].get(day_master_wuxing) == stem_wuxing:
+        elif RELATIONSHIPS['生'].get(day_master_wuxing) == stem_wuxing:
             if day_master_yinyang == stem_yinyang:
                 return '食神'
             return '伤官'
-        elif relationships['生'].get(stem_wuxing) == day_master_wuxing:
+        elif RELATIONSHIPS['生'].get(stem_wuxing) == day_master_wuxing:
             if day_master_yinyang == stem_yinyang:
                 return '偏印'
             return '正印'
-        elif relationships['克'].get(day_master_wuxing) == stem_wuxing:
+        elif RELATIONSHIPS['克'].get(day_master_wuxing) == stem_wuxing:
             if day_master_yinyang == stem_yinyang:
                 return '偏财'
             return '正财'
-        elif relationships['克'].get(stem_wuxing) == day_master_wuxing:
+        elif RELATIONSHIPS['克'].get(stem_wuxing) == day_master_wuxing:
             if day_master_yinyang == stem_yinyang:
                 return '七杀'
             return '正官'

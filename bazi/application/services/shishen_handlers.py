@@ -16,11 +16,6 @@ if TYPE_CHECKING:
     from lunar_python import EightChar
 
 
-def _check_he(ganzhi1: str, ganzhi2: str) -> bool:
-    """Check if two characters form a harmony relationship."""
-    return is_harmony(ganzhi1, ganzhi2)
-
-
 def _contain_shishen(target: str, shishen_list: List) -> bool:
     """Check if shishen_list contains a target ShiShen."""
     for main, sublist in shishen_list:
@@ -30,17 +25,18 @@ def _contain_shishen(target: str, shishen_list: List) -> bool:
 
 
 def _find_shishen_indices(target: str, shishen_list: List) -> List[int]:
-    """Find indices where target ShiShen appears."""
+    """Find indices where target ShiShen appears.
+
+    Returns flat indices where even indices (0,2,4,6) are main stems,
+    odd indices (1,3,5,7) are hidden stems sections.
+    """
     indices = []
-    i = 0
-    for shishen, sublist in shishen_list:
-        if shishen == target:
-            indices.append(i)
-        i += 1
-        for sub_shishen in sublist:
-            if sub_shishen == target:
-                indices.append(i)
-        i += 1
+    for pillar_idx, (main_shishen, hidden_list) in enumerate(shishen_list):
+        base_idx = pillar_idx * 2
+        if main_shishen == target:
+            indices.append(base_idx)
+        if target in hidden_list:
+            indices.append(base_idx + 1)
     return indices
 
 
@@ -54,7 +50,7 @@ def handle_zheng_cai(
     """Handle 正财 (Direct Wealth) fortune analysis."""
     analysis = "•流年走正财运， 未婚者有结婚之机会，已婚者太太能帮助先生，先生也较疼老婆。<br>"
 
-    if _check_he(bazi.getDayGan(), year_bazi.getYearGan()) or _check_he(
+    if is_harmony(bazi.getDayGan(), year_bazi.getYearGan()) or is_harmony(
         bazi.getMonthZhi(), year_bazi.getYearZhi()
     ):
         analysis += "•正财合日主或月支，在钱财或身体方面会有损失"
