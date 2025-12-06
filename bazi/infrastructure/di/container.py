@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from bazi.application.services import (
         BaziAnalysisService,
         CalendarService,
+        LiunianAnalysisService,
         ProfileService,
     )
 
@@ -58,6 +59,7 @@ class Container:
     # Application services (use case orchestrators)
     bazi_service: BaziAnalysisService
     calendar_service: CalendarService
+    liunian_service: LiunianAnalysisService
     profile_service: ProfileService
 
     @classmethod
@@ -85,6 +87,7 @@ class Container:
         from bazi.application.services import (
             BaziAnalysisService,
             CalendarService,
+            LiunianAnalysisService,
             ProfileService,
         )
 
@@ -108,6 +111,8 @@ class Container:
             bazi_service=bazi_service,
         )
 
+        liunian_service = LiunianAnalysisService()
+
         return cls(
             lunar_adapter=lunar,
             profile_repo=profile_repo,
@@ -117,6 +122,7 @@ class Container:
             shensha_calculator=shensha_calc,
             bazi_service=bazi_service,
             calendar_service=calendar_service,
+            liunian_service=liunian_service,
             profile_service=profile_service,
         )
 

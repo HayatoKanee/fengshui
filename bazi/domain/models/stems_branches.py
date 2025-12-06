@@ -201,3 +201,65 @@ class StemBranchRelations:
 
 # Singleton for relations
 RELATIONS = StemBranchRelations()
+
+
+def check_he_by_chinese(char1: str, char2: str) -> bool:
+    """
+    Check if two characters form a harmony (合) relationship.
+
+    Handles both stem-stem (五合) and branch-branch (六合) combinations.
+    Also checks reversed order for convenience.
+
+    Args:
+        char1: First Chinese character (stem or branch)
+        char2: Second Chinese character (stem or branch)
+
+    Returns:
+        True if the pair forms a harmony combination
+    """
+    # Try as branches first (六合)
+    try:
+        branch1 = EarthlyBranch.from_chinese(char1)
+        branch2 = EarthlyBranch.from_chinese(char2)
+        pair = (branch1, branch2)
+        reverse = (branch2, branch1)
+        if pair in RELATIONS.LIU_HE or reverse in RELATIONS.LIU_HE:
+            return True
+    except ValueError:
+        pass
+
+    # Try as stems (五合)
+    try:
+        stem1 = HeavenlyStem.from_chinese(char1)
+        stem2 = HeavenlyStem.from_chinese(char2)
+        pair = (stem1, stem2)
+        reverse = (stem2, stem1)
+        if pair in RELATIONS.WU_HE or reverse in RELATIONS.WU_HE:
+            return True
+    except ValueError:
+        pass
+
+    return False
+
+
+def check_he(
+    elem1: HeavenlyStem | EarthlyBranch | str,
+    elem2: HeavenlyStem | EarthlyBranch | str,
+) -> bool:
+    """
+    Check if two elements form a harmony (合) relationship.
+
+    Supports both domain types (HeavenlyStem, EarthlyBranch) and Chinese strings.
+
+    Args:
+        elem1: First element (stem, branch, or Chinese character)
+        elem2: Second element (stem, branch, or Chinese character)
+
+    Returns:
+        True if the pair forms a harmony combination
+    """
+    # Convert to Chinese characters if needed
+    char1 = elem1.chinese if hasattr(elem1, 'chinese') else str(elem1)
+    char2 = elem2.chinese if hasattr(elem2, 'chinese') else str(elem2)
+
+    return check_he_by_chinese(char1, char2)

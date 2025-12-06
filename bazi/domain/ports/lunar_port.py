@@ -238,3 +238,21 @@ class LunarPort(Protocol):
             True if in earth-dominant period
         """
         ...
+
+    @abstractmethod
+    def get_jieqi_dates(
+        self,
+        year: int,
+        jieqi_names: list[str],
+    ) -> list[date]:
+        """
+        Get the dates of specified solar terms for a given year.
+
+        Args:
+            year: Solar year
+            jieqi_names: List of solar term names in Chinese (e.g., ["立春", "立夏"])
+
+        Returns:
+            List of dates when those solar terms occur
+        """
+        ...

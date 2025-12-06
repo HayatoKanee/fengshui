@@ -333,6 +333,36 @@ class LunarPythonAdapter:
 
         return False
 
+    def get_jieqi_dates(
+        self,
+        year: int,
+        jieqi_names: list[str],
+    ) -> list[date]:
+        """
+        Get the dates of specified solar terms for a given year.
+
+        Args:
+            year: Solar year
+            jieqi_names: List of solar term names in Chinese (e.g., ["立春", "立夏"])
+
+        Returns:
+            List of dates when those solar terms occur
+        """
+        solar = Solar.fromYmd(year, 1, 1)
+        lunar = solar.getLunar()
+        jieqi_table = lunar.getJieQiTable()
+
+        result = []
+        for name in jieqi_names:
+            if name in jieqi_table:
+                jieqi_solar = jieqi_table[name]
+                result.append(date(
+                    jieqi_solar.getYear(),
+                    jieqi_solar.getMonth(),
+                    jieqi_solar.getDay(),
+                ))
+        return result
+
     def _eight_char_to_bazi(self, eight_char) -> BaZi:
         """
         Convert lunar_python EightChar to domain BaZi.

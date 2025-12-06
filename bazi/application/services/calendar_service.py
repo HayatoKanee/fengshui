@@ -294,6 +294,114 @@ class CalendarService:
         else:
             return DayQuality.TERRIBLE
 
+    # ============================================
+    # Calendar Taboo Methods (Special Day Checks)
+    # ============================================
+
+    @staticmethod
+    def is_yang_gong_taboo(lunar_month: int, lunar_day: int) -> bool:
+        """
+        Check if a lunar date is one of the Yang Gong Thirteen Taboos (杨公十三忌).
+
+        These are traditionally inauspicious days for important activities.
+
+        Args:
+            lunar_month: Lunar month (1-12)
+            lunar_day: Lunar day (1-30)
+
+        Returns:
+            True if the date is a Yang Gong taboo day
+        """
+        yang_gong_taboos = {
+            (1, 13),   # 正月十三
+            (2, 11),   # 二月十一
+            (3, 9),    # 三月初九
+            (4, 7),    # 四月初七
+            (5, 5),    # 五月初五
+            (6, 3),    # 六月初三
+            (7, 1),    # 七月初一
+            (7, 29),   # 七月二十九
+            (8, 27),   # 八月二十七
+            (9, 25),   # 九月二十五
+            (10, 23),  # 十月二十三
+            (11, 21),  # 十一月二十一
+            (12, 19),  # 十二月十九
+        }
+        return (lunar_month, lunar_day) in yang_gong_taboos
+
+    def is_si_jue_ri(self, year: int, month: int, day: int) -> bool:
+        """
+        Check if a date is one of the '四绝日' (Four "Jue" Days).
+
+        These are the days before Li Chun (立春), Li Xia (立夏),
+        Li Qiu (立秋), and Li Dong (立冬).
+
+        Args:
+            year: Solar year
+            month: Solar month (1-12)
+            day: Solar day (1-31)
+
+        Returns:
+            True if the date is a Si Jue day
+        """
+        # Get the day before each "Li" solar term
+        jue_jieqi = ["立春", "立夏", "立秋", "立冬"]
+        return self._is_day_before_jieqi(year, month, day, jue_jieqi)
+
+    def is_si_li_ri(self, year: int, month: int, day: int) -> bool:
+        """
+        Check if a date is one of the '四离日' (Four "Li" Days).
+
+        These are the days before Chun Fen (春分), Xia Zhi (夏至),
+        Qiu Fen (秋分), and Dong Zhi (冬至).
+
+        Args:
+            year: Solar year
+            month: Solar month (1-12)
+            day: Solar day (1-31)
+
+        Returns:
+            True if the date is a Si Li day
+        """
+        # Get the day before each equinox/solstice
+        li_jieqi = ["春分", "夏至", "秋分", "冬至"]
+        return self._is_day_before_jieqi(year, month, day, li_jieqi)
+
+    def _is_day_before_jieqi(
+        self,
+        year: int,
+        month: int,
+        day: int,
+        jieqi_names: list[str],
+    ) -> bool:
+        """
+        Check if a date is the day before one of the specified solar terms.
+
+        Args:
+            year: Solar year
+            month: Solar month (1-12)
+            day: Solar day (1-31)
+            jieqi_names: List of solar term names to check
+
+        Returns:
+            True if the date is the day before any of the specified solar terms
+        """
+        try:
+            # Get jieqi dates for this year from lunar adapter
+            jieqi_dates = self._lunar.get_jieqi_dates(year, jieqi_names)
+
+            current_date = date(year, month, day)
+
+            for jieqi_date in jieqi_dates:
+                # Check if current date is the day before this jieqi
+                day_before = jieqi_date - datetime.timedelta(days=1)
+                if current_date == day_before:
+                    return True
+            return False
+        except Exception:
+            # If jieqi lookup fails, return False to avoid breaking the calendar
+            return False
+
     def get_favorable_elements_for_profile(
         self,
         birth_data: BirthData,

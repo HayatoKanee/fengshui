@@ -4,9 +4,7 @@ Calendar Views.
 Views for the BaZi calendar showing day quality assessments
 based on user's birth chart.
 
-TODO: This view contains significant business logic that should
-be migrated to CalendarService. The current implementation uses
-legacy helper functions for compatibility.
+Uses domain services via the DI container for BaZi calculations.
 """
 import datetime
 
@@ -27,24 +25,8 @@ from bazi.constants import (
     yue_de,
     zhi_xiang_chong,
 )
-from bazi.helper import (
-    accumulate_wuxing_values,
-    calculate_gan_liang_value,
-    calculate_shenghao,
-    calculate_values,
-    calculate_values_for_bazi,
-    calculate_wang_xiang_values,
-    check_he,
-    get_hidden_gans,
-    get_wang_xiang,
-    is_si_jue_ri,
-    is_si_li_ri,
-    is_tian_de,
-    is_tian_yi_guiren,
-    is_wen_chang,
-    is_yang_gong_taboo,
-    is_yue_de,
-)
+from bazi.domain.models import BirthData, check_he
+from bazi.infrastructure.di import get_container
 from bazi.models import UserProfile
 
 
@@ -198,30 +180,24 @@ def calendar_data(request):
         good_wuxing_list = profile.favorable_wuxing.split(",")
         bad_wuxing_list = profile.unfavorable_wuxing.split(",")
     else:
-        # Calculate if not stored
-        values = calculate_values(profile_bazi)
-        hidden_gans = get_hidden_gans(profile_bazi)
-        wang_xiang = get_wang_xiang(profile_bazi.getMonthZhi(), profile_lunar)
-        wang_xiang_values = calculate_wang_xiang_values(profile_bazi, wang_xiang)
-        gan_liang_values = calculate_gan_liang_value(
-            values, hidden_gans, wang_xiang_values
+        # Calculate if not stored using domain services
+        container = get_container()
+        birth_data = BirthData(
+            year=profile.birth_year,
+            month=profile.birth_month,
+            day=profile.birth_day,
+            hour=profile.birth_hour,
+            minute=profile.birth_minute or 0,
+            is_male=getattr(profile, 'is_male', True),
         )
-        wuxing_value = accumulate_wuxing_values(
-            calculate_values_for_bazi(profile_bazi, gan_wuxing), gan_liang_values
-        )
-        sheng_hao = calculate_shenghao(wuxing_value, profile_day_wuxing)
-        is_strong = sheng_hao[0] > sheng_hao[1]
-
-        if is_strong:
-            good_wuxing_list = wuxing_relations[profile_day_wuxing]["不利"]
-            bad_wuxing_list = wuxing_relations[profile_day_wuxing]["有利"]
-        else:
-            good_wuxing_list = wuxing_relations[profile_day_wuxing]["有利"]
-            bad_wuxing_list = wuxing_relations[profile_day_wuxing]["不利"]
+        summary = container.bazi_service.get_quick_summary(birth_data)
+        is_strong = summary["is_strong"]
+        good_wuxing_list = summary["favorable_wuxing"]
+        bad_wuxing_list = summary["unfavorable_wuxing"]
 
         # Save for future use
+        profile.day_master_wuxing = summary["day_master_wuxing"]
         profile.is_day_master_strong = is_strong
-        profile.day_master_wuxing = profile_day_wuxing
         profile.favorable_wuxing = ",".join(good_wuxing_list)
         profile.unfavorable_wuxing = ",".join(bad_wuxing_list)
         profile.save()
@@ -438,9 +414,12 @@ def _calculate_day_quality(
     day_gan = date_bazi.getDayGan()
     day_zhi = date_bazi.getDayZhi()
 
-    # Check special inauspicious days
+    # Check special inauspicious days using domain services
+    container = get_container()
     day_score, day_overall_quality, day_reasons = _check_special_days(
-        date_solar,
+        year,
+        month,
+        day,
         date_lunar,
         date_bazi,
         day_gan,
@@ -448,6 +427,7 @@ def _calculate_day_quality(
         day_score,
         day_overall_quality,
         day_reasons,
+        container.calendar_service,
     )
 
     # Check conflicts with year/month
@@ -492,9 +472,11 @@ def _calculate_day_quality(
         day_reasons,
     )
 
-    # Check auspicious stars
+    # Check auspicious stars using domain services
     day_score, day_reasons = _check_auspicious_stars(
-        date_bazi,
+        year,
+        month,
+        day,
         day_gan,
         day_zhi,
         profile_day_gan,
@@ -502,6 +484,7 @@ def _calculate_day_quality(
         profile_month_zhi,
         day_score,
         day_reasons,
+        container,
     )
 
     # Build hour quality (all neutral for now)
@@ -524,7 +507,9 @@ def _calculate_day_quality(
 
 
 def _check_special_days(
-    date_solar,
+    year,
+    month,
+    day,
     date_lunar,
     date_bazi,
     day_gan,
@@ -532,10 +517,11 @@ def _check_special_days(
     day_score,
     day_quality,
     day_reasons,
+    calendar_service,
 ):
-    """Check for special inauspicious days."""
+    """Check for special inauspicious days using domain services."""
     # 四绝日 (Four Jue Days)
-    if is_si_jue_ri(date_solar):
+    if calendar_service.is_si_jue_ri(year, month, day):
         day_quality = "bad"
         day_score -= 2
         day_reasons.append(
@@ -543,7 +529,7 @@ def _check_special_days(
         )
 
     # 四离日 (Four Li Days)
-    if is_si_li_ri(date_solar):
+    if calendar_service.is_si_li_ri(year, month, day):
         day_quality = "bad"
         day_score -= 2
         day_reasons.append(
@@ -551,7 +537,9 @@ def _check_special_days(
         )
 
     # 杨公十三忌 (Yang Gong Thirteen Taboos)
-    if is_yang_gong_taboo(date_lunar):
+    lunar_month = date_lunar.getMonth()
+    lunar_day = date_lunar.getDay()
+    if calendar_service.is_yang_gong_taboo(lunar_month, lunar_day):
         day_score -= 0.5
         day_reasons.append(
             {"type": "bad", "text": "杨公十三忌: 此日为杨公忌日，不宜做重要事情"}
@@ -690,7 +678,9 @@ def _check_harmonies(day_zhi, profile_bazi, day_score, day_reasons):
 
 
 def _check_auspicious_stars(
-    date_bazi,
+    year,
+    month,
+    day,
     day_gan,
     day_zhi,
     profile_day_gan,
@@ -698,19 +688,29 @@ def _check_auspicious_stars(
     profile_month_zhi,
     day_score,
     day_reasons,
+    container,
 ):
-    """Check for auspicious stars (贵人, 天德, 月德, etc.)."""
-    # Day's own stars
-    if is_tian_de(date_bazi):
+    """Check for auspicious stars (贵人, 天德, 月德, etc.) using domain services."""
+    # Get domain BaZi for this date and calculate ShenSha
+    from datetime import datetime as dt
+    domain_bazi = container.lunar_adapter.get_bazi_from_datetime(
+        dt(year, month, day, 12, 0)
+    )
+    shensha_analysis = container.shensha_calculator.calculate_for_bazi(domain_bazi)
+
+    # Check for auspicious stars from domain analysis
+    shensha_types = {ss.type.name for ss in shensha_analysis.shensha_list}
+
+    if "TIAN_DE" in shensha_types:
         day_score += 1
         day_reasons.append({"type": "good", "text": "此日有天德星"})
-    if is_yue_de(date_bazi):
+    if "YUE_DE" in shensha_types:
         day_score += 1
         day_reasons.append({"type": "good", "text": "此日有月德星"})
-    if is_wen_chang(date_bazi):
+    if "WEN_CHANG" in shensha_types:
         day_score += 1
         day_reasons.append({"type": "good", "text": "此日有文昌星"})
-    if is_tian_yi_guiren(date_bazi):
+    if "TIAN_YI_GUI_REN" in shensha_types:
         day_score += 1
         day_reasons.append({"type": "good", "text": "此日有天乙贵人"})
 

@@ -13,6 +13,7 @@ from .stems_branches import (
     EarthlyBranch,
     StemBranchRelations,
     RELATIONS,
+    check_he,
 )
 from .pillar import Pillar
 from .bazi import BaZi, BirthData
@@ -43,6 +44,7 @@ __all__ = [
     "EarthlyBranch",
     "StemBranchRelations",
     "RELATIONS",
+    "check_he",
     # Pillar
     "Pillar",
     # BaZi

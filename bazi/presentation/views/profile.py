@@ -2,7 +2,7 @@
 Profile Management Views.
 
 Handles CRUD operations for user BaZi profiles.
-Uses ProfileService from the DI container for business logic.
+Uses BaziAnalysisService from the DI container for business logic.
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -13,78 +13,35 @@ from bazi.infrastructure.di import get_container
 from bazi.models import UserProfile
 from bazi.presentation.forms import UserProfileForm
 
-# Legacy imports for calculate_and_save_profile_attributes
-# TODO: Move this logic into ProfileService
-from lunar_python import Solar
-from bazi.constants import gan_wuxing, wuxing_relations
-from bazi.helper import (
-    accumulate_wuxing_values,
-    calculate_gan_liang_value,
-    calculate_shenghao,
-    calculate_values,
-    calculate_values_for_bazi,
-    calculate_wang_xiang_values,
-    get_hidden_gans,
-    get_wang_xiang,
-)
-
 
 def _calculate_and_save_profile_attributes(profile):
     """
     Calculate and save day master strength and favorable elements.
 
-    This is a temporary adapter function that bridges the old helper.py
-    functions with the new profile model. In the future, this logic
-    should be moved into ProfileService.
-
-    TODO: Migrate to ProfileService after extending domain services.
+    Uses BaziAnalysisService to perform domain calculations.
     """
     try:
-        # Create Solar and Lunar objects from profile birth information
-        profile_solar = Solar.fromYmdHms(
-            profile.birth_year,
-            profile.birth_month,
-            profile.birth_day,
-            profile.birth_hour,
-            profile.birth_minute or 0,
-            0,
+        container = get_container()
+
+        # Create BirthData from profile
+        birth_data = BirthData(
+            year=profile.birth_year,
+            month=profile.birth_month,
+            day=profile.birth_day,
+            hour=profile.birth_hour,
+            minute=profile.birth_minute or 0,
+            is_male=getattr(profile, 'is_male', True),
         )
-        profile_lunar = profile_solar.getLunar()
-        profile_bazi = profile_lunar.getEightChar()
 
-        # Get day master wuxing
-        profile_day_gan = profile_bazi.getDayGan()
-        profile_day_wuxing = gan_wuxing.get(profile_day_gan)
-        profile.day_master_wuxing = profile_day_wuxing
+        # Get quick summary from BaziAnalysisService
+        summary = container.bazi_service.get_quick_summary(birth_data)
 
-        # Calculate if day master is strong or weak
-        values = calculate_values(profile_bazi)
-        hidden_gans = get_hidden_gans(profile_bazi)
-        wang_xiang = get_wang_xiang(profile_bazi.getMonthZhi(), profile_lunar)
-        wang_xiang_values = calculate_wang_xiang_values(profile_bazi, wang_xiang)
-        gan_liang_values = calculate_gan_liang_value(
-            values, hidden_gans, wang_xiang_values
-        )
-        wuxing_value = accumulate_wuxing_values(
-            calculate_values_for_bazi(profile_bazi, gan_wuxing), gan_liang_values
-        )
-        sheng_hao = calculate_shenghao(wuxing_value, profile_day_wuxing)
-        is_strong = sheng_hao[0] > sheng_hao[1]
-        profile.is_day_master_strong = is_strong
+        # Store results in profile
+        profile.day_master_wuxing = summary["day_master_wuxing"]
+        profile.is_day_master_strong = summary["is_strong"]
+        profile.favorable_wuxing = ",".join(summary["favorable_wuxing"])
+        profile.unfavorable_wuxing = ",".join(summary["unfavorable_wuxing"])
 
-        # Determine favorable and unfavorable elements
-        if is_strong:
-            # Strong day master: elements that control it are good
-            good_wuxing_list = wuxing_relations[profile_day_wuxing]["不利"]
-            bad_wuxing_list = wuxing_relations[profile_day_wuxing]["有利"]
-        else:
-            # Weak day master: elements that generate it are good
-            good_wuxing_list = wuxing_relations[profile_day_wuxing]["有利"]
-            bad_wuxing_list = wuxing_relations[profile_day_wuxing]["不利"]
-
-        # Store as comma-separated string
-        profile.favorable_wuxing = ",".join(good_wuxing_list)
-        profile.unfavorable_wuxing = ",".join(bad_wuxing_list)
     except Exception as e:
         # Log error but don't stop profile creation
         print(f"Error calculating profile attributes: {str(e)}")

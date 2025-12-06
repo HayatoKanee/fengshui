@@ -17,26 +17,18 @@ from bazi.infrastructure.di import get_container
 from bazi.models import UserProfile
 from bazi.presentation.forms import BirthTimeForm
 
-# Legacy helper imports for functionality not yet in domain services
-# TODO: Move these to domain services
+# Legacy helper imports for template-specific data formatting
+# These functions format data in the specific structure expected by templates
+# TODO: Refactor templates to use domain model structures directly
 from bazi.helper import (
     accumulate_wuxing_values,
-    analyse_liunian,
-    analyse_partner,
-    analyse_personality,
-    calculate_day_guiren,
     calculate_gan_liang_value,
-    calculate_lu_shen,
     calculate_shenghao,
     calculate_shenghao_percentage,
     calculate_shishen_for_bazi,
-    calculate_tian_de,
     calculate_values,
     calculate_values_for_bazi,
     calculate_wang_xiang_values,
-    calculate_wen_chang,
-    calculate_yue_de,
-    extract_form_data,
     get_hidden_gans,
     get_relations,
     get_shensha,
@@ -62,6 +54,8 @@ def _build_bazi_context(
     TODO: Gradually migrate to using BaziAnalysisResult directly
     once templates are updated.
     """
+    container = get_container()
+
     main_wuxing = bazi.getDayWuXing()[0]
     values = calculate_values(bazi)
     hidden_gans = get_hidden_gans(bazi)
@@ -77,9 +71,14 @@ def _build_bazi_context(
     sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
     sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
     is_strong = sheng_hao[0] > sheng_hao[1]
-    partner_analyst = analyse_partner(hidden_gans, shishen)
-    personality = analyse_personality(bazi.getMonthZhi())
-    liunian_analysis = analyse_liunian(bazi, shishen, selected_year, is_strong, is_male)
+
+    # Use domain services for complex analysis
+    liunian_service = container.liunian_service
+    partner_analyst = liunian_service.analyse_partner(hidden_gans, shishen)
+    personality = liunian_service.analyse_personality(bazi.getMonthZhi())
+    liunian_analysis = liunian_service.analyse_liunian(
+        bazi, shishen, selected_year, is_strong, is_male
+    )
     shensha_list = get_shensha(bazi)
 
     current_year = datetime.datetime.now().year
@@ -184,16 +183,22 @@ def bazi_view(request):
     if request.method == "POST":
         form = BirthTimeForm(request.POST)
         if form.is_valid():
-            data = extract_form_data(form)
+            # Extract form data inline (was extract_form_data)
+            year = form.cleaned_data['year']
+            month = form.cleaned_data['month']
+            day = form.cleaned_data['day']
+            hour = form.cleaned_data['hour']
+            minute = form.cleaned_data['minute']
+
             selected_year = request.POST.get("liunian", str(current_year))
             is_male = request.POST.get("gender") == "male"
 
             solar = Solar.fromYmdHms(
-                data["year"],
-                data["month"],
-                data["day"],
-                data["hour"],
-                data["minute"],
+                year,
+                month,
+                day,
+                hour,
+                minute,
                 0,
             )
             lunar = solar.getLunar()
@@ -274,6 +279,8 @@ def get_bazi_detail(request):
         except UserProfile.DoesNotExist:
             pass
 
+    container = get_container()
+
     # Calculate BaZi
     solar = Solar.fromYmdHms(int(year), int(month), int(day), int(hour), 0, 0)
     lunar = solar.getLunar()
@@ -292,13 +299,26 @@ def get_bazi_detail(request):
     sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
     sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
 
-    # Calculate shensha
-    gui_ren = calculate_day_guiren(bazi)
-    tian_de = calculate_tian_de(bazi)
-    yue_de = calculate_yue_de(bazi)
-    wen_chang = calculate_wen_chang(bazi)
-    lu_shen = calculate_lu_shen(bazi)
+    # Calculate shensha using domain service
     shensha_list = get_shensha(bazi)
+
+    # Extract individual shensha from list for template compatibility
+    gui_ren = None
+    tian_de = None
+    yue_de = None
+    wen_chang = None
+    lu_shen = None
+    for shensha_name, positions in shensha_list:
+        if '贵人' in shensha_name:
+            gui_ren = positions
+        elif shensha_name == '天德':
+            tian_de = positions
+        elif shensha_name == '月德':
+            yue_de = positions
+        elif shensha_name == '文昌':
+            wen_chang = positions
+        elif shensha_name == '禄神':
+            lu_shen = positions
 
     context = {
         "bazi": bazi,
