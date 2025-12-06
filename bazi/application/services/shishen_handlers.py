@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from typing import List, TYPE_CHECKING
 
-from bazi.constants import liu_he, wu_he
+# Domain layer imports (DIP-compliant)
+from bazi.domain.constants import is_harmony
 
 if TYPE_CHECKING:
     from lunar_python import EightChar
@@ -17,12 +18,7 @@ if TYPE_CHECKING:
 
 def _check_he(ganzhi1: str, ganzhi2: str) -> bool:
     """Check if two characters form a harmony relationship."""
-    return (
-        (ganzhi1, ganzhi2) in liu_he
-        or (ganzhi2, ganzhi1) in liu_he
-        or (ganzhi1, ganzhi2) in wu_he
-        or (ganzhi2, ganzhi1) in wu_he
-    )
+    return is_harmony(ganzhi1, ganzhi2)
 
 
 def _contain_shishen(target: str, shishen_list: List) -> bool:

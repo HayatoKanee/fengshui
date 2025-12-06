@@ -15,16 +15,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
-from bazi.constants import (
-    gan_wuxing,
-    gan_yinyang,
-    hidden_gan_ratios,
-    relationships,
-    season_phases,
-    wang_xiang_value,
-    wuxing_relations,
-    zhi_seasons,
-    zhi_wuxing,
+# Domain layer imports (DIP-compliant)
+from bazi.domain.constants import (
+    GAN_WUXING,
+    GAN_YINYANG,
+    HIDDEN_GAN_RATIOS,
+    RELATIONSHIPS,
+    SEASON_PHASES,
+    WANG_XIANG_VALUE,
+    WUXING_RELATIONS,
+    ZHI_SEASONS,
+    ZHI_WUXING,
 )
 from bazi.domain.models import (
     BaZi,
@@ -76,7 +77,7 @@ class BaziViewData:
     wang_xiang: Dict[str, str]
 
     # Seasonal phase values per position
-    wang_xiang_values: List[Tuple[float, List[float]]]
+    WANG_XIANG_VALUEs: List[Tuple[float, List[float]]]
 
     # Stem strength values per position
     gan_liang_values: List[Tuple[float, List[float]]]
@@ -142,9 +143,9 @@ class BaziPresenter:
         wuxing = self._calculate_wuxing_values(pillars)
         yinyang = self._calculate_yinyang_values(pillars)
         wang_xiang = self._get_wang_xiang(bazi.getMonthZhi(), lunar)
-        wang_xiang_values = self._calculate_wang_xiang_values(pillars, wang_xiang)
+        WANG_XIANG_VALUEs = self._calculate_WANG_XIANG_VALUEs(pillars, wang_xiang)
         gan_liang_values = self._calculate_gan_liang_values(
-            values, hidden_gans, wang_xiang_values
+            values, hidden_gans, WANG_XIANG_VALUEs
         )
         wuxing_value = self._accumulate_wuxing_values(wuxing, gan_liang_values)
         sheng_hao = self._calculate_shenghao(wuxing_value, main_wuxing)
@@ -152,7 +153,7 @@ class BaziPresenter:
             sheng_hao[0], sheng_hao[1]
         )
         shishen = self._calculate_shishen_for_bazi(wuxing, yinyang)
-        sheng_hao_relations = wuxing_relations.get(main_wuxing, {})
+        sheng_hao_relations = WUXING_RELATIONS.get(main_wuxing, {})
         shengxiao = lunar.getYearShengXiaoExact()
         is_strong = sheng_hao[0] > sheng_hao[1]
 
@@ -165,7 +166,7 @@ class BaziPresenter:
             yinyang=yinyang,
             shishen=shishen,
             wang_xiang=wang_xiang,
-            wang_xiang_values=wang_xiang_values,
+            WANG_XIANG_VALUEs=WANG_XIANG_VALUEs,
             gan_liang_values=gan_liang_values,
             wuxing_value=wuxing_value,
             sheng_hao=sheng_hao,
@@ -176,20 +177,20 @@ class BaziPresenter:
             sheng_hao_relations=sheng_hao_relations,
         )
 
-    def _wuxing_relationship(self, gan: str, zhi: str) -> Tuple[int, int]:
+    def _WUXING_RELATIONShip(self, gan: str, zhi: str) -> Tuple[int, int]:
         """Calculate relationship values between stem and branch elements."""
-        element1 = gan_wuxing.get(gan)
-        element2 = zhi_wuxing.get(zhi)
+        element1 = GAN_WUXING.get(gan)
+        element2 = ZHI_WUXING.get(zhi)
 
         if element1 == element2:
             return 10, 10
-        elif relationships['生'].get(element1) == element2:
+        elif RELATIONSHIPS['生'].get(element1) == element2:
             return 6, 8
-        elif relationships['克'].get(element1) == element2:
+        elif RELATIONSHIPS['克'].get(element1) == element2:
             return 4, 2
-        elif relationships['克'].get(element2) == element1:
+        elif RELATIONSHIPS['克'].get(element2) == element1:
             return 2, 4
-        elif relationships['生'].get(element2) == element1:
+        elif RELATIONSHIPS['生'].get(element2) == element1:
             return 8, 6
         return 0, 0
 
@@ -201,7 +202,7 @@ class BaziPresenter:
         values = []
         for pillar in pillars:
             gan, zhi = pillar[0], pillar[1]
-            gan_value, zhi_value = self._wuxing_relationship(gan, zhi)
+            gan_value, zhi_value = self._WUXING_RELATIONShip(gan, zhi)
             values.append((gan_value, zhi_value))
         return values
 
@@ -213,7 +214,7 @@ class BaziPresenter:
         hidden_gans_list = []
         for pillar in pillars:
             zhi = pillar[1]
-            hidden_gans = hidden_gan_ratios.get(zhi, {})
+            hidden_gans = HIDDEN_GAN_RATIOS.get(zhi, {})
             hidden_gans_list.append(hidden_gans)
         return hidden_gans_list
 
@@ -225,10 +226,10 @@ class BaziPresenter:
         values = []
         for pillar in pillars:
             gan, zhi = pillar[0], pillar[1]
-            value_for_gan = gan_wuxing.get(gan)
-            hidden_gans_for_zhi = hidden_gan_ratios.get(zhi, {})
+            value_for_gan = GAN_WUXING.get(gan)
+            hidden_gans_for_zhi = HIDDEN_GAN_RATIOS.get(zhi, {})
             values_for_zhi = [
-                gan_wuxing.get(hidden_gan) for hidden_gan in hidden_gans_for_zhi.keys()
+                GAN_WUXING.get(hidden_gan) for hidden_gan in hidden_gans_for_zhi.keys()
             ]
             values.append((value_for_gan, values_for_zhi))
         return values
@@ -241,10 +242,10 @@ class BaziPresenter:
         values = []
         for pillar in pillars:
             gan, zhi = pillar[0], pillar[1]
-            value_for_gan = gan_yinyang.get(gan)
-            hidden_gans_for_zhi = hidden_gan_ratios.get(zhi, {})
+            value_for_gan = GAN_YINYANG.get(gan)
+            hidden_gans_for_zhi = HIDDEN_GAN_RATIOS.get(zhi, {})
             values_for_zhi = [
-                gan_yinyang.get(hidden_gan)
+                GAN_YINYANG.get(hidden_gan)
                 for hidden_gan in hidden_gans_for_zhi.keys()
             ]
             values.append((value_for_gan, values_for_zhi))
@@ -256,57 +257,57 @@ class BaziPresenter:
         lunar: Lunar,
     ) -> Dict[str, str]:
         """Get seasonal phase mapping."""
-        season = zhi_seasons.get(month_zhi)
+        season = ZHI_SEASONS.get(month_zhi)
         if month_zhi in ['辰', '未', '戌', '丑']:
             next_jieqi = lunar.getNextJieQi(True)
             if next_jieqi.getSolar().subtract(lunar.getSolar()) <= 18:
                 return {'土': '旺', '金': '相', '火': '休', '木': '囚', '水': '死'}
-        return season_phases.get(season, {})
+        return SEASON_PHASES.get(season, {})
 
-    def _calculate_wang_xiang_values(
+    def _calculate_WANG_XIANG_VALUEs(
         self,
         pillars: List[str],
         wang_xiang: Dict[str, str],
     ) -> List[Tuple[float, List[float]]]:
         """Calculate seasonal phase values for each position."""
-        wang_xiang_values_list = []
+        WANG_XIANG_VALUEs_list = []
 
         for pillar in pillars:
             gan, zhi = pillar[0], pillar[1]
 
-            # Calculate wang_xiang_value for gan
-            gan_element = gan_wuxing.get(gan)
+            # Calculate WANG_XIANG_VALUE for gan
+            gan_element = GAN_WUXING.get(gan)
             wang_xiang_for_gan = wang_xiang.get(gan_element)
-            wang_xiang_value_for_gan = wang_xiang_value.get(wang_xiang_for_gan, 1.0)
+            WANG_XIANG_VALUE_for_gan = WANG_XIANG_VALUE.get(wang_xiang_for_gan, 1.0)
 
-            # Calculate wang_xiang_value for each hidden gan in zhi
-            hidden_gans_for_zhi = hidden_gan_ratios.get(zhi, {})
-            wang_xiang_values_for_zhi = []
+            # Calculate WANG_XIANG_VALUE for each hidden gan in zhi
+            hidden_gans_for_zhi = HIDDEN_GAN_RATIOS.get(zhi, {})
+            WANG_XIANG_VALUEs_for_zhi = []
             for hidden_gan in hidden_gans_for_zhi.keys():
-                hidden_element = gan_wuxing.get(hidden_gan)
+                hidden_element = GAN_WUXING.get(hidden_gan)
                 wang_xiang_for_hidden = wang_xiang.get(hidden_element)
-                wang_xiang_value_for_hidden = wang_xiang_value.get(
+                WANG_XIANG_VALUE_for_hidden = WANG_XIANG_VALUE.get(
                     wang_xiang_for_hidden, 1.0
                 )
-                wang_xiang_values_for_zhi.append(wang_xiang_value_for_hidden)
+                WANG_XIANG_VALUEs_for_zhi.append(WANG_XIANG_VALUE_for_hidden)
 
-            wang_xiang_values_list.append(
-                (wang_xiang_value_for_gan, wang_xiang_values_for_zhi)
+            WANG_XIANG_VALUEs_list.append(
+                (WANG_XIANG_VALUE_for_gan, WANG_XIANG_VALUEs_for_zhi)
             )
 
-        return wang_xiang_values_list
+        return WANG_XIANG_VALUEs_list
 
     def _calculate_gan_liang_values(
         self,
         values: List[Tuple[int, int]],
         hidden_gans: List[Dict[str, float]],
-        wang_xiang_values: List[Tuple[float, List[float]]],
+        WANG_XIANG_VALUEs: List[Tuple[float, List[float]]],
     ) -> List[Tuple[float, List[float]]]:
         """Calculate stem strength values."""
         result = []
 
         for (v_gan, v_zhi), gans, (wx_gan, wx_zhis) in zip(
-            values, hidden_gans, wang_xiang_values
+            values, hidden_gans, WANG_XIANG_VALUEs
         ):
             zhi_values = [
                 v_zhi * g * wx for g, wx in zip(gans.values(), wx_zhis)
@@ -342,7 +343,7 @@ class BaziPresenter:
         """Calculate beneficial and harmful totals."""
         total_beneficial = 0.0
         total_non_beneficial = 0.0
-        relationship = wuxing_relations.get(main_wuxing, {})
+        relationship = WUXING_RELATIONS.get(main_wuxing, {})
 
         for beneficial in relationship.get('有利', []):
             total_beneficial += wuxing_value.get(beneficial, 0)

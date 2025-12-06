@@ -14,16 +14,17 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from lunar_python import Solar
 
-from bazi.constants import (
-    gan_wuxing,
-    gan_xiang_chong,
-    gui_ren,
-    tian_de,
-    wen_chang,
-    wuxing,
-    wuxing_relations,
-    yue_de,
-    zhi_xiang_chong,
+# Domain layer imports (DIP-compliant)
+from bazi.domain.constants import (
+    GAN_WUXING,
+    GAN_XIANG_CHONG,
+    GANZHI_WUXING,
+    GUI_REN,
+    TIAN_DE,
+    WEN_CHANG,
+    WUXING_RELATIONS,
+    YUE_DE,
+    ZHI_XIANG_CHONG,
 )
 from bazi.domain.models import BirthData, check_he
 from bazi.infrastructure.di import get_container
@@ -168,7 +169,7 @@ def calendar_data(request):
     if profile.day_master_wuxing:
         profile_day_wuxing = profile.day_master_wuxing
     else:
-        profile_day_wuxing = gan_wuxing.get(profile_day_gan)
+        profile_day_wuxing = GAN_WUXING.get(profile_day_gan)
 
     # Get favorable/unfavorable elements
     if (
@@ -282,26 +283,26 @@ def _calculate_year_score(
 
     # Check gan conflicts
     for profile_gan in profile_all_gan:
-        if (year_gan, profile_gan) in gan_xiang_chong or (
+        if (year_gan, profile_gan) in GAN_XIANG_CHONG or (
             profile_gan,
             year_gan,
-        ) in gan_xiang_chong:
+        ) in GAN_XIANG_CHONG:
             score -= 0.1
             break
 
     # Check zhi conflicts
     for profile_zhi in profile_all_zhi:
-        if (year_zhi, profile_zhi) in zhi_xiang_chong or (
+        if (year_zhi, profile_zhi) in ZHI_XIANG_CHONG or (
             profile_zhi,
             year_zhi,
-        ) in zhi_xiang_chong:
+        ) in ZHI_XIANG_CHONG:
             score -= 0.1
             break
 
     # Check if year elements are favorable
-    year_gan_wuxing = gan_wuxing.get(year_gan)
-    year_zhi_wuxing = wuxing.get(year_zhi)
-    if year_gan_wuxing in good_wuxing_list or year_zhi_wuxing in good_wuxing_list:
+    year_GAN_WUXING = GAN_WUXING.get(year_gan)
+    year_zhi_wuxing = GANZHI_WUXING.get(year_zhi)
+    if year_GAN_WUXING in good_wuxing_list or year_zhi_wuxing in good_wuxing_list:
         score += 0.1
 
     return score
@@ -320,41 +321,41 @@ def _calculate_month_score(
     score = 0
 
     # Check month gan conflicts with year gan
-    if (month_gan, year_gan) in gan_xiang_chong or (
+    if (month_gan, year_gan) in GAN_XIANG_CHONG or (
         year_gan,
         month_gan,
-    ) in gan_xiang_chong:
+    ) in GAN_XIANG_CHONG:
         score -= 0.2
 
     # Check month gan conflicts with profile
     for profile_gan in profile_all_gan:
-        if (month_gan, profile_gan) in gan_xiang_chong or (
+        if (month_gan, profile_gan) in GAN_XIANG_CHONG or (
             profile_gan,
             month_gan,
-        ) in gan_xiang_chong:
+        ) in GAN_XIANG_CHONG:
             score -= 0.2
             break
 
     # Check month zhi conflicts with year zhi
-    if (month_zhi, year_zhi) in zhi_xiang_chong or (
+    if (month_zhi, year_zhi) in ZHI_XIANG_CHONG or (
         year_zhi,
         month_zhi,
-    ) in zhi_xiang_chong:
+    ) in ZHI_XIANG_CHONG:
         score -= 0.2
 
     # Check month zhi conflicts with profile
     for profile_zhi in profile_all_zhi:
-        if (month_zhi, profile_zhi) in zhi_xiang_chong or (
+        if (month_zhi, profile_zhi) in ZHI_XIANG_CHONG or (
             profile_zhi,
             month_zhi,
-        ) in zhi_xiang_chong:
+        ) in ZHI_XIANG_CHONG:
             score -= 0.2
             break
 
     # Check if month elements are favorable
-    month_gan_wuxing = gan_wuxing.get(month_gan)
-    month_zhi_wuxing = wuxing.get(month_zhi)
-    if month_gan_wuxing in good_wuxing_list or month_zhi_wuxing in good_wuxing_list:
+    month_GAN_WUXING = GAN_WUXING.get(month_gan)
+    month_zhi_wuxing = GANZHI_WUXING.get(month_zhi)
+    if month_GAN_WUXING in good_wuxing_list or month_zhi_wuxing in good_wuxing_list:
         score += 0.1
 
     return score
@@ -567,13 +568,13 @@ def _check_year_month_conflicts(
 ):
     """Check conflicts between day pillar and year/month."""
     # Day gan conflicts
-    if (day_gan, year_gan) in gan_xiang_chong:
+    if (day_gan, year_gan) in GAN_XIANG_CHONG:
         day_quality = "bad"
         day_score -= 2
         day_reasons.append(
             {"type": "bad", "text": f"日干 {day_gan} 与年干 {year_gan} 相冲"}
         )
-    if (day_gan, month_gan) in gan_xiang_chong:
+    if (day_gan, month_gan) in GAN_XIANG_CHONG:
         day_quality = "bad"
         day_score -= 2
         day_reasons.append(
@@ -581,13 +582,13 @@ def _check_year_month_conflicts(
         )
 
     # Day zhi conflicts
-    if (day_zhi, year_zhi) in zhi_xiang_chong:
+    if (day_zhi, year_zhi) in ZHI_XIANG_CHONG:
         day_quality = "bad"
         day_score -= 2
         day_reasons.append(
             {"type": "bad", "text": f"日支 {day_zhi} 与年支 {year_zhi} 相冲"}
         )
-    if (day_zhi, month_zhi) in zhi_xiang_chong:
+    if (day_zhi, month_zhi) in ZHI_XIANG_CHONG:
         day_quality = "bad"
         day_score -= 2
         day_reasons.append(
@@ -608,7 +609,7 @@ def _check_profile_conflicts(
 ):
     """Check conflicts between day pillar and profile."""
     for profile_gan in profile_all_gan:
-        if (day_gan, profile_gan) in gan_xiang_chong:
+        if (day_gan, profile_gan) in GAN_XIANG_CHONG:
             day_quality = "bad"
             day_score -= 2
             day_reasons.append(
@@ -616,7 +617,7 @@ def _check_profile_conflicts(
             )
 
     for profile_zhi in profile_all_zhi:
-        if (day_zhi, profile_zhi) in zhi_xiang_chong:
+        if (day_zhi, profile_zhi) in ZHI_XIANG_CHONG:
             day_quality = "bad"
             day_score -= 2
             day_reasons.append(
@@ -635,14 +636,14 @@ def _check_wuxing_compatibility(
     day_reasons,
 ):
     """Check five element compatibility."""
-    day_gan_wuxing = gan_wuxing.get(day_gan)
-    day_zhi_wuxing = wuxing.get(day_zhi)
+    day_GAN_WUXING = GAN_WUXING.get(day_gan)
+    day_zhi_wuxing = GANZHI_WUXING.get(day_zhi)
 
     # Bad elements
-    if day_gan_wuxing in bad_wuxing_list:
+    if day_GAN_WUXING in bad_wuxing_list:
         day_score -= 0.5
         day_reasons.append(
-            {"type": "bad", "text": f"日干五行 {day_gan_wuxing} 对命主不利"}
+            {"type": "bad", "text": f"日干五行 {day_GAN_WUXING} 对命主不利"}
         )
     if day_zhi_wuxing in bad_wuxing_list:
         day_score -= 0.5
@@ -651,10 +652,10 @@ def _check_wuxing_compatibility(
         )
 
     # Good elements
-    if day_gan_wuxing in good_wuxing_list:
+    if day_GAN_WUXING in good_wuxing_list:
         day_score += 0.25
         day_reasons.append(
-            {"type": "good", "text": f"日干五行 {day_gan_wuxing} 对命主有利"}
+            {"type": "good", "text": f"日干五行 {day_GAN_WUXING} 对命主有利"}
         )
     if day_zhi_wuxing in good_wuxing_list:
         day_score += 0.25
@@ -715,7 +716,7 @@ def _check_auspicious_stars(
         day_reasons.append({"type": "good", "text": "此日有天乙贵人"})
 
     # Profile interaction stars
-    if (profile_day_gan, day_zhi) in gui_ren:
+    if (profile_day_gan, day_zhi) in GUI_REN:
         day_score += 1
         day_reasons.append(
             {
@@ -723,7 +724,7 @@ def _check_auspicious_stars(
                 "text": f"命主日干 {profile_day_gan} 与当日日支 {day_zhi} 贵人相见",
             }
         )
-    if (day_gan, profile_day_zhi) in wen_chang:
+    if (day_gan, profile_day_zhi) in WEN_CHANG:
         day_score += 1
         day_reasons.append(
             {
@@ -731,7 +732,7 @@ def _check_auspicious_stars(
                 "text": f"命主日干 {day_gan} 与当日日支 {profile_day_zhi} 文昌相见",
             }
         )
-    if (profile_month_zhi, day_gan) in tian_de:
+    if (profile_month_zhi, day_gan) in TIAN_DE:
         day_score += 1
         day_reasons.append(
             {
@@ -739,7 +740,7 @@ def _check_auspicious_stars(
                 "text": f"命主月支 {profile_month_zhi} 与当日日干 {day_gan} 天德相见",
             }
         )
-    if (profile_month_zhi, day_gan) in yue_de:
+    if (profile_month_zhi, day_gan) in YUE_DE:
         day_score += 1
         day_reasons.append(
             {
