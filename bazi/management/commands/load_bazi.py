@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
-import csv
-import os
-from bazi.helper import best_bazi_from_to
+
+from bazi.utils.experiments import best_bazi_from_to
 
 
 class Command(BaseCommand):
