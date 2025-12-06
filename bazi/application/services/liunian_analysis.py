@@ -23,7 +23,7 @@ from bazi.constants import (
 )
 # Import handlers from dedicated module
 from bazi.application.services.shishen_handlers import shishen_handler
-from bazi.domain.models import ShiShen, calculate_shishen
+from bazi.domain.models import HeavenlyStem, ShiShen, calculate_shishen
 
 if TYPE_CHECKING:
     from lunar_python import EightChar
@@ -92,16 +92,13 @@ class LiunianAnalysisService:
         Returns:
             HTML-formatted analysis text
         """
-        daymaster_wuxing = gan_wuxing.get(bazi.getDayGan())
-        daymaster_yinyang = gan_yinyang.get(bazi.getDayGan())
+        daymaster_gan = bazi.getDayGan()
 
         solar = Solar.fromYmd(int(selected_year), 5, 5)
         lunar = solar.getLunar()
         year_bazi = lunar.getEightChar()
 
-        year_shishen = self._get_shishen_for_year(
-            year_bazi, daymaster_wuxing, daymaster_yinyang
-        )
+        year_shishen = self._get_shishen_for_year(year_bazi, daymaster_gan)
 
         analysis = (
             f"{year_bazi.getYearGan()}{year_bazi.getYearZhi()}年，"
@@ -149,29 +146,25 @@ class LiunianAnalysisService:
     def _get_shishen_for_year(
         self,
         year_bazi: EightChar,
-        daymaster_wuxing: str,
-        daymaster_yinyang: str,
+        daymaster_gan: str,
     ) -> List:
         """Calculate ShiShen for a given year's pillars."""
         year_gan = year_bazi.getYearGan()
         year_hidden_gans = hidden_gan_ratios.get(year_bazi.getYearZhi(), {})
 
-        yinyang_gan = gan_yinyang.get(year_gan)
-        wuxing_gan = gan_wuxing.get(year_gan)
-        gan_shishen = calculate_shishen(
-            daymaster_yinyang, daymaster_wuxing, yinyang_gan, wuxing_gan
-        )
+        # Convert Chinese characters to HeavenlyStem objects
+        daymaster_stem = HeavenlyStem.from_chinese(daymaster_gan)
+        year_stem = HeavenlyStem.from_chinese(year_gan)
+
+        gan_shishen = calculate_shishen(daymaster_stem, year_stem)
 
         zhi_shishen = {}
         for gan, ratio in year_hidden_gans.items():
-            yinyang_for_gan = gan_yinyang.get(gan)
-            wuxing_for_gan = gan_wuxing.get(gan)
-            shishen_for_gan = calculate_shishen(
-                daymaster_yinyang, daymaster_wuxing, yinyang_for_gan, wuxing_for_gan
-            )
-            zhi_shishen[shishen_for_gan] = ratio
+            hidden_stem = HeavenlyStem.from_chinese(gan)
+            shishen_for_gan = calculate_shishen(daymaster_stem, hidden_stem)
+            zhi_shishen[shishen_for_gan.chinese] = ratio
 
-        return [gan_shishen, zhi_shishen]
+        return [gan_shishen.chinese, zhi_shishen]
 
     def _analyse_liunian_shishen(
         self,
