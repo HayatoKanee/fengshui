@@ -21,8 +21,8 @@ from bazi.constants import (
     tigang,
     wu_he,
 )
-# Import shishen_handler from helper.py as it references handler functions there
-from bazi.helper import shishen_handler
+# Import handlers from dedicated module
+from bazi.application.services.shishen_handlers import shishen_handler
 from bazi.domain.models import ShiShen, calculate_shishen
 
 if TYPE_CHECKING:

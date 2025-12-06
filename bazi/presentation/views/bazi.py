@@ -11,29 +11,10 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from lunar_python import Solar
 
-from bazi.constants import gan_wuxing, gan_yinyang
-from bazi.domain.models import BirthData
 from bazi.infrastructure.di import get_container
 from bazi.models import UserProfile
+from bazi.presentation.presenters import BaziPresenter, get_shensha
 from bazi.presentation.forms import BirthTimeForm
-
-# Legacy helper imports for template-specific data formatting
-# These functions format data in the specific structure expected by templates
-# TODO: Refactor templates to use domain model structures directly
-from bazi.helper import (
-    accumulate_wuxing_values,
-    calculate_gan_liang_value,
-    calculate_shenghao,
-    calculate_shenghao_percentage,
-    calculate_shishen_for_bazi,
-    calculate_values,
-    calculate_values_for_bazi,
-    calculate_wang_xiang_values,
-    get_hidden_gans,
-    get_relations,
-    get_shensha,
-    get_wang_xiang,
-)
 
 
 def _build_bazi_context(
@@ -47,37 +28,24 @@ def _build_bazi_context(
     """
     Build the template context for BaZi analysis.
 
-    This adapter function prepares all the data needed by the
-    bazi.html template. It uses a mix of domain services and
-    legacy helper functions.
-
-    TODO: Gradually migrate to using BaziAnalysisResult directly
-    once templates are updated.
+    This function prepares all the data needed by the bazi.html template
+    using the BaziPresenter for template-specific data formatting
+    and domain services for complex analysis.
     """
     container = get_container()
+    presenter = BaziPresenter()
 
-    main_wuxing = bazi.getDayWuXing()[0]
-    values = calculate_values(bazi)
-    hidden_gans = get_hidden_gans(bazi)
-    sheng_hao_relations = get_relations(main_wuxing)
-    wuxing = calculate_values_for_bazi(bazi, gan_wuxing)
-    yinyang = calculate_values_for_bazi(bazi, gan_yinyang)
-    shishen = calculate_shishen_for_bazi(wuxing, yinyang)
-    wang_xiang = get_wang_xiang(bazi.getMonthZhi(), lunar)
-    wang_xiang_values = calculate_wang_xiang_values(bazi, wang_xiang)
-    gan_liang_values = calculate_gan_liang_value(values, hidden_gans, wang_xiang_values)
-    shengxiao = lunar.getYearShengXiaoExact()
-    wuxing_value = accumulate_wuxing_values(wuxing, gan_liang_values)
-    sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
-    sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
-    is_strong = sheng_hao[0] > sheng_hao[1]
+    # Use presenter for all template-specific data formatting
+    view_data = presenter.present(bazi, lunar)
 
     # Use domain services for complex analysis
     liunian_service = container.liunian_service
-    partner_analyst = liunian_service.analyse_partner(hidden_gans, shishen)
+    partner_analyst = liunian_service.analyse_partner(
+        view_data.hidden_gans, view_data.shishen
+    )
     personality = liunian_service.analyse_personality(bazi.getMonthZhi())
     liunian_analysis = liunian_service.analyse_liunian(
-        bazi, shishen, selected_year, is_strong, is_male
+        bazi, view_data.shishen, selected_year, view_data.is_strong, is_male
     )
     shensha_list = get_shensha(bazi)
 
@@ -87,19 +55,19 @@ def _build_bazi_context(
     return {
         "form": form,
         "bazi": bazi,
-        "values": values,
-        "hidden_gans": hidden_gans,
-        "main_wuxing": main_wuxing,
-        "shengxiao": shengxiao,
-        "wang_xiang": wang_xiang,
-        "wang_xiang_values": wang_xiang_values,
-        "wuxing": wuxing,
-        "yinyang": yinyang,
-        "shishen": shishen,
-        "gan_liang_values": gan_liang_values,
-        "wuxing_value": wuxing_value,
-        "sheng_hao": sheng_hao,
-        "sheng_hao_percentage": sheng_hao_percentage,
+        "values": view_data.values,
+        "hidden_gans": view_data.hidden_gans,
+        "main_wuxing": view_data.main_wuxing,
+        "shengxiao": view_data.shengxiao,
+        "wang_xiang": view_data.wang_xiang,
+        "wang_xiang_values": view_data.wang_xiang_values,
+        "wuxing": view_data.wuxing,
+        "yinyang": view_data.yinyang,
+        "shishen": view_data.shishen,
+        "gan_liang_values": view_data.gan_liang_values,
+        "wuxing_value": view_data.wuxing_value,
+        "sheng_hao": view_data.sheng_hao,
+        "sheng_hao_percentage": view_data.sheng_hao_percentage,
         "current_year": int(selected_year),
         "is_male": is_male,
         "partner_analyst": partner_analyst,
@@ -279,27 +247,16 @@ def get_bazi_detail(request):
         except UserProfile.DoesNotExist:
             pass
 
-    container = get_container()
-
     # Calculate BaZi
     solar = Solar.fromYmdHms(int(year), int(month), int(day), int(hour), 0, 0)
     lunar = solar.getLunar()
     bazi = lunar.getEightChar()
 
-    # Calculate analysis data
-    main_wuxing = bazi.getDayWuXing()[0]
-    values = calculate_values(bazi)
-    hidden_gans = get_hidden_gans(bazi)
-    wuxing = calculate_values_for_bazi(bazi, gan_wuxing)
-    yinyang = calculate_values_for_bazi(bazi, gan_yinyang)
-    wang_xiang = get_wang_xiang(bazi.getMonthZhi(), lunar)
-    wang_xiang_values = calculate_wang_xiang_values(bazi, wang_xiang)
-    gan_liang_values = calculate_gan_liang_value(values, hidden_gans, wang_xiang_values)
-    wuxing_value = accumulate_wuxing_values(wuxing, gan_liang_values)
-    sheng_hao = calculate_shenghao(wuxing_value, main_wuxing)
-    sheng_hao_percentage = calculate_shenghao_percentage(sheng_hao[0], sheng_hao[1])
+    # Use presenter for template-specific data formatting
+    presenter = BaziPresenter()
+    view_data = presenter.present(bazi, lunar)
 
-    # Calculate shensha using domain service
+    # Calculate shensha
     shensha_list = get_shensha(bazi)
 
     # Extract individual shensha from list for template compatibility
@@ -311,9 +268,9 @@ def get_bazi_detail(request):
     for shensha_name, positions in shensha_list:
         if '贵人' in shensha_name:
             gui_ren = positions
-        elif shensha_name == '天德':
+        elif shensha_name == '天德贵人':
             tian_de = positions
-        elif shensha_name == '月德':
+        elif shensha_name == '月德贵人':
             yue_de = positions
         elif shensha_name == '文昌':
             wen_chang = positions
@@ -322,10 +279,10 @@ def get_bazi_detail(request):
 
     context = {
         "bazi": bazi,
-        "wuxing": wuxing,
-        "wuxing_value": wuxing_value,
-        "sheng_hao": sheng_hao,
-        "sheng_hao_percentage": sheng_hao_percentage,
+        "wuxing": view_data.wuxing,
+        "wuxing_value": view_data.wuxing_value,
+        "sheng_hao": view_data.sheng_hao,
+        "sheng_hao_percentage": view_data.sheng_hao_percentage,
         "gui_ren": gui_ren,
         "tian_de": tian_de,
         "yue_de": yue_de,
