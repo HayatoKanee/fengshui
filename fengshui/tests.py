@@ -47,12 +47,16 @@ class URLTests(TestCase):
     def test_bazi_url_resolves(self):
         """Test that bazi URL resolves correctly"""
         resolver = resolve('/bazi')  # Note: no trailing slash
-        self.assertEqual(resolver.func.__name__, 'bazi_view')
-    
+        # CBV as_view() returns function with __name__ = 'view'
+        # Check the view class instead
+        self.assertEqual(resolver.func.view_class.__name__, 'BaziAnalysisView')
+
     def test_bazi_detail_url(self):
         """Test that bazi_detail URL resolves correctly"""
         resolver = resolve('/bazi_detail')  # The actual URL name is bazi_detail
-        self.assertEqual(resolver.func.__name__, 'get_bazi_detail')
+        # CBV as_view() returns function with __name__ = 'view'
+        # Check the view class instead
+        self.assertEqual(resolver.func.view_class.__name__, 'BaziDetailView')
     
     def test_zeri_url_resolves(self):
         """Test that zeri URL resolves correctly"""

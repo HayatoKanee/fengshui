@@ -53,7 +53,7 @@
                         <option value="">-- 请选择 --</option>
                         {% for profile in profiles %}
                             <option value="{{ profile.id }}" {% if profile.is_default %}selected{% endif %}>
-                                {{ profile.name }} ({{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日)
+                                {{ profile.name }} ({{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日)
                                 {% if profile.is_default %}[默认]{% endif %}
                             </option>
                         {% endfor %}

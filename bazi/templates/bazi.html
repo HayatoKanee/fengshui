@@ -25,7 +25,7 @@
                 {% for profile in profiles %}
                     <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
                        class="btn {% if request.GET.profile_id|add:'0' == profile.id %}btn-primary{% else %}btn-outline btn-primary{% endif %} w-full justify-start">
-                        {{ profile.name }} ({{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日)
+                        {{ profile.name }} ({{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日)
                     </a>
                 {% endfor %}
                 <button @click="showAddModal = true"

@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from bazi.application.services import (
         BaziAnalysisService,
         CalendarService,
+        DayQualityService,
         FeiXingService,
         LiunianAnalysisService,
         ProfileService,
@@ -62,6 +63,7 @@ class Container:
     # Application services (use case orchestrators)
     bazi_service: BaziAnalysisService
     calendar_service: CalendarService
+    day_quality_service: DayQualityService
     feixing_service: FeiXingService
     liunian_service: LiunianAnalysisService
     profile_service: ProfileService
@@ -92,6 +94,7 @@ class Container:
         from bazi.application.services import (
             BaziAnalysisService,
             CalendarService,
+            DayQualityService,
             FeiXingService,
             LiunianAnalysisService,
             ProfileService,
@@ -109,6 +112,13 @@ class Container:
             lunar_adapter=lunar,
             wuxing_calculator=wuxing_calc,
             day_master_analyzer=day_master_analyzer,
+        )
+
+        day_quality_service = DayQualityService(
+            lunar_adapter=lunar,
+            bazi_service=bazi_service,
+            calendar_service=calendar_service,
+            shensha_calculator=shensha_calc,
         )
 
         profile_service = ProfileService(
@@ -131,6 +141,7 @@ class Container:
             feixing_calculator=feixing_calc,
             bazi_service=bazi_service,
             calendar_service=calendar_service,
+            day_quality_service=day_quality_service,
             feixing_service=feixing_service,
             liunian_service=liunian_service,
             profile_service=profile_service,

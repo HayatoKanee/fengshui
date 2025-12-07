@@ -25,11 +25,11 @@
                                 <tr class="hover">
                                     <td class="font-medium">{{ profile.name }}</td>
                                     <td>
-                                        {{ profile.birth_year }}年{{ profile.birth_month }}月{{ profile.birth_day }}日
-                                        {{ profile.birth_hour }}时{% if profile.birth_minute %}{{ profile.birth_minute }}分{% endif %}
+                                        {{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日
+                                        {{ profile.birth_data.hour }}时{% if profile.birth_data.minute %}{{ profile.birth_data.minute }}分{% endif %}
                                     </td>
                                     <td>
-                                        {% if profile.is_male %}
+                                        {% if profile.birth_data.is_male %}
                                             <span class="badge badge-info">男</span>
                                         {% else %}
                                             <span class="badge badge-secondary">女</span>

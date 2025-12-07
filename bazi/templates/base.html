@@ -7,11 +7,21 @@
     <meta name="htmx-config" content='{"historyCacheSize": 0}'>
     <title>{% block title %}FengShui - BaZi{% endblock %}</title>
 
+    <!-- Chinese Web Font - Noto Sans SC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS + DaisyUI -->
     {% tailwind_css %}
 
     <!-- Custom WuXing element colors -->
     <style>
+        /* Chinese font stack */
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
         /* WuXing element text colors */
         .text-wood { color: var(--color-wuxing-wood); }
         .text-fire { color: var(--color-wuxing-fire); }
@@ -60,6 +70,10 @@
             <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow">
                 <li><a href="{% url 'home' %}">首页</a></li>
                 <li><a href="{% url 'bazi' %}">八字排盘</a></li>
+                <li><a href="{% url 'bazi_lookup' %}">八字查日</a></li>
+                <li><a href="{% url 'zeri' %}">择日</a></li>
+                <li><a href="{% url 'calendar' %}">日历</a></li>
+                <li><a href="{% url 'feixing' %}">飞星</a></li>
                 <li>
                     <details>
                         <summary>基础知识</summary>
@@ -73,8 +87,6 @@
                         </ul>
                     </details>
                 </li>
-                <li><a href="{% url 'calendar' %}">择日</a></li>
-                <li><a href="{% url 'feixing' %}">飞星</a></li>
             </ul>
         </div>
         <a href="{% url 'home' %}" class="btn btn-ghost text-xl">FengShui</a>
@@ -84,6 +96,10 @@
         <ul class="menu menu-horizontal px-1">
             <li><a href="{% url 'home' %}">首页</a></li>
             <li><a href="{% url 'bazi' %}">八字排盘</a></li>
+            <li><a href="{% url 'bazi_lookup' %}">八字查日</a></li>
+            <li><a href="{% url 'zeri' %}">择日</a></li>
+            <li><a href="{% url 'calendar' %}">日历</a></li>
+            <li><a href="{% url 'feixing' %}">飞星</a></li>
             <li>
                 <details>
                     <summary>基础知识</summary>
@@ -97,12 +113,21 @@
                     </ul>
                 </details>
             </li>
-            <li><a href="{% url 'calendar' %}">择日</a></li>
-            <li><a href="{% url 'feixing' %}">飞星</a></li>
         </ul>
     </div>
 
     <div class="navbar-end gap-2">
+        <!-- Language toggle -->
+        <div class="dropdown dropdown-end" x-data="{ lang: localStorage.getItem('lang') || 'zh' }">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-sm px-2">
+                <span x-text="lang === 'zh' ? '中' : 'EN'" class="text-base font-medium"></span>
+            </div>
+            <ul tabindex="0" class="dropdown-content bg-base-100 rounded-box z-50 p-2 shadow-lg mt-2">
+                <li><a @click="lang = 'zh'; localStorage.setItem('lang', 'zh')" :class="{ 'active': lang === 'zh' }" class="block px-3 py-1 rounded hover:bg-base-200 cursor-pointer" style="white-space: nowrap;">中文</a></li>
+                <li><a @click="lang = 'en'; localStorage.setItem('lang', 'en')" :class="{ 'active': lang === 'en' }" class="block px-3 py-1 rounded hover:bg-base-200 cursor-pointer" style="white-space: nowrap;">EN</a></li>
+            </ul>
+        </div>
+
         <!-- Theme toggle -->
         <label class="swap swap-rotate btn btn-ghost btn-circle">
             <input type="checkbox" x-model="darkMode" />

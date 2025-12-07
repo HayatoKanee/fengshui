@@ -24,62 +24,55 @@
     <h2 class="text-2xl font-semibold mb-6">各山位飞星</h2>
 
     <!-- Flying Star Charts Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
         {% for item in table_data %}
-        <div class="card bg-base-100 shadow-lg">
-            <div class="card-body p-4">
-                {% get_direction_grid item.star as direction_grid %}
-                {% get_direction_grid item.second_star as direction_second_grid %}
+        <div class="flex flex-col items-center">
+            {% get_direction_grid item.star as direction_grid %}
+            {% get_direction_grid item.second_star as direction_second_grid %}
 
-                <!-- Top direction label -->
-                <div class="text-center font-bold text-sm mb-2">
-                    <span class="text-primary">{{ direction_grid.top }}</span>
-                    <span class="text-secondary ml-1">{{ direction_second_grid.top }}</span>
+            <!-- Top direction label -->
+            <div class="text-center font-medium text-base mb-1">
+                {{ direction_grid.top }}{{ direction_second_grid.top }}
+            </div>
+
+            <!-- Middle row: left label, grid, right label -->
+            <div class="flex items-center gap-1">
+                <!-- Left label (vertical) -->
+                <div class="font-medium text-sm w-6 text-right flex flex-col items-end">
+                    <span>{{ direction_grid.left }}</span>
+                    <span>{{ direction_second_grid.left }}</span>
                 </div>
 
-                <!-- Middle row: left label, grid, right label -->
-                <div class="flex items-center justify-between gap-2">
-                    <!-- Left label -->
-                    <div class="font-bold text-xs text-left w-8 shrink-0">
-                        <div class="text-primary">{{ direction_grid.left }}</div>
-                        <div class="text-secondary">{{ direction_second_grid.left }}</div>
-                    </div>
+                <!-- 3x3 Flying Star Grid -->
+                <table class="border-collapse" style="border-spacing: 0;">
+                    {% for r in 3|to_range %}
+                    <tr>
+                        {% for c in 3|to_range %}
+                        <td class="border border-base-300 text-center align-middle" style="width: 60px; height: 60px;">
+                            <!-- Main grid number (top) -->
+                            <div class="text-lg font-medium">
+                                {{ item.main_grid|index:r|index:c }}
+                            </div>
+                            <!-- Star numbers (bottom - spaced out) -->
+                            <div class="text-sm text-base-content/70" style="letter-spacing: 0.3em;">
+                                {{ item.grid_star|index:r|index:c }} {{ item.grid_opposite_star|index:r|index:c }}
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
 
-                    <!-- 3x3 Flying Star Grid -->
-                    <div class="flex-1 overflow-x-auto">
-                        <table class="table table-sm table-bordered w-full text-center">
-                            {% for r in 3|to_range %}
-                            <tr>
-                                {% for c in 3|to_range %}
-                                <td class="p-1 border border-base-300">
-                                    <!-- Main grid number (top) -->
-                                    <div class="text-base font-semibold text-base-content">
-                                        {{ item.main_grid|index:r|index:c }}
-                                    </div>
-                                    <!-- Star numbers (bottom - side by side) -->
-                                    <div class="flex justify-center gap-1 text-xs">
-                                        <span class="text-primary">{{ item.grid_star|index:r|index:c }}</span>
-                                        <span class="text-secondary">{{ item.grid_opposite_star|index:r|index:c }}</span>
-                                    </div>
-                                </td>
-                                {% endfor %}
-                            </tr>
-                            {% endfor %}
-                        </table>
-                    </div>
-
-                    <!-- Right label -->
-                    <div class="font-bold text-xs text-right w-8 shrink-0">
-                        <div class="text-primary">{{ direction_grid.right }}</div>
-                        <div class="text-secondary">{{ direction_second_grid.right }}</div>
-                    </div>
+                <!-- Right label (vertical) -->
+                <div class="font-medium text-sm w-6 text-left flex flex-col">
+                    <span>{{ direction_grid.right }}</span>
+                    <span>{{ direction_second_grid.right }}</span>
                 </div>
+            </div>
 
-                <!-- Bottom direction label -->
-                <div class="text-center font-bold text-sm mt-2">
-                    <span class="text-primary">{{ direction_grid.bottom }}</span>
-                    <span class="text-secondary ml-1">{{ direction_second_grid.bottom }}</span>
-                </div>
+            <!-- Bottom direction label -->
+            <div class="text-center font-medium text-base mt-1">
+                {{ direction_grid.bottom }}{{ direction_second_grid.bottom }}
             </div>
         </div>
         {% endfor %}
