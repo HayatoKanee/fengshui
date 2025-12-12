@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Alpine.js cloak - hide elements until Alpine initializes */
+[x-cloak] { display: none !important; }
+
+/* Source paths for Tailwind to scan */
+@source "../../bazi/templates/**/*.html";
+@source "./**/*.{ts,tsx}";
+
+/* WuXing (Five Elements) Custom Theme */
+@theme {
+  --color-wuxing-wood: #228B22;
+  --color-wuxing-wood-light: #90EE90;
+  --color-wuxing-wood-dark: #006400;
+
+  --color-wuxing-fire: #DC143C;
+  --color-wuxing-fire-light: #FF6B6B;
+  --color-wuxing-fire-dark: #8B0000;
+
+  --color-wuxing-earth: #DAA520;
+  --color-wuxing-earth-light: #FFD700;
+  --color-wuxing-earth-dark: #B8860B;
+
+  --color-wuxing-metal: #C0C0C0;
+  --color-wuxing-metal-light: #E8E8E8;
+  --color-wuxing-metal-dark: #808080;
+
+  --color-wuxing-water: #1E90FF;
+  --color-wuxing-water-light: #87CEEB;
+  --color-wuxing-water-dark: #000080;
+}
+
+/* DaisyUI Light Theme */
+@plugin "daisyui/theme" {
+  name: "fengshui-light";
+  default: true;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f8f9fa;
+  --color-base-300: #e9ecef;
+  --color-base-content: #212529;
+  --color-primary: #2563eb;
+  --color-primary-content: #ffffff;
+  --color-secondary: #6c757d;
+  --color-accent: #ffc107;
+  --color-neutral: #343a40;
+  --color-info: #17a2b8;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-error: #dc3545;
+}
+
+/* DaisyUI Dark Theme */
+@plugin "daisyui/theme" {
+  name: "fengshui-dark";
+  color-scheme: dark;
+  --color-base-100: #1d232a;
+  --color-base-200: #191e24;
+  --color-base-300: #15191e;
+  --color-base-content: #f8f9fa;
+  --color-primary: #3b82f6;
+  --color-primary-content: #ffffff;
+  --color-secondary: #6c757d;
+  --color-accent: #ffc107;
+  --color-neutral: #6c757d;
+  --color-info: #3abff8;
+  --color-success: #36d399;
+  --color-warning: #fbbd23;
+  --color-error: #f87272;
+}
+
+/* WuXing Utility Classes */
+.bg-wood { background-color: var(--color-wuxing-wood); color: white; }
+.bg-fire { background-color: var(--color-wuxing-fire); color: white; }
+.bg-earth { background-color: var(--color-wuxing-earth); color: white; }
+.bg-metal { background-color: var(--color-wuxing-metal); color: black; }
+.bg-water { background-color: var(--color-wuxing-water); color: white; }
+
+.text-wood { color: var(--color-wuxing-wood); }
+.text-fire { color: var(--color-wuxing-fire); }
+.text-earth { color: var(--color-wuxing-earth); }
+.text-metal { color: var(--color-wuxing-metal-dark); }
+.text-water { color: var(--color-wuxing-water); }
+
+/* HTMX Loading States */
+.htmx-request .htmx-indicator { display: inline-flex; }
+.htmx-indicator { display: none; }
+
+/* View Transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+}
+
+/* Chinese Font Stack + FOUC Prevention (reveals body hidden by inline style) */
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  visibility: visible;
+  opacity: 1;
+}

@@ -1,51 +1,24 @@
-{% load static tailwind_tags django_htmx %}
+{% load static django_vite django_htmx i18n %}
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="fengshui-light">
+<html lang="{{ LANGUAGE_CODE }}" data-theme="fengshui-light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="htmx-config" content='{"historyCacheSize": 0}'>
-    <title>{% block title %}FengShui - BaZi{% endblock %}</title>
+    <title>{% block title %}MyFate - BaZi{% endblock %}</title>
 
     <!-- Chinese Web Font - Noto Sans SC -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS + DaisyUI -->
-    {% tailwind_css %}
+    <!-- FOUC Prevention: Hide body until CSS loads -->
+    <style>body { visibility: hidden; opacity: 0; }</style>
 
-    <!-- Custom WuXing element colors -->
-    <style>
-        /* Chinese font stack */
-        body {
-            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-
-        /* WuXing element text colors */
-        .text-wood { color: var(--color-wuxing-wood); }
-        .text-fire { color: var(--color-wuxing-fire); }
-        .text-earth { color: var(--color-wuxing-earth); }
-        .text-metal { color: var(--color-wuxing-metal-dark); }
-        .text-water { color: var(--color-wuxing-water); }
-
-        /* WuXing element background colors */
-        .bg-wood { background-color: var(--color-wuxing-wood); color: white; }
-        .bg-fire { background-color: var(--color-wuxing-fire); color: white; }
-        .bg-earth { background-color: var(--color-wuxing-earth); color: white; }
-        .bg-metal { background-color: var(--color-wuxing-metal); color: black; }
-        .bg-water { background-color: var(--color-wuxing-water); color: white; }
-
-        /* HTMX loading indicator */
-        .htmx-request .htmx-indicator { display: inline-block; }
-        .htmx-indicator { display: none; }
-    </style>
-
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
-
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <!-- Vite Assets (Tailwind CSS + HTMX + Alpine.js + React Islands) -->
+    {% vite_hmr_client %}
+    {% vite_asset 'src/styles.css' %}
+    {% vite_asset 'src/main.ts' %}
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -68,48 +41,48 @@
                 </svg>
             </div>
             <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow">
-                <li><a href="{% url 'home' %}">首页</a></li>
-                <li><a href="{% url 'bazi' %}">八字排盘</a></li>
-                <li><a href="{% url 'bazi_lookup' %}">八字查日</a></li>
-                <li><a href="{% url 'zeri' %}">择日</a></li>
-                <li><a href="{% url 'calendar' %}">日历</a></li>
-                <li><a href="{% url 'feixing' %}">飞星</a></li>
+                <li><a href="{% url 'home' %}">{% trans "首页" %}</a></li>
+                <li><a href="{% url 'bazi' %}">{% trans "八字排盘" %}</a></li>
+                <li><a href="{% url 'bazi_lookup' %}">{% trans "八字查日" %}</a></li>
+                <li><a href="{% url 'zeri' %}">{% trans "择日" %}</a></li>
+                <li><a href="{% url 'calendar' %}">{% trans "日历" %}</a></li>
+                <li><a href="{% url 'feixing' %}">{% trans "飞星" %}</a></li>
                 <li>
                     <details>
-                        <summary>基础知识</summary>
+                        <summary>{% trans "基础知识" %}</summary>
                         <ul class="p-2">
-                            <li><a href="{% url 'yinyang' %}">阴阳</a></li>
-                            <li><a href="{% url 'wuxing' %}">五行</a></li>
-                            <li><a href="{% url 'tiangan' %}">天干</a></li>
-                            <li><a href="{% url 'dizhi' %}">地支</a></li>
-                            <li><a href="{% url 'ganzhi' %}">干支</a></li>
-                            <li><a href="{% url 'introbazi' %}">八字介绍</a></li>
+                            <li><a href="{% url 'yinyang' %}">{% trans "阴阳" %}</a></li>
+                            <li><a href="{% url 'wuxing' %}">{% trans "五行" %}</a></li>
+                            <li><a href="{% url 'tiangan' %}">{% trans "天干" %}</a></li>
+                            <li><a href="{% url 'dizhi' %}">{% trans "地支" %}</a></li>
+                            <li><a href="{% url 'ganzhi' %}">{% trans "干支" %}</a></li>
+                            <li><a href="{% url 'introbazi' %}">{% trans "八字介绍" %}</a></li>
                         </ul>
                     </details>
                 </li>
             </ul>
         </div>
-        <a href="{% url 'home' %}" class="btn btn-ghost text-xl">FengShui</a>
+        <a href="{% url 'home' %}" class="btn btn-ghost text-xl">MyFate</a>
     </div>
 
     <div class="navbar-center hidden lg:flex">
         <ul class="menu menu-horizontal px-1">
-            <li><a href="{% url 'home' %}">首页</a></li>
-            <li><a href="{% url 'bazi' %}">八字排盘</a></li>
-            <li><a href="{% url 'bazi_lookup' %}">八字查日</a></li>
-            <li><a href="{% url 'zeri' %}">择日</a></li>
-            <li><a href="{% url 'calendar' %}">日历</a></li>
-            <li><a href="{% url 'feixing' %}">飞星</a></li>
+            <li><a href="{% url 'home' %}">{% trans "首页" %}</a></li>
+            <li><a href="{% url 'bazi' %}">{% trans "八字排盘" %}</a></li>
+            <li><a href="{% url 'bazi_lookup' %}">{% trans "八字查日" %}</a></li>
+            <li><a href="{% url 'zeri' %}">{% trans "择日" %}</a></li>
+            <li><a href="{% url 'calendar' %}">{% trans "日历" %}</a></li>
+            <li><a href="{% url 'feixing' %}">{% trans "飞星" %}</a></li>
             <li>
                 <details>
-                    <summary>基础知识</summary>
+                    <summary>{% trans "基础知识" %}</summary>
                     <ul class="p-2 bg-base-100 rounded-box z-50 shadow">
-                        <li><a href="{% url 'yinyang' %}">阴阳</a></li>
-                        <li><a href="{% url 'wuxing' %}">五行</a></li>
-                        <li><a href="{% url 'tiangan' %}">天干</a></li>
-                        <li><a href="{% url 'dizhi' %}">地支</a></li>
-                        <li><a href="{% url 'ganzhi' %}">干支</a></li>
-                        <li><a href="{% url 'introbazi' %}">八字介绍</a></li>
+                        <li><a href="{% url 'yinyang' %}">{% trans "阴阳" %}</a></li>
+                        <li><a href="{% url 'wuxing' %}">{% trans "五行" %}</a></li>
+                        <li><a href="{% url 'tiangan' %}">{% trans "天干" %}</a></li>
+                        <li><a href="{% url 'dizhi' %}">{% trans "地支" %}</a></li>
+                        <li><a href="{% url 'ganzhi' %}">{% trans "干支" %}</a></li>
+                        <li><a href="{% url 'introbazi' %}">{% trans "八字介绍" %}</a></li>
                     </ul>
                 </details>
             </li>
@@ -117,14 +90,28 @@
     </div>
 
     <div class="navbar-end gap-2">
-        <!-- Language toggle -->
-        <div class="dropdown dropdown-end" x-data="{ lang: localStorage.getItem('lang') || 'zh' }">
+        <!-- Language toggle (HTMX-powered) -->
+        <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost btn-sm px-2">
-                <span x-text="lang === 'zh' ? '中' : 'EN'" class="text-base font-medium"></span>
+                <span class="text-base font-medium">{% if LANGUAGE_CODE == 'zh-hans' %}中{% else %}EN{% endif %}</span>
             </div>
             <ul tabindex="0" class="dropdown-content bg-base-100 rounded-box z-50 p-2 shadow-lg mt-2">
-                <li><a @click="lang = 'zh'; localStorage.setItem('lang', 'zh')" :class="{ 'active': lang === 'zh' }" class="block px-3 py-1 rounded hover:bg-base-200 cursor-pointer" style="white-space: nowrap;">中文</a></li>
-                <li><a @click="lang = 'en'; localStorage.setItem('lang', 'en')" :class="{ 'active': lang === 'en' }" class="block px-3 py-1 rounded hover:bg-base-200 cursor-pointer" style="white-space: nowrap;">EN</a></li>
+                <li>
+                    <form action="{% url 'set_language' %}" method="post" hx-post="{% url 'set_language' %}" hx-swap="none" hx-on::after-request="window.location.reload()">
+                        {% csrf_token %}
+                        <input type="hidden" name="language" value="zh-hans">
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="block w-full text-left px-3 py-1 rounded hover:bg-base-200 cursor-pointer {% if LANGUAGE_CODE == 'zh-hans' %}bg-primary/10{% endif %}">中文</button>
+                    </form>
+                </li>
+                <li>
+                    <form action="{% url 'set_language' %}" method="post" hx-post="{% url 'set_language' %}" hx-swap="none" hx-on::after-request="window.location.reload()">
+                        {% csrf_token %}
+                        <input type="hidden" name="language" value="en">
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="block w-full text-left px-3 py-1 rounded hover:bg-base-200 cursor-pointer {% if LANGUAGE_CODE == 'en' %}bg-primary/10{% endif %}">English</button>
+                    </form>
+                </li>
             </ul>
         </div>
 
@@ -149,12 +136,12 @@
                 </div>
             </div>
             <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow">
-                <li><a href="{% url 'profiles' %}">个人资料</a></li>
-                <li><a href="{% url 'logout' %}">退出登录</a></li>
+                <li><a href="{% url 'profiles' %}">{% trans "个人资料" %}</a></li>
+                <li><a href="{% url 'logout' %}">{% trans "退出登录" %}</a></li>
             </ul>
         </div>
         {% else %}
-        <a href="{% url 'login' %}" class="btn btn-primary btn-sm">登录</a>
+        <a href="{% url 'login' %}" class="btn btn-primary btn-sm">{% trans "登录" %}</a>
         {% endif %}
     </div>
 </div>
@@ -176,10 +163,21 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- Footer -->
-<footer class="footer footer-center bg-base-300 text-base-content p-4">
-    <aside>
-        <p>FengShui BaZi - 八字命理分析</p>
+<!-- Footer - Modern Minimal Design -->
+<footer class="footer footer-center bg-base-200 text-base-content py-8">
+    <aside class="space-y-3">
+        <p class="text-2xl font-light tracking-wide">
+            <span class="font-semibold">MyFate</span>
+            <span class="text-base-content/40 mx-2">|</span>
+            <span class="text-base-content/70">{% trans "命理分析" %}</span>
+        </p>
+        <p class="text-sm text-base-content/50 max-w-md">
+            {% trans "探索命运的奥秘，了解八字的智慧" %}
+        </p>
+        <div class="border-t border-base-content/10 w-24 mx-auto my-4"></div>
+        <p class="text-xs text-base-content/40">
+            © {% now "Y" %} MyFate.org
+        </p>
     </aside>
 </footer>
 {% endblock %}

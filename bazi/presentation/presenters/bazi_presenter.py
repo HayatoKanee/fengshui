@@ -334,18 +334,33 @@ class BaziPresenter:
         wuxing_value: Dict[str, float],
         main_wuxing: str,
     ) -> Tuple[float, float]:
-        """Calculate beneficial and harmful totals."""
-        total_beneficial = 0.0
-        total_non_beneficial = 0.0
+        """
+        Calculate beneficial (生) and harmful (耗) element totals.
+
+        生 (sheng/beneficial): Elements that support the day master
+            - Same element (比劫) + element that generates it (印星)
+        耗 (hao/harmful): Elements that drain the day master
+            - Element it generates (食伤) + element it controls (财星) + element that controls it (官杀)
+
+        Args:
+            wuxing_value: Dict of element -> accumulated strength value
+            main_wuxing: The day master's element (日主五行)
+
+        Returns:
+            Tuple of (beneficial_total, harmful_total)
+        """
         relationship = WUXING_RELATIONS.get(main_wuxing, {})
 
-        for beneficial in relationship.get('有利', []):
-            total_beneficial += wuxing_value.get(beneficial, 0)
+        total_beneficial = sum(
+            wuxing_value.get(element, 0)
+            for element in relationship.get('有利', [])
+        )
+        total_harmful = sum(
+            wuxing_value.get(element, 0)
+            for element in relationship.get('不利', [])
+        )
 
-        for non_beneficial in relationship.get('不利', []):
-            total_non_beneficial += wuxing_value.get(non_beneficial, 0)
-
-        return total_beneficial, total_non_beneficial
+        return total_beneficial, total_harmful
 
     def _calculate_shenghao_percentage(
         self,

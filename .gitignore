@@ -398,3 +398,11 @@ pyrightconfig.json
 # Project specific
 .serena/
 data/
+.playwright-mcp/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Vite
+frontend/.vite/

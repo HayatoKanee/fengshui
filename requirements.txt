@@ -25,3 +25,4 @@ tzdata==2025.2
 whitenoise==6.9.0
 psycopg2-binary>=2.9
 dj-database-url>=1.0
+django-vite>=3.0.0

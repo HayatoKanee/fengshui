@@ -6,13 +6,15 @@
          showInputForm: {% if request.GET.profile_id %}false{% else %}true{% endif %},
          showSaveModal: false,
          showAddModal: false,
+         showDeleteModal: false,
+         profileToDelete: { id: null, name: '' },
          formData: {
-             year: '',
-             month: '',
-             day: '',
-             hour: '',
-             minute: '0',
-             gender: 'male'
+             year: '{{ form.year.value|default:"" }}',
+             month: '{{ form.month.value|default:"" }}',
+             day: '{{ form.day.value|default:"" }}',
+             hour: '{{ form.hour.value|default:"" }}',
+             minute: '{{ form.minute.value|default:"0" }}',
+             gender: '{{ form.gender.value|default:"male" }}'
          }
      }">
 
@@ -23,10 +25,16 @@
             <h3 class="card-title text-xl">选择已保存的资料</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {% for profile in profiles %}
-                    <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
-                       class="btn {% if request.GET.profile_id|add:'0' == profile.id %}btn-primary{% else %}btn-outline btn-primary{% endif %} w-full justify-start">
-                        {{ profile.name }} ({{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日)
-                    </a>
+                    <div class="relative group">
+                        <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
+                           class="btn {% if request.GET.profile_id|add:'0' == profile.id %}btn-primary{% else %}btn-outline btn-primary{% endif %} w-full justify-start">
+                            {{ profile.name }} ({{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日)
+                        </a>
+                        <button type="button"
+                                @click.prevent="profileToDelete = { id: {{ profile.id }}, name: '{{ profile.name }}' }; showDeleteModal = true"
+                                class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-base-300/80 text-base-content/50 hover:bg-error hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center text-xs font-light leading-none"
+                                title="删除">×</button>
+                    </div>
                 {% endfor %}
                 <button @click="showAddModal = true"
                         class="btn btn-outline btn-success w-full">
@@ -489,6 +497,25 @@
             </form>
         </div>
         <div class="modal-backdrop" @click="showAddModal = false"></div>
+    </div>
+
+    <!-- Delete Profile Confirmation Modal -->
+    <div class="modal" :class="{ 'modal-open': showDeleteModal }">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4 text-error">确认删除</h3>
+            <p class="py-4">
+                确定要删除 <span class="font-bold" x-text="profileToDelete.name"></span> 的八字资料吗？
+            </p>
+            <p class="text-sm text-base-content/60">此操作不可撤销。</p>
+            <form :action="'/profiles/delete/' + profileToDelete.id + '/'" method="post">
+                {% csrf_token %}
+                <div class="modal-action">
+                    <button type="button" @click="showDeleteModal = false; profileToDelete = { id: null, name: '' }" class="btn btn-ghost">取消</button>
+                    <button type="submit" class="btn btn-error">删除</button>
+                </div>
+            </form>
+        </div>
+        <div class="modal-backdrop" @click="showDeleteModal = false"></div>
     </div>
     {% endif %}
 </div>

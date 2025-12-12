@@ -1,0 +1,165 @@
+# FengShui BaZi English Translations
+# Copyright (C) 2025
+# This file is distributed under the same license as the FengShui package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: FengShui 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-12 15:48+0000\n"
+"PO-Revision-Date: 2025-12-12 15:50+0000\n"
+"Last-Translator: Auto\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: bazi/templates/base.html:40 bazi/templates/base.html:66
+msgid "首页"
+msgstr "Home"
+
+#: bazi/templates/base.html:41 bazi/templates/base.html:67
+#: bazi/templates/home.html:12
+msgid "八字排盘"
+msgstr "BaZi Chart"
+
+#: bazi/templates/base.html:42 bazi/templates/base.html:68
+msgid "八字查日"
+msgstr "BaZi Lookup"
+
+#: bazi/templates/base.html:43 bazi/templates/base.html:69
+#: bazi/templates/home.html:41
+msgid "择日"
+msgstr "Date Selection"
+
+#: bazi/templates/base.html:44 bazi/templates/base.html:70
+msgid "日历"
+msgstr "Calendar"
+
+#: bazi/templates/base.html:45 bazi/templates/base.html:71
+#: bazi/templates/home.html:55
+msgid "飞星"
+msgstr "Flying Stars"
+
+#: bazi/templates/base.html:48 bazi/templates/base.html:74
+msgid "基础知识"
+msgstr "Basics"
+
+#: bazi/templates/base.html:50 bazi/templates/base.html:76
+msgid "阴阳"
+msgstr "Yin Yang"
+
+#: bazi/templates/base.html:51 bazi/templates/base.html:77
+msgid "五行"
+msgstr "Five Elements"
+
+#: bazi/templates/base.html:52 bazi/templates/base.html:78
+msgid "天干"
+msgstr "Heavenly Stems"
+
+#: bazi/templates/base.html:53 bazi/templates/base.html:79
+msgid "地支"
+msgstr "Earthly Branches"
+
+#: bazi/templates/base.html:54 bazi/templates/base.html:80
+msgid "干支"
+msgstr "Stems & Branches"
+
+#: bazi/templates/base.html:55 bazi/templates/base.html:81
+msgid "八字介绍"
+msgstr "BaZi Introduction"
+
+#: bazi/templates/base.html:135
+msgid "个人资料"
+msgstr "Profile"
+
+#: bazi/templates/base.html:136
+msgid "退出登录"
+msgstr "Logout"
+
+#: bazi/templates/base.html:140
+msgid "登录"
+msgstr "Login"
+
+#: bazi/templates/base.html:165
+msgid "FengShui BaZi - 八字命理分析"
+msgstr "FengShui BaZi - Chinese Astrology Analysis"
+
+#: bazi/templates/home.html:7
+msgid "致访客"
+msgstr "To Visitors"
+
+#: bazi/templates/home.html:9
+msgid ""
+"欢迎访问我的网站！本人偶得机会学习一些风水五行皮毛。通过这个平台，我希望分享"
+"所学，帮助大家了解风水堪舆和命理的知识。如有错误或建议，请联系我，我会尽快调"
+"整。"
+msgstr ""
+"Welcome to my website! I've had the fortunate opportunity to delve into the "
+"basics of Feng Shui and the Five Elements. Through this platform, I aim to "
+"share my learnings and help individuals understand the knowledge of "
+"geomancy and Chinese astrology. If you spot any inaccuracies or have "
+"suggestions, please reach out to me, and I'll make adjustments promptly."
+
+#: bazi/templates/home.html:13
+msgid "择日查询"
+msgstr "Date Selection"
+
+#: bazi/templates/home.html:14
+msgid "了解八字"
+msgstr "Learn BaZi"
+
+#: bazi/templates/home.html:27
+msgid "八字"
+msgstr "BaZi"
+
+#: bazi/templates/home.html:28
+msgid "核心"
+msgstr "Core"
+
+#: bazi/templates/home.html:30
+msgid "八字排盘与分析，了解命理格局"
+msgstr "BaZi chart and analysis, understand your destiny"
+
+#: bazi/templates/home.html:32 bazi/templates/home.html:46
+#: bazi/templates/home.html:60 bazi/templates/home.html:74
+msgid "查看"
+msgstr "View"
+
+#: bazi/templates/home.html:42
+msgid "实用"
+msgstr "Practical"
+
+#: bazi/templates/home.html:44
+msgid "根据八字选择吉日良辰"
+msgstr "Choose auspicious dates based on BaZi"
+
+#: bazi/templates/home.html:56
+msgid "风水"
+msgstr "Feng Shui"
+
+#: bazi/templates/home.html:58
+msgid "玄空飞星盘的计算与分析"
+msgstr "Xuan Kong Flying Stars calculation and analysis"
+
+#: bazi/templates/home.html:69
+msgid "学习"
+msgstr "Learn"
+
+#: bazi/templates/home.html:70
+msgid "入门"
+msgstr "Beginner"
+
+#: bazi/templates/home.html:72
+msgid "五行、天干地支基础知识"
+msgstr "Five Elements, Heavenly Stems and Earthly Branches basics"
+
+#: fengshui/settings.py:134
+msgid "中文"
+msgstr "Chinese"
+
+#: fengshui/settings.py:135
+msgid "English"
+msgstr "English"

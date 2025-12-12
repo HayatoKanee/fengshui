@@ -1,0 +1,140 @@
+{% extends 'intro.html' %}
+{% block introContent %}
+<h2>旺相休囚死</h2>
+<p>
+    旺相休囚死是八字命理中用来判断五行在不同季节强弱的重要概念。每个五行在不同的月令（季节）中，会呈现出不同的状态和力量。
+</p>
+
+<div class="alert alert-info my-6">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>月令是八字中最重要的参考点，决定了各五行的基础强弱。</span>
+</div>
+
+<h3>五种状态说明</h3>
+
+<div class="not-prose grid grid-cols-1 md:grid-cols-5 gap-4 my-6">
+    <div class="card bg-success/20 shadow border border-success">
+        <div class="card-body p-4 text-center">
+            <h4 class="card-title justify-center text-success">旺</h4>
+            <p class="text-sm">当令之行</p>
+            <p class="text-xs">力量最强</p>
+            <div class="badge badge-success mt-2">100%</div>
+        </div>
+    </div>
+    <div class="card bg-info/20 shadow border border-info">
+        <div class="card-body p-4 text-center">
+            <h4 class="card-title justify-center text-info">相</h4>
+            <p class="text-sm">旺所生之行</p>
+            <p class="text-xs">力量次强</p>
+            <div class="badge badge-info mt-2">80%</div>
+        </div>
+    </div>
+    <div class="card bg-warning/20 shadow border border-warning">
+        <div class="card-body p-4 text-center">
+            <h4 class="card-title justify-center text-warning">休</h4>
+            <p class="text-sm">生旺之行</p>
+            <p class="text-xs">力量中等</p>
+            <div class="badge badge-warning mt-2">60%</div>
+        </div>
+    </div>
+    <div class="card bg-neutral/20 shadow border border-neutral">
+        <div class="card-body p-4 text-center">
+            <h4 class="card-title justify-center">囚</h4>
+            <p class="text-sm">克旺之行</p>
+            <p class="text-xs">力量较弱</p>
+            <div class="badge badge-neutral mt-2">40%</div>
+        </div>
+    </div>
+    <div class="card bg-error/20 shadow border border-error">
+        <div class="card-body p-4 text-center">
+            <h4 class="card-title justify-center text-error">死</h4>
+            <p class="text-sm">旺所克之行</p>
+            <p class="text-xs">力量最弱</p>
+            <div class="badge badge-error mt-2">20%</div>
+        </div>
+    </div>
+</div>
+
+<h3>各季节的旺相休囚死</h3>
+
+<div class="overflow-x-auto my-6">
+    <table class="table table-zebra">
+        <thead>
+            <tr>
+                <th>季节/月令</th>
+                <th class="text-success">旺</th>
+                <th class="text-info">相</th>
+                <th class="text-warning">休</th>
+                <th>囚</th>
+                <th class="text-error">死</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge bg-wood text-white">春 (寅卯月)</span></td>
+                <td><span class="badge bg-wood text-white">木</span></td>
+                <td><span class="badge bg-fire text-white">火</span></td>
+                <td><span class="badge bg-water text-white">水</span></td>
+                <td><span class="badge bg-metal">金</span></td>
+                <td><span class="badge bg-earth text-white">土</span></td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-fire text-white">夏 (巳午月)</span></td>
+                <td><span class="badge bg-fire text-white">火</span></td>
+                <td><span class="badge bg-earth text-white">土</span></td>
+                <td><span class="badge bg-wood text-white">木</span></td>
+                <td><span class="badge bg-water text-white">水</span></td>
+                <td><span class="badge bg-metal">金</span></td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-metal">秋 (申酉月)</span></td>
+                <td><span class="badge bg-metal">金</span></td>
+                <td><span class="badge bg-water text-white">水</span></td>
+                <td><span class="badge bg-earth text-white">土</span></td>
+                <td><span class="badge bg-fire text-white">火</span></td>
+                <td><span class="badge bg-wood text-white">木</span></td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-water text-white">冬 (亥子月)</span></td>
+                <td><span class="badge bg-water text-white">水</span></td>
+                <td><span class="badge bg-wood text-white">木</span></td>
+                <td><span class="badge bg-metal">金</span></td>
+                <td><span class="badge bg-earth text-white">土</span></td>
+                <td><span class="badge bg-fire text-white">火</span></td>
+            </tr>
+            <tr>
+                <td><span class="badge bg-earth text-white">四季末 (辰戌丑未月)</span></td>
+                <td><span class="badge bg-earth text-white">土</span></td>
+                <td><span class="badge bg-metal">金</span></td>
+                <td><span class="badge bg-fire text-white">火</span></td>
+                <td><span class="badge bg-wood text-white">木</span></td>
+                <td><span class="badge bg-water text-white">水</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<h3>计算原理</h3>
+
+<div class="collapse collapse-arrow bg-base-200 my-6">
+    <input type="checkbox" checked />
+    <div class="collapse-title text-lg font-medium">
+        旺相休囚死的推演逻辑
+    </div>
+    <div class="collapse-content">
+        <ol class="list-decimal pl-6 space-y-2">
+            <li><strong>旺</strong>：与月令同一五行，得令当旺</li>
+            <li><strong>相</strong>：旺所生之行（如春木旺，木生火，故火相）</li>
+            <li><strong>休</strong>：生旺之行（如春木旺，水生木，故水休）</li>
+            <li><strong>囚</strong>：克旺之行（如春木旺，金克木，故金囚）</li>
+            <li><strong>死</strong>：旺所克之行（如春木旺，木克土，故土死）</li>
+        </ol>
+    </div>
+</div>
+
+<p>
+    在本系统的八字排盘中，我们使用旺相休囚死来计算每个五行的基础力量值，再结合干支的具体配置，得出最终的五行力量分布。
+</p>
+{% endblock %}

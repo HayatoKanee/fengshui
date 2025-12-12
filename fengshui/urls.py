@@ -17,6 +17,7 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+from django.conf.urls.i18n import i18n_patterns
 
 # Import from new presentation layer (Clean Architecture)
 from bazi.presentation import (
@@ -76,6 +77,11 @@ urlpatterns = [
     path('feixing',feixing_view,name='feixing'),
     path('calendar', calendar_view, name='calendar'),
     path('calendar/data/', calendar_data, name='calendar_data'),
+]
+
+# i18n URL for language switching
+urlpatterns += [
+    path('i18n/', include('django.conf.urls.i18n')),
 ]
 
 # Add browser-reload for development hot-reloading
