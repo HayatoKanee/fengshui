@@ -30,6 +30,8 @@ if TYPE_CHECKING:
         LiunianAnalysisService,
         ProfileService,
     )
+    from bazi.application.services.bazi_lookup_service import OptimizedBaziLookupService
+    from bazi.domain.services.sexagenary_calculator import SexagenaryCycleCalculator
 
 
 @dataclass
@@ -59,6 +61,7 @@ class Container:
     day_master_analyzer: DayMasterAnalyzer
     shensha_calculator: ShenShaCalculator
     feixing_calculator: FeiXingCalculator
+    sexagenary_calculator: SexagenaryCycleCalculator
 
     # Application services (use case orchestrators)
     bazi_service: BaziAnalysisService
@@ -67,6 +70,7 @@ class Container:
     feixing_service: FeiXingService
     liunian_service: LiunianAnalysisService
     profile_service: ProfileService
+    bazi_lookup_service: OptimizedBaziLookupService
 
     @classmethod
     def create(cls) -> Container:
@@ -89,6 +93,10 @@ class Container:
         day_master_analyzer = DayMasterAnalyzer()
         shensha_calc = ShenShaCalculator()
         feixing_calc = FeiXingCalculator()
+
+        # Sexagenary calculator for optimized lookup
+        from bazi.domain.services.sexagenary_calculator import SexagenaryCycleCalculator
+        sexagenary_calc = SexagenaryCycleCalculator()
 
         # Application services (import here to avoid circular imports)
         from bazi.application.services import (
@@ -131,6 +139,10 @@ class Container:
 
         feixing_service = FeiXingService(calculator=feixing_calc)
 
+        # Optimized BaZi lookup service
+        from bazi.application.services.bazi_lookup_service import OptimizedBaziLookupService
+        bazi_lookup_service = OptimizedBaziLookupService(lunar_adapter=lunar)
+
         return cls(
             lunar_adapter=lunar,
             profile_repo=profile_repo,
@@ -139,12 +151,14 @@ class Container:
             day_master_analyzer=day_master_analyzer,
             shensha_calculator=shensha_calc,
             feixing_calculator=feixing_calc,
+            sexagenary_calculator=sexagenary_calc,
             bazi_service=bazi_service,
             calendar_service=calendar_service,
             day_quality_service=day_quality_service,
             feixing_service=feixing_service,
             liunian_service=liunian_service,
             profile_service=profile_service,
+            bazi_lookup_service=bazi_lookup_service,
         )
 
 

@@ -8,10 +8,12 @@ from .wuxing_calculator import WuXingCalculator
 from .shishen_calculator import ShiShenCalculator
 from .day_master_analyzer import DayMasterAnalyzer
 from .shensha_calculator import ShenShaCalculator
+from .sexagenary_calculator import SexagenaryCycleCalculator
 
 __all__ = [
     "WuXingCalculator",
     "ShiShenCalculator",
     "DayMasterAnalyzer",
     "ShenShaCalculator",
+    "SexagenaryCycleCalculator",
 ]
