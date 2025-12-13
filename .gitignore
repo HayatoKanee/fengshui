@@ -27,7 +27,7 @@ media
 .Python
 build/
 develop-eggs/
-dist/
+/dist/
 downloads/
 eggs/
 .eggs/
@@ -406,3 +406,10 @@ frontend/node_modules/
 
 # Vite
 frontend/.vite/
+
+# Vite build output (generated on Heroku, don't commit)
+static/dist/js/
+static/dist/css/
+static/dist/assets/
+static/dist/manifest.json
+!static/dist/.gitkeep
