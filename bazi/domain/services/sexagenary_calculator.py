@@ -61,11 +61,11 @@ class SexagenaryCycleCalculator:
     - After: ~365 * 100 / 60 = ~608 calculations (60x improvement)
     """
 
-    # Heavenly Stems (天干) - 10 elements
-    STEMS = ('甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸')
+    # Heavenly Stems (天干) - 10 elements, derived from domain model
+    STEMS = tuple(stem.value for stem in HeavenlyStem)
 
-    # Earthly Branches (地支) - 12 elements
-    BRANCHES = ('子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥')
+    # Earthly Branches (地支) - 12 elements, derived from domain model
+    BRANCHES = tuple(branch.value for branch in EarthlyBranch)
 
     # Hour branch mapping (hour -> branch index)
     # 子时 23-01, 丑时 01-03, 寅时 03-05, etc.

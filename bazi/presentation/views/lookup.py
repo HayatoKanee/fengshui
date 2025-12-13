@@ -23,6 +23,7 @@ from django.shortcuts import redirect, render
 from fengshui import settings
 from bazi.infrastructure.di import get_container
 from bazi.application.services.bazi_lookup_service import LookupCriteria
+from bazi.domain.models import HeavenlyStem, EarthlyBranch
 
 
 def bazi_lookup_view(request):
@@ -52,9 +53,9 @@ def bazi_lookup_view(request):
     start_year = datetime.datetime.now().year
     end_year = start_year + 100
 
-    # 天干 (10 Heavenly Stems) and 地支 (12 Earthly Branches)
-    tiangan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
-    dizhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+    # 天干 (10 Heavenly Stems) and 地支 (12 Earthly Branches) - from domain model
+    tiangan = [stem.value for stem in HeavenlyStem]
+    dizhi = [branch.value for branch in EarthlyBranch]
 
     if request.method == 'POST':
         # Get the 8 individual characters from form
