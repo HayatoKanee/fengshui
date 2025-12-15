@@ -160,18 +160,6 @@
                     </div>
                 </div>
 
-                <!-- Liunian Selection -->
-                <div class="form-control">
-                    <label class="label" for="liunian">
-                        <span class="label-text">流年</span>
-                    </label>
-                    <select name="liunian" id="liunian" class="select select-bordered w-full max-w-xs">
-                        {% for year in years %}
-                            <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
                 <!-- Submit Button -->
                 <div class="flex flex-col gap-2">
                     <button type="submit" class="btn btn-primary w-full">
@@ -392,8 +380,41 @@
                                     <span>{{ personality }}</span>
                                 </li>
                                 <li>
-                                    <span class="font-medium">{{ current_year }}流年分析：</span>
-                                    <div class="mt-1 text-base-content/80">{{ liunian_analysis|safe }}</div>
+                                    <span class="font-medium">流年分析：</span>
+                                    <div id="liunian-section" class="mt-2 p-3 bg-base-300 rounded-lg">
+                                        <!-- Year Dropdown for Liunian -->
+                                        <div class="flex flex-wrap items-center gap-4 mb-3">
+                                            <label class="flex items-center gap-2">
+                                                <span class="text-sm font-medium">选择流年：</span>
+                                                <select id="liunian_year_select"
+                                                        name="liunian_year"
+                                                        class="select select-sm select-bordered"
+                                                        hx-get="{% url 'liunian_partial' %}"
+                                                        hx-target="#liunian-content"
+                                                        hx-trigger="change"
+                                                        hx-include="[name='birth_year'],[name='birth_month'],[name='birth_day'],[name='birth_hour'],[name='birth_minute'],[name='is_male']">
+                                                    {% for year, ganzhi in liunian_year_options %}
+                                                        <option value="{{ year }}" {% if year == selected_liunian_year %}selected{% endif %}>
+                                                            {{ year }} {{ ganzhi }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </label>
+                                            <span class="loading loading-spinner loading-sm htmx-indicator"></span>
+                                        </div>
+                                        <!-- Hidden fields to pass birth data for HTMX -->
+                                        <input type="hidden" name="birth_year" value="{{ form.year.value }}">
+                                        <input type="hidden" name="birth_month" value="{{ form.month.value }}">
+                                        <input type="hidden" name="birth_day" value="{{ form.day.value }}">
+                                        <input type="hidden" name="birth_hour" value="{{ form.hour.value }}">
+                                        <input type="hidden" name="birth_minute" value="{{ form.minute.value|default:0 }}">
+                                        <input type="hidden" name="is_male" value="{{ is_male }}">
+
+                                        <!-- Liunian Content (updated via HTMX) -->
+                                        <div id="liunian-content">
+                                            {% include 'partials/liunian_content.html' %}
+                                        </div>
+                                    </div>
                                 </li>
                             </ul>
                         </div>

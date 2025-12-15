@@ -5,6 +5,7 @@ Main views for BaZi (Four Pillars) analysis and display.
 Uses DI container for all infrastructure access (DIP-compliant).
 """
 import datetime
+from datetime import date
 from typing import Any, Dict, Optional
 
 from django.http import HttpResponse
@@ -37,13 +38,37 @@ class BaziContextBuilder(ContainerMixin):
         self.presenter = BaziPresenter()
         self.current_year = datetime.datetime.now().year
 
+    def _get_liunian_year_options(self) -> list:
+        """
+        Generate year options with 干支 for the dropdown.
+
+        Returns a range of years (current year ± some range) with their
+        corresponding 干支 (GanZhi) names.
+
+        Returns:
+            List of (year, ganzhi) tuples
+        """
+        from bazi.domain.services.sexagenary_calculator import SexagenaryCycleCalculator
+        calculator = SexagenaryCycleCalculator()
+
+        # Generate options: 10 years back to 30 years forward
+        start_year = self.current_year - 10
+        end_year = self.current_year + 30
+
+        options = []
+        for year in range(start_year, end_year + 1):
+            ganzhi = calculator.get_year_pillar(year)
+            options.append((year, ganzhi))
+
+        return options
+
     def build(
         self,
         form: BirthTimeForm,
         bazi,
         lunar,
         is_male: bool,
-        selected_year: str,
+        liunian_year: int,
         profiles=None,
     ) -> Dict[str, Any]:
         """
@@ -54,7 +79,7 @@ class BaziContextBuilder(ContainerMixin):
             bazi: The lunar_python EightChar object
             lunar: The lunar_python Lunar object
             is_male: Whether the person is male
-            selected_year: Year for LiuNian analysis
+            liunian_year: Year for LiuNian analysis
             profiles: Optional list of user profiles
 
         Returns:
@@ -63,6 +88,20 @@ class BaziContextBuilder(ContainerMixin):
         # Use presenter for all template-specific data formatting
         view_data = self.presenter.present(bazi, lunar)
 
+        # Use Feb 10 of the selected year (safely after Lichun ~Feb 3-5)
+        # This ensures we get the correct Chinese year pillar
+        liunian_date = date(liunian_year, 2, 10)
+
+        # Get year pillar for the liunian year
+        lunar_adapter = self.container.lunar_adapter
+        liunian_year_pillar = lunar_adapter.get_year_pillar(
+            liunian_date.year, liunian_date.month, liunian_date.day
+        )
+
+        # Get Lichun date for the selected year
+        lichun_dates = lunar_adapter.get_jieqi_dates(liunian_year, ["立春"])
+        lichun_date = lichun_dates[0] if lichun_dates else None
+
         # Use application services for complex analysis via container
         liunian_service = self.container.liunian_service
         partner_analyst = liunian_service.analyse_partner(
@@ -70,11 +109,12 @@ class BaziContextBuilder(ContainerMixin):
         )
         personality = liunian_service.analyse_personality(bazi.getMonthZhi())
         liunian_analysis = liunian_service.analyse_liunian(
-            bazi, view_data.shishen, selected_year, view_data.is_strong, is_male
+            bazi, view_data.shishen, liunian_date, view_data.is_strong, is_male
         )
         shensha_list = get_shensha(bazi)
 
-        years = range(self.current_year - 20, self.current_year + 50)
+        # Generate year dropdown options
+        liunian_year_options = self._get_liunian_year_options()
 
         return {
             "form": form,
@@ -92,11 +132,14 @@ class BaziContextBuilder(ContainerMixin):
             "wuxing_value": view_data.wuxing_value,
             "sheng_hao": view_data.sheng_hao,
             "sheng_hao_percentage": view_data.sheng_hao_percentage,
-            "current_year": int(selected_year),
+            "liunian_year_options": liunian_year_options,
+            "selected_liunian_year": liunian_year,
+            "liunian_year_pillar": liunian_year_pillar.chinese,
+            "lichun_date": lichun_date.strftime("%Y-%m-%d") if lichun_date else "N/A",
+            "today_date": date.today().strftime("%Y-%m-%d"),
             "is_male": is_male,
             "partner_analyst": partner_analyst,
             "liunian_analysis": liunian_analysis,
-            "years": years,
             "personality": personality,
             "shensha_list": shensha_list,
             "profiles": profiles,
@@ -162,8 +205,10 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
         hour = form.cleaned_data['hour']
         minute = form.cleaned_data['minute']
 
-        selected_year = request.POST.get('liunian', str(current_year))
         is_male = request.POST.get('gender') == 'male'
+
+        # Use current year as default for liunian analysis
+        liunian_year = date.today().year
 
         # Calculate BaZi
         lunar, bazi = self.container.lunar_adapter.get_raw_lunar_and_bazi(
@@ -177,7 +222,7 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
             bazi=bazi,
             lunar=lunar,
             is_male=is_male,
-            selected_year=selected_year,
+            liunian_year=liunian_year,
             profiles=self.get_user_profiles(),
         )
 
@@ -186,7 +231,9 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
     def _render_profile_analysis(self, request, profile, current_year: int):
         """Render analysis for a saved profile."""
         is_male = profile.birth_data.is_male
-        selected_year = request.GET.get('year', str(current_year))
+
+        # Use current year as default for liunian analysis
+        liunian_year = date.today().year
 
         # Calculate BaZi for the profile
         lunar, bazi = self.container.lunar_adapter.get_raw_lunar_and_bazi(
@@ -215,7 +262,7 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
             bazi=bazi,
             lunar=lunar,
             is_male=is_male,
-            selected_year=selected_year,
+            liunian_year=liunian_year,
             profiles=self.get_user_profiles(),
         )
 
@@ -290,9 +337,84 @@ class BaziDetailView(ProfileMixin, View):
         }
 
 
+class LiunianPartialView(ContainerMixin, View):
+    """
+    HTMX endpoint for dynamic LiuNian (yearly fortune) analysis.
+
+    Returns an HTML fragment with updated liunian analysis when the
+    user changes the year dropdown, without requiring a page refresh.
+    """
+
+    def get(self, request):
+        """Handle GET request - return updated liunian partial."""
+        liunian_year_str = request.GET.get('liunian_year')
+        birth_year = request.GET.get('birth_year')
+        birth_month = request.GET.get('birth_month')
+        birth_day = request.GET.get('birth_day')
+        birth_hour = request.GET.get('birth_hour')
+        birth_minute = request.GET.get('birth_minute', '0')
+        is_male_str = request.GET.get('is_male', 'True')
+
+        # Validate required parameters
+        if not all([liunian_year_str, birth_year, birth_month, birth_day, birth_hour]):
+            return HttpResponse(status=400)
+
+        # Parse the liunian year and birth data
+        try:
+            liunian_year = int(liunian_year_str)
+            birth_year = int(birth_year)
+            birth_month = int(birth_month)
+            birth_day = int(birth_day)
+            birth_hour = int(birth_hour)
+            birth_minute = int(birth_minute) if birth_minute else 0
+        except ValueError:
+            return HttpResponse(status=400)
+
+        is_male = is_male_str.lower() == 'true'
+
+        # Use Feb 10 of the selected year (safely after Lichun)
+        liunian_date = date(liunian_year, 2, 10)
+
+        # Reconstruct bazi from birth data
+        lunar_adapter = self.container.lunar_adapter
+        lunar, bazi = lunar_adapter.get_raw_lunar_and_bazi(
+            birth_year, birth_month, birth_day, birth_hour, birth_minute
+        )
+
+        # Get year pillar for the selected liunian year
+        liunian_year_pillar = lunar_adapter.get_year_pillar(
+            liunian_date.year, liunian_date.month, liunian_date.day
+        )
+
+        # Get Lichun date for the selected year
+        lichun_dates = lunar_adapter.get_jieqi_dates(liunian_year, ["立春"])
+        lichun_date = lichun_dates[0] if lichun_dates else None
+
+        # Use presenter for template-specific data formatting
+        presenter = BaziPresenter()
+        view_data = presenter.present(bazi, lunar)
+
+        # Get liunian analysis
+        liunian_service = self.container.liunian_service
+        liunian_analysis = liunian_service.analyse_liunian(
+            bazi, view_data.shishen, liunian_date, view_data.is_strong, is_male
+        )
+
+        context = {
+            'selected_liunian_year': liunian_year,
+            'liunian_year_pillar': liunian_year_pillar.chinese,
+            'lichun_date': lichun_date.strftime('%Y-%m-%d') if lichun_date else 'N/A',
+            'liunian_analysis': liunian_analysis,
+        }
+
+        html = render_to_string('partials/liunian_content.html', context)
+        return HttpResponse(html)
+
+
 # =============================================================================
 # URL-compatible function aliases (for backward compatibility)
 # =============================================================================
 
 bazi_view = BaziAnalysisView.as_view()
 get_bazi_detail = BaziDetailView.as_view()
+liunian_partial = LiunianPartialView.as_view()

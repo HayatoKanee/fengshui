@@ -24,7 +24,7 @@ from .profile import (
     delete_profile,
     set_default_profile,
 )
-from .bazi import bazi_view, get_bazi_detail
+from .bazi import bazi_view, get_bazi_detail, liunian_partial
 from .calendar import calendar_view, calendar_data
 from .static_pages import (
     home_view,
@@ -52,6 +52,7 @@ __all__ = [
     # BaZi
     "bazi_view",
     "get_bazi_detail",
+    "liunian_partial",
     # Calendar
     "calendar_view",
     "calendar_data",

@@ -8,7 +8,8 @@ Generates Chinese text-based analysis for:
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from datetime import date
+from typing import Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 from lunar_python import Solar
 
@@ -70,7 +71,7 @@ class LiunianAnalysisService:
         self,
         bazi: EightChar,
         shishen: List,
-        selected_year: str,
+        liunian_date: Union[date, str],
         is_strong: bool,
         is_male: bool,
     ) -> str:
@@ -80,7 +81,8 @@ class LiunianAnalysisService:
         Args:
             bazi: The EightChar object
             shishen: ShiShen list for all pillars
-            selected_year: Year to analyze
+            liunian_date: Date for liunian analysis (respects Lichun boundary)
+                         Can be date object or "YYYY-MM-DD" string
             is_strong: Whether day master is strong
             is_male: Whether the person is male
 
@@ -89,7 +91,14 @@ class LiunianAnalysisService:
         """
         daymaster_gan = bazi.getDayGan()
 
-        solar = Solar.fromYmd(int(selected_year), 5, 5)
+        # Handle both date object and string input
+        if isinstance(liunian_date, str):
+            year, month, day = map(int, liunian_date.split('-'))
+        else:
+            year, month, day = liunian_date.year, liunian_date.month, liunian_date.day
+
+        # Use actual date for year pillar calculation (respects Lichun)
+        solar = Solar.fromYmd(year, month, day)
         lunar = solar.getLunar()
         year_bazi = lunar.getEightChar()
 

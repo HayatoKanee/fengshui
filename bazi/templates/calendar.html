@@ -102,10 +102,8 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- FullCalendar CSS and JS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/locales-all.min.js"></script>
+<!-- FullCalendar v6.1.19 (latest, CSS auto-injected) -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
 
 <style>
     /* Custom FullCalendar Day Cell Formatting */
@@ -130,12 +128,16 @@
         border-radius: 50%;
         display: inline-block;
         margin-right: 4px;
+        /* Default to neutral appearance when no specific class is applied */
+        background-color: transparent;
+        border: 2px solid oklch(var(--bc) / 0.3);
     }
 
     /* Dot colors */
     .good-dot {
         background-color: oklch(var(--er)); /* DaisyUI error color (red) for good luck */
         box-shadow: 0 0 3px oklch(var(--er) / 0.7);
+        border: none;
     }
 
     .neutral-dot {
@@ -146,6 +148,7 @@
     .bad-dot {
         background-color: oklch(var(--n)); /* DaisyUI neutral color (dark) for bad luck */
         box-shadow: 0 0 3px oklch(var(--n) / 0.7);
+        border: none;
     }
 
     .fc-day-today {
@@ -183,6 +186,9 @@ function calendarApp() {
         dayScores: {},
         isInitializing: true,
         csrfToken: '{{ csrf_token }}',
+        _dayCellContentLogged: false,
+        _cellsLogged: 0,
+        _classVerified: false,
 
         initCalendar() {
             const self = this;
@@ -218,6 +224,12 @@ function calendarApp() {
                 },
 
                 dayCellContent: function(args) {
+                    // Log once to verify callback is being called
+                    if (!self._dayCellContentLogged) {
+                        console.log('dayCellContent callback is being called');
+                        self._dayCellContentLogged = true;
+                    }
+
                     const dateNum = args.dayNumberText;
                     const dateStr = args.date.getFullYear() + '-' +
                                    String(args.date.getMonth() + 1).padStart(2, '0') + '-' +
@@ -341,8 +353,10 @@ function calendarApp() {
                     loadSingleMonth(nextYear, nextMonth)
                 ]);
 
+                // Update existing calendar cells with loaded data
+                // Note: calendar.render() doesn't re-invoke dayCellContent for existing cells
+                // so we must manually update the dot classes in the DOM
                 this.updateCalendarCells();
-                this.calendar.render();
             } catch (error) {
                 if (error.type === 'no_profile') {
                     this.alertMessage = error.message;
@@ -360,13 +374,61 @@ function calendarApp() {
             const self = this;
             const cells = document.querySelectorAll('.fc-daygrid-day');
 
+            console.log('updateCalendarCells called, found', cells.length, 'cells');
+            console.log('dayScores:', Object.keys(self.dayScores).length, 'entries');
+            console.log('calendarData:', Object.keys(self.calendarData).length, 'entries');
+            // Log sample data keys
+            console.log('Sample dayScores keys:', Object.keys(self.dayScores).slice(0, 3));
+
+            // Reset logging counters
+            self._cellsLogged = 0;
+            self._classVerified = false;
+            let firstCellLogged = false;
             cells.forEach(function(cell) {
                 const date = cell.getAttribute('data-date');
                 if (date) {
                     const quality = self.calendarData[date] || 'neutral';
+                    const score = self.dayScores[date];
                     cell.setAttribute('data-quality', quality);
 
-                    const dotContainer = cell.querySelector('.day-content');
+                    // Log first cell structure for debugging
+                    if (!firstCellLogged) {
+                        console.log('First cell innerHTML:', cell.innerHTML);
+                        firstCellLogged = true;
+                    }
+
+                    let dotContainer = cell.querySelector('.day-content');
+
+                    // If no .day-content exists, try to find the day-top container and create our structure
+                    if (!dotContainer) {
+                        const dayTop = cell.querySelector('.fc-daygrid-day-top');
+                        if (dayTop) {
+                            // Create our dot structure inside fc-daygrid-day-top
+                            const dotEl = document.createElement('span');
+                            dotEl.classList.add('quality-dot');
+                            dotEl.style.marginRight = '4px';
+                            dayTop.insertBefore(dotEl, dayTop.firstChild);
+
+                            // Apply class based on score
+                            if (score !== undefined && score !== null) {
+                                if (score > 2) {
+                                    dotEl.classList.add('good-dot');
+                                } else if (score >= -1) {
+                                    dotEl.classList.add('neutral-dot');
+                                } else {
+                                    dotEl.classList.add('bad-dot');
+                                }
+                            } else if (quality === 'good') {
+                                dotEl.classList.add('good-dot');
+                            } else if (quality === 'neutral') {
+                                dotEl.classList.add('neutral-dot');
+                            } else if (quality === 'bad') {
+                                dotEl.classList.add('bad-dot');
+                            }
+                        }
+                        return; // Skip rest of loop for this cell
+                    }
+
                     if (dotContainer) {
                         let dotElement = dotContainer.querySelector('.quality-dot');
                         if (!dotElement) {
@@ -375,26 +437,44 @@ function calendarApp() {
                             dotContainer.insertBefore(dotElement, dotContainer.firstChild);
                         }
 
+                        // Log first few cells' data for debugging
+                        if (!self._cellsLogged) self._cellsLogged = 0;
+                        if (self._cellsLogged < 3) {
+                            console.log('Processing cell:', date, 'score:', score, 'quality:', quality);
+                            self._cellsLogged++;
+                        }
+
+                        // Reset and apply appropriate class
                         dotElement.className = 'quality-dot';
-                        const score = self.dayScores[date];
 
                         if (score !== undefined && score !== null) {
                             cell.setAttribute('data-score', score);
                             if (score > 2) {
                                 dotElement.classList.add('good-dot');
+                                dotElement.style.backgroundColor = '#f87171'; // red fallback
                             } else if (score >= -1) {
                                 dotElement.classList.add('neutral-dot');
+                                dotElement.style.border = '2px solid #888'; // gray border fallback
                             } else {
                                 dotElement.classList.add('bad-dot');
+                                dotElement.style.backgroundColor = '#374151'; // dark fallback
                             }
+                        } else if (quality === 'good') {
+                            dotElement.classList.add('good-dot');
+                            dotElement.style.backgroundColor = '#f87171';
+                        } else if (quality === 'bad') {
+                            dotElement.classList.add('bad-dot');
+                            dotElement.style.backgroundColor = '#374151';
                         } else {
-                            if (quality === 'good') {
-                                dotElement.classList.add('good-dot');
-                            } else if (quality === 'neutral') {
-                                dotElement.classList.add('neutral-dot');
-                            } else if (quality === 'bad') {
-                                dotElement.classList.add('bad-dot');
-                            }
+                            // Default to neutral if no score and quality isn't explicitly good/bad
+                            dotElement.classList.add('neutral-dot');
+                            dotElement.style.border = '2px solid #888';
+                        }
+
+                        // Verify class was added
+                        if (!self._classVerified) {
+                            console.log('Dot classes after update:', dotElement.className);
+                            self._classVerified = true;
                         }
                     }
                 }

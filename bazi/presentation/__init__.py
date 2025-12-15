@@ -28,6 +28,7 @@ from .views import (
     # BaZi views
     bazi_view,
     get_bazi_detail,
+    liunian_partial,
     # Calendar views
     calendar_view,
     calendar_data,
@@ -59,6 +60,7 @@ __all__ = [
     # BaZi
     "bazi_view",
     "get_bazi_detail",
+    "liunian_partial",
     # Calendar
     "calendar_view",
     "calendar_data",

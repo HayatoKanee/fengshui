@@ -1,0 +1,7 @@
+<!-- Liunian Analysis Content Partial -->
+<!-- This partial is loaded via HTMX when the year dropdown changes -->
+<div class="flex flex-wrap gap-4 mb-3 text-sm">
+    <span><strong>流年：</strong><span class="text-primary font-bold text-lg">{{ selected_liunian_year }} {{ liunian_year_pillar }}</span></span>
+    <span><strong>立春：</strong>{{ lichun_date }}（年柱从此日起算）</span>
+</div>
+<div class="text-base-content/80">{{ liunian_analysis|safe }}</div>
