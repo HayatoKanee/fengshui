@@ -775,8 +775,8 @@ class DayQualityService:
 
         # Get hour pillar
         hour_pillar = self._lunar.get_hour_pillar(year, month, day, hour)
-        hour_gan = hour_pillar.gan
-        hour_zhi = hour_pillar.zhi
+        hour_gan = hour_pillar.stem.chinese
+        hour_zhi = hour_pillar.branch.chinese
 
         # Build full 八字 string (year + month + day + hour)
         year_pillar = f"{month_ctx.year_gan}{month_ctx.year_zhi}"

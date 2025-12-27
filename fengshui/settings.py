@@ -22,7 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-only-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Default to False for safety
+# Auto-detect: DEBUG=True locally, DEBUG=False on Heroku (DYNO env var is set by Heroku)
+DEBUG = 'DYNO' not in os.environ
 
 ALLOWED_HOSTS = ['.herokuapp.com', 'localhost', '127.0.0.1', "www.myfate.org", "myfate.org"]
 
