@@ -17,9 +17,15 @@ from .elements import (
     GANZHI_WUXING,
     GAN_YINYANG,
     WUXING_LIST,
+    HOUR_INFO,
+    ZODIAC_HOURS,
     get_stem_wuxing,
     get_branch_wuxing,
     get_stem_yinyang,
+    get_hour_name,
+    get_hour_time_range,
+    get_hour_branch,
+    get_hour_display,
 )
 
 from .relationships import (
@@ -87,9 +93,15 @@ __all__ = [
     "GANZHI_WUXING",
     "GAN_YINYANG",
     "WUXING_LIST",
+    "HOUR_INFO",
+    "ZODIAC_HOURS",
     "get_stem_wuxing",
     "get_branch_wuxing",
     "get_stem_yinyang",
+    "get_hour_name",
+    "get_hour_time_range",
+    "get_hour_branch",
+    "get_hour_display",
     # Relationships
     "WUXING_SHENG",
     "WUXING_KE",

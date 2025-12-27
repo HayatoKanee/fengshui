@@ -108,9 +108,24 @@ class CalendarDataView(ContainerMixin, View):
         # Convert result to JSON-serializable format
         calendar_days = []
         for day_result in result.days:
+            # Serialize hour quality results
+            hours_data = []
+            for hour_result in day_result.hours:
+                hours_data.append({
+                    "hour": hour_result.hour,
+                    "hour_name": hour_result.hour_name,
+                    "hour_display": hour_result.hour_display,
+                    "quality": hour_result.quality,
+                    "score": hour_result.score,
+                    "reasons": list(hour_result.reasons),
+                    "full_bazi": hour_result.full_bazi,
+                    "hour_gan": hour_result.hour_gan,
+                    "hour_zhi": hour_result.hour_zhi,
+                })
+
             calendar_days.append({
                 "day": day_result.day,
-                "hours": list(day_result.hours),
+                "hours": hours_data,
                 "overall_quality": day_result.overall_quality,
                 "reasons": list(day_result.reasons),
                 "lunar_date": day_result.lunar_date,

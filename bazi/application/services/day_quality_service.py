@@ -18,8 +18,14 @@ from bazi.domain.constants import (
     TIAN_DE,
     WEN_CHANG,
     YUE_DE,
+    ZODIAC_HOURS,
     is_gan_clash,
     is_zhi_clash,
+    is_wu_bu_yu_shi,
+    get_hour_name,
+    get_hour_time_range,
+    get_hour_branch,
+    get_hour_display,
 )
 from bazi.domain.models import BirthData, check_he
 from bazi.domain.ports import LunarPort, ProfileData
@@ -66,10 +72,24 @@ class MonthContext:
 
 
 @dataclass(frozen=True)
+class HourQualityResult:
+    """Result of a single hour quality calculation."""
+    hour: int                           # Hour number (0, 1, 3, 5, ...)
+    hour_name: str                      # Chinese hour name (子时, 丑时, etc.)
+    hour_display: str                   # Display string (子时 (23:00-01:00))
+    quality: str                        # good/neutral/bad
+    score: float                        # Numeric score
+    reasons: Tuple[Dict[str, str], ...] # List of reasons
+    full_bazi: str                      # Complete 8-character display
+    hour_gan: str                       # Hour stem (天干)
+    hour_zhi: str                       # Hour branch (地支)
+
+
+@dataclass(frozen=True)
 class DayQualityResult:
     """Result of a single day quality calculation."""
     day: int
-    hours: Tuple[Dict[str, Any], ...]
+    hours: Tuple[HourQualityResult, ...]  # Now uses HourQualityResult
     overall_quality: str
     reasons: Tuple[Dict[str, str], ...]
     lunar_date: str
@@ -90,10 +110,7 @@ class MonthResult:
 # Constants
 # =============================================================================
 
-# Hours to calculate quality for (Chinese zodiac hours)
-ZODIAC_HOURS = (0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23)
-
-# Score adjustments
+# Score adjustments - Day Level
 SCORE_YEAR_CONFLICT = -0.1
 SCORE_YEAR_FAVORABLE = 0.1
 SCORE_MONTH_CONFLICT = -0.2
@@ -105,6 +122,17 @@ SCORE_BAD_WUXING = -0.5
 SCORE_GOOD_WUXING = 0.25
 SCORE_HARMONY = 1.0
 SCORE_AUSPICIOUS_STAR = 1.0
+
+# Score adjustments - Hour Level
+SCORE_HOUR_WU_BU_YU = -2.0       # 五不遇时 penalty
+SCORE_HOUR_CONFLICT = -1.5       # Hour conflicts with profile
+SCORE_HOUR_BAD_WUXING = -0.5     # Hour wuxing unfavorable
+SCORE_HOUR_GOOD_WUXING = 0.5     # Hour wuxing favorable
+SCORE_HOUR_GUIREN = 1.0          # 贵人 in hour
+
+# Hour quality thresholds
+HOUR_QUALITY_GOOD_THRESHOLD = 0.5
+HOUR_QUALITY_BAD_THRESHOLD = -0.5
 
 
 # =============================================================================
@@ -327,9 +355,12 @@ class DayQualityService:
             day_score, day_reasons,
         )
 
-        # Build hour quality using constant
+        # Calculate hour quality for each zodiac hour
         hours = tuple(
-            {"hour": h, "quality": "neutral"}
+            self._calculate_hour_quality(
+                month_ctx.year, month_ctx.month, day, h,
+                day_gan, day_zhi, month_ctx, profile_ctx
+            )
             for h in ZODIAC_HOURS
         )
 
@@ -711,3 +742,130 @@ class DayQualityService:
             })
 
         return day_score, day_reasons
+
+    def _calculate_hour_quality(
+        self,
+        year: int,
+        month: int,
+        day: int,
+        hour: int,
+        day_gan: str,
+        day_zhi: str,
+        month_ctx: MonthContext,
+        profile_ctx: ProfileContext,
+    ) -> HourQualityResult:
+        """
+        Calculate quality for a single hour.
+
+        Args:
+            year: Calendar year
+            month: Calendar month
+            day: Day of month
+            hour: Hour number (0, 1, 3, 5, ...)
+            day_gan: Day pillar stem
+            day_zhi: Day pillar branch
+            month_ctx: Month context with pillars
+            profile_ctx: Profile context data
+
+        Returns:
+            HourQualityResult with quality assessment
+        """
+        reasons: List[Dict[str, str]] = []
+        score = 0.0
+
+        # Get hour pillar
+        hour_pillar = self._lunar.get_hour_pillar(year, month, day, hour)
+        hour_gan = hour_pillar.gan
+        hour_zhi = hour_pillar.zhi
+
+        # Build full 八字 string (year + month + day + hour)
+        year_pillar = f"{month_ctx.year_gan}{month_ctx.year_zhi}"
+        month_pillar = f"{month_ctx.month_gan}{month_ctx.month_zhi}"
+        day_pillar = f"{day_gan}{day_zhi}"
+        hour_pillar_str = f"{hour_gan}{hour_zhi}"
+        full_bazi = f"{year_pillar} {month_pillar} {day_pillar} {hour_pillar_str}"
+
+        # Check 五不遇时
+        if is_wu_bu_yu_shi(day_gan, hour_zhi):
+            score += SCORE_HOUR_WU_BU_YU
+            reasons.append({
+                "type": "bad",
+                "text": f"五不遇时: 日干{day_gan}与时支{hour_zhi}相冲"
+            })
+
+        # Check hour gan/zhi conflicts with profile
+        for profile_gan in profile_ctx.all_gan:
+            if is_gan_clash(hour_gan, profile_gan):
+                score += SCORE_HOUR_CONFLICT
+                reasons.append({
+                    "type": "bad",
+                    "text": f"时干{hour_gan}与命主天干{profile_gan}相冲"
+                })
+                break
+
+        for profile_zhi in profile_ctx.all_zhi:
+            if is_zhi_clash(hour_zhi, profile_zhi):
+                score += SCORE_HOUR_CONFLICT
+                reasons.append({
+                    "type": "bad",
+                    "text": f"时支{hour_zhi}与命主地支{profile_zhi}相冲"
+                })
+                break
+
+        # Check hour wuxing compatibility
+        hour_gan_wuxing = GAN_WUXING.get(hour_gan)
+        hour_zhi_wuxing = GANZHI_WUXING.get(hour_zhi)
+
+        if hour_gan_wuxing in profile_ctx.bad_wuxing:
+            score += SCORE_HOUR_BAD_WUXING
+            reasons.append({
+                "type": "bad",
+                "text": f"时干五行{hour_gan_wuxing}对命主不利"
+            })
+        elif hour_gan_wuxing in profile_ctx.good_wuxing:
+            score += SCORE_HOUR_GOOD_WUXING
+            reasons.append({
+                "type": "good",
+                "text": f"时干五行{hour_gan_wuxing}对命主有利"
+            })
+
+        if hour_zhi_wuxing in profile_ctx.bad_wuxing:
+            score += SCORE_HOUR_BAD_WUXING
+            reasons.append({
+                "type": "bad",
+                "text": f"时支五行{hour_zhi_wuxing}对命主不利"
+            })
+        elif hour_zhi_wuxing in profile_ctx.good_wuxing:
+            score += SCORE_HOUR_GOOD_WUXING
+            reasons.append({
+                "type": "good",
+                "text": f"时支五行{hour_zhi_wuxing}对命主有利"
+            })
+
+        # Check for 贵人 at this hour
+        if (profile_ctx.day_gan, hour_zhi) in GUI_REN:
+            score += SCORE_HOUR_GUIREN
+            reasons.append({
+                "type": "good",
+                "text": f"命主日干{profile_ctx.day_gan}与时支{hour_zhi}贵人相见"
+            })
+
+        # Determine quality
+        if score >= HOUR_QUALITY_GOOD_THRESHOLD:
+            quality = "good"
+        elif score <= HOUR_QUALITY_BAD_THRESHOLD:
+            quality = "bad"
+        else:
+            quality = "neutral"
+
+        return HourQualityResult(
+            hour=hour,
+            hour_name=get_hour_name(hour),
+            hour_display=get_hour_display(hour),
+            quality=quality,
+            score=score,
+            reasons=tuple(reasons),
+            full_bazi=full_bazi,
+            hour_gan=hour_gan,
+            hour_zhi=hour_zhi,
+        )
