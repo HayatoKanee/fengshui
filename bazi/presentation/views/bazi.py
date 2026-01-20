@@ -38,12 +38,15 @@ class BaziContextBuilder(ContainerMixin):
         self.presenter = BaziPresenter()
         self.current_year = datetime.datetime.now().year
 
-    def _get_liunian_year_options(self) -> list:
+    def _get_liunian_year_options(self, birth_year: int = None) -> list:
         """
         Generate year options with 干支 for the dropdown.
 
-        Returns a range of years (current year ± some range) with their
-        corresponding 干支 (GanZhi) names.
+        Returns a wide range of years with their corresponding 干支 (GanZhi) names.
+        If birth_year is provided, starts from birth year; otherwise starts 100 years back.
+
+        Args:
+            birth_year: Optional birth year to start the range from
 
         Returns:
             List of (year, ganzhi) tuples
@@ -51,9 +54,9 @@ class BaziContextBuilder(ContainerMixin):
         from bazi.domain.services.sexagenary_calculator import SexagenaryCycleCalculator
         calculator = SexagenaryCycleCalculator()
 
-        # Generate options: 10 years back to 30 years forward
-        start_year = self.current_year - 10
-        end_year = self.current_year + 30
+        # Wide range: from birth year (or 100 years back) to 100 years forward
+        start_year = birth_year if birth_year else self.current_year - 100
+        end_year = self.current_year + 100
 
         options = []
         for year in range(start_year, end_year + 1):
@@ -113,8 +116,9 @@ class BaziContextBuilder(ContainerMixin):
         )
         shensha_list = get_shensha(bazi)
 
-        # Generate year dropdown options
-        liunian_year_options = self._get_liunian_year_options()
+        # Generate year dropdown options (starting from birth year)
+        birth_year = form.cleaned_data.get('year') if form.is_valid() else None
+        liunian_year_options = self._get_liunian_year_options(birth_year)
 
         return {
             "form": form,
