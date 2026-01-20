@@ -392,7 +392,7 @@
                                                         hx-get="{% url 'liunian_partial' %}"
                                                         hx-target="#liunian-content"
                                                         hx-trigger="change"
-                                                        hx-include="[name='birth_year'],[name='birth_month'],[name='birth_day'],[name='birth_hour'],[name='birth_minute'],[name='is_male']">
+                                                        hx-include="this,[name='birth_year'],[name='birth_month'],[name='birth_day'],[name='birth_hour'],[name='birth_minute'],[name='is_male']">
                                                     {% for year, ganzhi in liunian_year_options %}
                                                         <option value="{{ year }}" {% if year == selected_liunian_year %}selected{% endif %}>
                                                             {{ year }} {{ ganzhi }}
