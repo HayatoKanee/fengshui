@@ -40,6 +40,8 @@ from .views import (
     ganzhi_view,
     wuxing_view,
     introbazi_view,
+    shishen_view,
+    wangxiang_view,
     feixing_view,
     # Lookup views
     bazi_lookup_view,
@@ -72,6 +74,8 @@ __all__ = [
     "ganzhi_view",
     "wuxing_view",
     "introbazi_view",
+    "shishen_view",
+    "wangxiang_view",
     "feixing_view",
     # Lookup
     "bazi_lookup_view",
