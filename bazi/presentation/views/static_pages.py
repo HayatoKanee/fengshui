@@ -72,3 +72,23 @@ def introbazi_view(request):
     including how they are calculated and interpreted.
     """
     return render(request, "introbazi.html")
+
+
+def shishen_view(request):
+    """
+    十神 (Ten Gods) educational page.
+
+    Explains the Ten Gods relationships in BaZi - how each stem
+    relates to the Day Master based on element and polarity.
+    """
+    return render(request, "shishen.html")
+
+
+def wangxiang_view(request):
+    """
+    旺相休囚死 (Seasonal Element Strength) educational page.
+
+    Explains how each of the Five Elements has different strength
+    depending on the season (month branch).
+    """
+    return render(request, "wangxiang.html")

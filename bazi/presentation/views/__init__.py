@@ -34,6 +34,8 @@ from .static_pages import (
     ganzhi_view,
     wuxing_view,
     introbazi_view,
+    shishen_view,
+    wangxiang_view,
 )
 from .lookup import bazi_lookup_view, zeri_view
 from .feixing import feixing_view
@@ -64,6 +66,8 @@ __all__ = [
     "ganzhi_view",
     "wuxing_view",
     "introbazi_view",
+    "shishen_view",
+    "wangxiang_view",
     # Lookup
     "bazi_lookup_view",
     "zeri_view",
