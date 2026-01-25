@@ -1,187 +1,59 @@
 """
-ShenSha (神煞) Stars Domain Constants.
+ShenSha (神煞) Stars Domain Constants - 向后兼容层。
 
-Domain-level constants for auspicious and inauspicious stars
-used in day selection and chart analysis.
+★★★ 注意：此文件现在从 shensha_registry 重新导出数据！★★★
+
+添加新神煞请修改：
+- models/shensha_registry.py
+
+此文件保持向后兼容，供旧代码使用。
+新代码应直接使用 ShenShaRegistry。
 """
-from typing import FrozenSet, Tuple
+from typing import FrozenSet, List, Tuple
 
-# 天乙贵人 - Heavenly Noble (Gui Ren)
-GUI_REN: FrozenSet[Tuple[str, str]] = frozenset([
-    ('甲', '丑'), ('戊', '丑'), ('庚', '丑'),
-    ('甲', '未'), ('戊', '未'), ('庚', '未'),
-    ('乙', '子'), ('己', '子'), ('乙', '申'), ('己', '申'),
-    ('丙', '亥'), ('丁', '亥'), ('丙', '酉'), ('丁', '酉'),
-    ('壬', '卯'), ('癸', '卯'), ('壬', '巳'), ('癸', '巳'),
-    ('辛', '午'), ('辛', '寅'),
-])
+# 从 registry 导入所有查表数据
+from ..models.shensha_registry import (
+    _GUI_REN,
+    _TIAN_DE,
+    _TIAN_DE_HE,
+    _YUE_DE,
+    _YUE_DE_HE,
+    _WEN_CHANG,
+    _LU_SHEN,
+    _YANG_REN,
+    _TAO_HUA,
+    _HONG_YAN_SHA,
+    _JIANG_XING,
+    _HUA_GAI,
+    _YI_MA,
+    _JIE_SHA,
+    _WANG_SHEN,
+    _GU_CHEN,
+    _GUA_SU,
+    XUN_KONG,
+)
 
-# 天德 - Heaven Virtue
-# 古诀：寅月丁，卯月申，辰月壬，巳月辛，午月亥，未月甲，申月癸，酉月寅，戌月丙，亥月乙，子月巳，丑月庚
-# 注意：卯、午、酉、子月查地支，其余月份查天干
-TIAN_DE: FrozenSet[Tuple[str, str]] = frozenset([
-    ('寅', '丁'), ('卯', '申'), ('辰', '壬'), ('巳', '辛'),
-    ('午', '亥'), ('未', '甲'), ('申', '癸'), ('酉', '寅'),
-    ('戌', '丙'), ('亥', '乙'), ('子', '巳'), ('丑', '庚'),
-])
-
-# 天德合 - Heaven Virtue Combination (天德的五合/六合)
-# 原理：天德与天干五合或地支六合者即为天德合
-TIAN_DE_HE: FrozenSet[Tuple[str, str]] = frozenset([
-    # 天干五合对应
-    ('寅', '壬'),  # 丁壬合
-    ('辰', '丁'),  # 壬丁合
-    ('巳', '丙'),  # 辛丙合
-    ('未', '己'),  # 甲己合
-    ('申', '戊'),  # 癸戊合
-    ('戌', '辛'),  # 丙辛合
-    ('亥', '庚'),  # 乙庚合
-    ('丑', '乙'),  # 庚乙合
-    # 地支六合对应
-    ('卯', '巳'),  # 巳申合
-    ('午', '寅'),  # 寅亥合
-    ('酉', '亥'),  # 寅亥合
-    ('子', '申'),  # 巳申合
-])
-
-# 月德 - Month Virtue
-# 查法：寅午戌月见丙，亥卯未月见甲，申子辰月见壬，巳酉丑月见庚
-YUE_DE: FrozenSet[Tuple[str, str]] = frozenset([
-    ('寅', '丙'), ('卯', '甲'), ('辰', '壬'), ('巳', '庚'),
-    ('午', '丙'), ('未', '甲'), ('申', '壬'), ('酉', '庚'),
-    ('戌', '丙'), ('亥', '甲'), ('子', '壬'), ('丑', '庚'),
-])
-
-# 月德合 - Month Virtue Combination (月德的天干五合)
-# 查法：丙辛合→寅午戌月见辛，甲己合→亥卯未月见己，壬丁合→申子辰月见丁，庚乙合→巳酉丑月见乙
-YUE_DE_HE: FrozenSet[Tuple[str, str]] = frozenset([
-    ('寅', '辛'), ('卯', '己'), ('辰', '丁'), ('巳', '乙'),
-    ('午', '辛'), ('未', '己'), ('申', '丁'), ('酉', '乙'),
-    ('戌', '辛'), ('亥', '己'), ('子', '丁'), ('丑', '乙'),
-])
-
-# 文昌 - Literary Star
-WEN_CHANG: FrozenSet[Tuple[str, str]] = frozenset([
-    ('甲', '巳'), ('乙', '午'), ('丙', '申'), ('丁', '酉'),
-    ('戊', '申'), ('己', '酉'), ('庚', '亥'), ('辛', '子'),
-    ('壬', '寅'), ('癸', '卯'),
-])
-
-# 禄神 - Prosperity Star
-LU_SHEN: FrozenSet[Tuple[str, str]] = frozenset([
-    ('甲', '寅'), ('乙', '卯'), ('丙', '巳'), ('戊', '巳'),
-    ('丁', '午'), ('己', '午'), ('庚', '申'), ('辛', '酉'),
-    ('壬', '亥'), ('癸', '子'),
-])
-
-# 羊刃 - Goat Blade
-YANG_REN: FrozenSet[Tuple[str, str]] = frozenset([
-    ('甲', '卯'), ('乙', '辰'), ('丙', '午'), ('戊', '午'),
-    ('丁', '未'), ('己', '未'), ('庚', '酉'), ('辛', '戌'),
-    ('壬', '子'), ('癸', '丑'),
-])
-
-# 桃花 - Peach Blossom (Romance Star)
-TAO_HUA: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '酉'), ('丑', '午'), ('寅', '卯'), ('卯', '子'),
-    ('辰', '酉'), ('巳', '午'), ('午', '卯'), ('未', '子'),
-    ('申', '酉'), ('酉', '午'), ('戌', '卯'), ('亥', '子'),
-])
-
-# 红艳煞 - Red Romance Star
-HONG_YAN_SHA: FrozenSet[Tuple[str, str]] = frozenset([
-    ('甲', '午'), ('乙', '午'), ('丙', '寅'), ('戊', '辰'),
-    ('丁', '未'), ('己', '辰'), ('庚', '戌'), ('辛', '酉'),
-    ('壬', '子'), ('癸', '申'),
-])
-
-# 将星 - General Star
-JIANG_XING: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '子'), ('午', '午'),
-    ('丑', '酉'), ('未', '卯'),
-    ('寅', '午'), ('申', '子'),
-    ('卯', '卯'), ('酉', '酉'),
-    ('辰', '子'), ('戌', '午'),
-    ('巳', '酉'), ('亥', '卯'),
-])
-
-# 华盖 - Canopy Star
-HUA_GAI: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '辰'), ('午', '戌'),
-    ('丑', '丑'), ('未', '未'),
-    ('寅', '戌'), ('申', '辰'),
-    ('卯', '未'), ('酉', '丑'),
-    ('辰', '辰'), ('戌', '戌'),
-    ('巳', '丑'), ('亥', '未'),
-])
-
-# 驿马 - Post Horse Star
-YI_MA: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '寅'), ('午', '申'),
-    ('丑', '亥'), ('未', '巳'),
-    ('寅', '申'), ('申', '寅'),
-    ('卯', '巳'), ('酉', '亥'),
-    ('辰', '寅'), ('戌', '申'),
-    ('巳', '亥'), ('亥', '巳'),
-])
-
-# 劫煞 - Robbery Star
-JIE_SHA: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '巳'), ('丑', '寅'), ('寅', '亥'), ('卯', '申'),
-    ('辰', '巳'), ('巳', '寅'), ('午', '亥'), ('未', '申'),
-    ('申', '巳'), ('酉', '寅'), ('戌', '亥'), ('亥', '申'),
-])
-
-# 亡神 - Death Spirit Star
-WANG_SHEN: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '亥'), ('丑', '申'), ('寅', '巳'), ('卯', '寅'),
-    ('辰', '亥'), ('巳', '申'), ('午', '巳'), ('未', '寅'),
-    ('申', '亥'), ('酉', '申'), ('戌', '巳'), ('亥', '寅'),
-])
-
-# 孤辰 - Lone Star (Male Loneliness)
-GU_CHEN: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '寅'), ('丑', '寅'), ('寅', '巳'), ('卯', '巳'),
-    ('辰', '巳'), ('巳', '申'), ('午', '申'), ('未', '申'),
-    ('申', '亥'), ('酉', '亥'), ('戌', '亥'), ('亥', '寅'),
-])
-
-# 寡宿 - Widowhood Star (Female Loneliness)
-GUA_SU: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '戌'), ('丑', '戌'), ('寅', '丑'), ('卯', '丑'),
-    ('辰', '丑'), ('巳', '辰'), ('午', '辰'), ('未', '辰'),
-    ('申', '未'), ('酉', '未'), ('戌', '未'), ('亥', '戌'),
-])
-
-# 空亡（旬空）- Void/Emptiness (by day pillar)
-XUN_KONG: dict[str, list[str]] = {
-    # 甲子旬空戌亥
-    '甲子': ['戌', '亥'], '乙丑': ['戌', '亥'], '丙寅': ['戌', '亥'], '丁卯': ['戌', '亥'],
-    '戊辰': ['戌', '亥'], '己巳': ['戌', '亥'], '庚午': ['戌', '亥'], '辛未': ['戌', '亥'],
-    '壬申': ['戌', '亥'], '癸酉': ['戌', '亥'],
-    # 甲戌旬空申酉
-    '甲戌': ['申', '酉'], '乙亥': ['申', '酉'], '丙子': ['申', '酉'], '丁丑': ['申', '酉'],
-    '戊寅': ['申', '酉'], '己卯': ['申', '酉'], '庚辰': ['申', '酉'], '辛巳': ['申', '酉'],
-    '壬午': ['申', '酉'], '癸未': ['申', '酉'],
-    # 甲申旬空午未
-    '甲申': ['午', '未'], '乙酉': ['午', '未'], '丙戌': ['午', '未'], '丁亥': ['午', '未'],
-    '戊子': ['午', '未'], '己丑': ['午', '未'], '庚寅': ['午', '未'], '辛卯': ['午', '未'],
-    '壬辰': ['午', '未'], '癸巳': ['午', '未'],
-    # 甲午旬空辰巳
-    '甲午': ['辰', '巳'], '乙未': ['辰', '巳'], '丙申': ['辰', '巳'], '丁酉': ['辰', '巳'],
-    '戊戌': ['辰', '巳'], '己亥': ['辰', '巳'], '庚子': ['辰', '巳'], '辛丑': ['辰', '巳'],
-    '壬寅': ['辰', '巳'], '癸卯': ['辰', '巳'],
-    # 甲辰旬空寅卯
-    '甲辰': ['寅', '卯'], '乙巳': ['寅', '卯'], '丙午': ['寅', '卯'], '丁未': ['寅', '卯'],
-    '戊申': ['寅', '卯'], '己酉': ['寅', '卯'], '庚戌': ['寅', '卯'], '辛亥': ['寅', '卯'],
-    '壬子': ['寅', '卯'], '癸丑': ['寅', '卯'],
-    # 甲寅旬空子丑
-    '甲寅': ['子', '丑'], '乙卯': ['子', '丑'], '丙辰': ['子', '丑'], '丁巳': ['子', '丑'],
-    '戊午': ['子', '丑'], '己未': ['子', '丑'], '庚申': ['子', '丑'], '辛酉': ['子', '丑'],
-    '壬戌': ['子', '丑'], '癸亥': ['子', '丑'],
-}
+# 重新导出（保持旧API）
+GUI_REN: FrozenSet[Tuple[str, str]] = _GUI_REN
+TIAN_DE: FrozenSet[Tuple[str, str]] = _TIAN_DE
+TIAN_DE_HE: FrozenSet[Tuple[str, str]] = _TIAN_DE_HE
+YUE_DE: FrozenSet[Tuple[str, str]] = _YUE_DE
+YUE_DE_HE: FrozenSet[Tuple[str, str]] = _YUE_DE_HE
+WEN_CHANG: FrozenSet[Tuple[str, str]] = _WEN_CHANG
+LU_SHEN: FrozenSet[Tuple[str, str]] = _LU_SHEN
+YANG_REN: FrozenSet[Tuple[str, str]] = _YANG_REN
+TAO_HUA: FrozenSet[Tuple[str, str]] = _TAO_HUA
+HONG_YAN_SHA: FrozenSet[Tuple[str, str]] = _HONG_YAN_SHA
+JIANG_XING: FrozenSet[Tuple[str, str]] = _JIANG_XING
+HUA_GAI: FrozenSet[Tuple[str, str]] = _HUA_GAI
+YI_MA: FrozenSet[Tuple[str, str]] = _YI_MA
+JIE_SHA: FrozenSet[Tuple[str, str]] = _JIE_SHA
+WANG_SHEN: FrozenSet[Tuple[str, str]] = _WANG_SHEN
+GU_CHEN: FrozenSet[Tuple[str, str]] = _GU_CHEN
+GUA_SU: FrozenSet[Tuple[str, str]] = _GUA_SU
 
 
+# 保留辅助函数供外部使用
 def has_gui_ren(day_gan: str, target_zhi: str) -> bool:
     """Check if day stem and target branch form Gui Ren relationship."""
     return (day_gan, target_zhi) in GUI_REN

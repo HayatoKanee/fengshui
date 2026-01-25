@@ -353,8 +353,7 @@ class ShenShaRuleRegistry:
     @classmethod
     def _initialize_default_rules(cls) -> None:
         """Initialize default rules from Registry."""
-        from .shensha_registry import ShenShaRegistry
-        from ..constants.shensha import XUN_KONG
+        from .shensha_registry import ShenShaRegistry, XUN_KONG
 
         rules: List[ShenShaRule] = []
 
