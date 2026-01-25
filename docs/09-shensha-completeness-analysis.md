@@ -72,6 +72,33 @@
 
 ## 三、天德贵人正确查法
 
+### 权威来源：《问真神煞大全》
+
+**古诀**：
+> 寅月丁。卯月申。辰月壬。巳月辛。午月亥。未月甲。
+> 申月癸。酉月寅。戌月丙。亥月乙。子月巳。丑月庚。
+
+**查法**：以月支查四柱干支
+
+### 当前代码错误分析
+
+代码位置：`shensha_calculator.py:37-51`
+
+```python
+# 当前错误实现 - 注释显示开发者知道原始值是地支但错误地转换了
+_TIAN_DE: Dict[EarthlyBranch, HeavenlyStem] = {
+    EarthlyBranch.MAO: HeavenlyStem.GENG,  # Note: original was '申' but should be stem  ❌
+    EarthlyBranch.WU: HeavenlyStem.JIA,    # Note: original was '亥' but should be stem  ❌
+    EarthlyBranch.YOU: HeavenlyStem.BING,  # Note: original was '寅'                     ❌
+    EarthlyBranch.ZI: HeavenlyStem.BING,   # Note: original was '巳'                     ❌
+    # ...
+}
+```
+
+**错误原因**：开发者误以为天德贵人只能是天干，所以将地支（申、亥、寅、巳）错误地转换为了天干（庚、甲、丙、丙）。
+
+**正确理解**：天德贵人是**混合类型**，8个月查天干，4个月查地支！
+
 ### 传统口诀
 
 根据[阐微堂](https://chanweitang.com/post/120.html)和[国易堂](https://www.guoyi360.com/tdgr/1868.html)：
