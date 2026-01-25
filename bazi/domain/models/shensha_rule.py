@@ -131,7 +131,7 @@ class TableLookupRule:
     Generic table-driven ShenSha rule.
 
     Most ShenSha (90%+) can be expressed as simple table lookups:
-    - Extract a reference value from BaZi (e.g., day_stem)
+    - Extract reference value(s) from BaZi (e.g., day_stem, year_branch)
     - For each pillar, extract target value(s) (e.g., branch)
     - Check if (ref, target) exists in lookup table
 
@@ -141,27 +141,35 @@ class TableLookupRule:
     Attributes:
         type_name: ShenShaType enum name (string for lazy resolution)
         lookup_table: FrozenSet of (ref, target) tuples
-        ref_extractor: Function to extract reference from BaZi
+        ref_extractors: Tuple of functions to extract reference from BaZi
+                       (supports multiple, e.g., both year_branch and day_branch for 桃花)
         target_extractor: Function to extract target(s) from Pillar
         positions: Which pillar positions to check
-        also_use_day_branch: Also use day branch as secondary ref (for 桃花/劫煞)
-        exclude_ref_position: Exclude the position that matches ref source
+        exclude_positions: Positions to exclude (e.g., ("year",) for 驿马)
 
     Example:
         >>> rule = TableLookupRule(
         ...     type_name="TIAN_YI_GUI_REN",
         ...     lookup_table=frozenset([("甲", "丑"), ("甲", "未"), ...]),
-        ...     ref_extractor=day_stem_extractor,
+        ...     ref_extractors=(day_stem_extractor,),
         ...     target_extractor=branch_target,
+        ... )
+
+        # Multiple ref extractors (桃花同时用年支和日支)
+        >>> rule = TableLookupRule(
+        ...     type_name="TAO_HUA",
+        ...     lookup_table=TAO_HUA,
+        ...     ref_extractors=(year_branch_extractor, day_branch_extractor),
+        ...     target_extractor=branch_target,
+        ...     exclude_positions=("year",),
         ... )
     """
     type_name: str
     lookup_table: FrozenSet[Tuple[str, str]]
-    ref_extractor: RefExtractor
+    ref_extractors: Tuple[RefExtractor, ...]
     target_extractor: TargetExtractor
     positions: Tuple[str, ...] = ("year", "month", "day", "hour")
-    also_use_day_branch: bool = False
-    exclude_ref_position: str | None = None  # e.g., "year" for year-branch based rules
+    exclude_positions: Tuple[str, ...] = ()
 
     @property
     def shensha_type(self) -> "ShenShaType":
@@ -174,40 +182,25 @@ class TableLookupRule:
         from .shensha import ShenSha
 
         results: List[ShenSha] = []
-        ref_value = self.ref_extractor(bazi)
 
-        # Check each position
-        for pos_name in self.positions:
-            if pos_name == self.exclude_ref_position:
-                continue
+        # Iterate over all ref extractors
+        for ref_extractor in self.ref_extractors:
+            ref_value = ref_extractor(bazi)
 
-            pillar = self._get_pillar(bazi, pos_name)
-            targets = self.target_extractor(pillar)
-
-            for target_value, position_suffix in targets:
-                if (ref_value, target_value) in self.lookup_table:
-                    results.append(ShenSha(
-                        type=self.shensha_type,
-                        position=f"{pos_name}_{position_suffix}",
-                        triggered_by=ref_value,
-                    ))
-
-        # Secondary check with day branch (for rules like 桃花, 劫煞)
-        if self.also_use_day_branch:
-            day_ref = bazi.day_pillar.branch.chinese
+            # Check each position
             for pos_name in self.positions:
-                if pos_name == "day":  # Skip day pillar when using day branch as ref
+                if pos_name in self.exclude_positions:
                     continue
 
                 pillar = self._get_pillar(bazi, pos_name)
                 targets = self.target_extractor(pillar)
 
                 for target_value, position_suffix in targets:
-                    if (day_ref, target_value) in self.lookup_table:
+                    if (ref_value, target_value) in self.lookup_table:
                         new_shensha = ShenSha(
                             type=self.shensha_type,
                             position=f"{pos_name}_{position_suffix}",
-                            triggered_by=day_ref,
+                            triggered_by=ref_value,
                         )
                         # Avoid duplicates
                         if new_shensha not in results:
@@ -359,7 +352,26 @@ class ShenShaRuleRegistry:
 
     @classmethod
     def _initialize_default_rules(cls) -> None:
-        """Initialize default rules from constants."""
-        from ..constants.shensha_rules import create_all_rules
-        cls._rules = create_all_rules()
+        """Initialize default rules from Registry."""
+        from .shensha_registry import ShenShaRegistry
+        from ..constants.shensha import XUN_KONG
+
+        rules: List[ShenShaRule] = []
+
+        # Generate table-based rules from Registry
+        for type_name, defn in ShenShaRegistry.get_table_based():
+            rules.append(TableLookupRule(
+                type_name=type_name,
+                lookup_table=defn.lookup_table,
+                ref_extractors=defn.ref_extractors,
+                target_extractor=defn.target_extractor,
+                positions=defn.positions,
+                exclude_positions=defn.exclude_positions,
+            ))
+
+        # Add special rules
+        rules.append(KongWangRule(xun_kong_table=XUN_KONG))
+        rules.append(SanQiRule())
+
+        cls._rules = rules
         cls._initialized = True
