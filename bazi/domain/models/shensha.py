@@ -76,6 +76,7 @@ _BENEFICIAL_SHENSHA = {
     ShenShaType.JIANG_XING,
     ShenShaType.HUA_GAI,
     ShenShaType.SAN_QI,
+    ShenShaType.YI_MA,  # 驿马主变动迁移，多视为吉星
 }
 
 # ShenSha categories
