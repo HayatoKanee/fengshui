@@ -30,7 +30,9 @@ from ..models.shensha_rule import (
 from .shensha import (
     GUI_REN,
     TIAN_DE,
+    TIAN_DE_HE,
     YUE_DE,
+    YUE_DE_HE,
     WEN_CHANG,
     LU_SHEN,
     YANG_REN,
@@ -45,27 +47,6 @@ from .shensha import (
     GUA_SU,
     XUN_KONG,
 )
-
-
-# ============================================================
-# 天德合查表 - 天德的五合/六合对应
-# ============================================================
-TIAN_DE_HE = frozenset([
-    # 天干五合对应
-    ('寅', '壬'),  # 丁壬合
-    ('辰', '丁'),  # 壬丁合
-    ('巳', '丙'),  # 辛丙合
-    ('未', '己'),  # 甲己合
-    ('申', '戊'),  # 癸戊合
-    ('戌', '辛'),  # 丙辛合
-    ('亥', '庚'),  # 乙庚合
-    ('丑', '乙'),  # 庚乙合
-    # 地支六合对应
-    ('卯', '巳'),  # 巳申合
-    ('午', '寅'),  # 寅亥合
-    ('酉', '亥'),  # 寅亥合
-    ('子', '申'),  # 巳申合
-])
 
 
 def create_all_rules() -> List[ShenShaRule]:
@@ -112,6 +93,13 @@ def create_all_rules() -> List[ShenShaRule]:
         lookup_table=YUE_DE,
         ref_extractor=month_branch_extractor,
         target_extractor=stem_target,
+    ))
+
+    rules.append(TableLookupRule(
+        type_name="YUE_DE_HE",
+        lookup_table=YUE_DE_HE,
+        ref_extractor=month_branch_extractor,
+        target_extractor=stem_target,  # 月德合只查天干
     ))
 
     # ==============================================================
