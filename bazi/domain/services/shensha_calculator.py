@@ -5,7 +5,7 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 
 from ..models import (
     BaZi,
@@ -35,19 +35,46 @@ _TIAN_YI_GUI_REN: Dict[HeavenlyStem, Set[EarthlyBranch]] = {
 }
 
 # 天德 (Heavenly Virtue) - based on month branch
-_TIAN_DE: Dict[EarthlyBranch, HeavenlyStem] = {
-    EarthlyBranch.YIN: HeavenlyStem.DING,
-    EarthlyBranch.MAO: HeavenlyStem.GENG,  # Note: original was '申' but should be stem
-    EarthlyBranch.CHEN: HeavenlyStem.REN,
-    EarthlyBranch.SI: HeavenlyStem.XIN,
-    EarthlyBranch.WU: HeavenlyStem.JIA,  # Note: original was '亥' but should be stem
-    EarthlyBranch.WEI: HeavenlyStem.JIA,
-    EarthlyBranch.SHEN: HeavenlyStem.GUI,
-    EarthlyBranch.YOU: HeavenlyStem.BING,  # Note: original was '寅'
-    EarthlyBranch.XU: HeavenlyStem.BING,
-    EarthlyBranch.HAI: HeavenlyStem.YI,
-    EarthlyBranch.ZI: HeavenlyStem.BING,  # Note: original was '巳'
-    EarthlyBranch.CHOU: HeavenlyStem.GENG,
+# 古诀：寅月丁。卯月申。辰月壬。巳月辛。午月亥。未月甲。
+#       申月癸。酉月寅。戌月丙。亥月乙。子月巳。丑月庚。
+# 注意：卯、午、酉、子月查地支，其余月份查天干
+_TIAN_DE: Dict[EarthlyBranch, Union[HeavenlyStem, EarthlyBranch]] = {
+    # 寅申巳亥月 - 配阴干
+    EarthlyBranch.YIN: HeavenlyStem.DING,   # 寅月见丁
+    EarthlyBranch.SI: HeavenlyStem.XIN,     # 巳月见辛
+    EarthlyBranch.SHEN: HeavenlyStem.GUI,   # 申月见癸
+    EarthlyBranch.HAI: HeavenlyStem.YI,     # 亥月见乙
+    # 辰戌丑未月 - 配阳干
+    EarthlyBranch.CHEN: HeavenlyStem.REN,   # 辰月见壬
+    EarthlyBranch.XU: HeavenlyStem.BING,    # 戌月见丙
+    EarthlyBranch.CHOU: HeavenlyStem.GENG,  # 丑月见庚
+    EarthlyBranch.WEI: HeavenlyStem.JIA,    # 未月见甲
+    # 子午卯酉月 - 配地支（墓库位置）
+    EarthlyBranch.MAO: EarthlyBranch.SHEN,  # 卯月见申
+    EarthlyBranch.WU: EarthlyBranch.HAI,    # 午月见亥
+    EarthlyBranch.YOU: EarthlyBranch.YIN,   # 酉月见寅
+    EarthlyBranch.ZI: EarthlyBranch.SI,     # 子月见巳
+}
+
+# 天德合 (Heavenly Virtue Combination) - 天德的合者
+# 古诀：寅月壬。卯月巳。辰月丁。巳月丙。午月寅。未月己。
+#       申月戊。酉月亥。戌月辛。亥月庚。子月申。丑月乙。
+# 原理：天德与天干五合或地支六合者即为天德合
+_TIAN_DE_HE: Dict[EarthlyBranch, Union[HeavenlyStem, EarthlyBranch]] = {
+    # 天干五合对应
+    EarthlyBranch.YIN: HeavenlyStem.REN,    # 丁壬合
+    EarthlyBranch.CHEN: HeavenlyStem.DING,  # 壬丁合
+    EarthlyBranch.SI: HeavenlyStem.BING,    # 辛丙合
+    EarthlyBranch.WEI: HeavenlyStem.JI,     # 甲己合
+    EarthlyBranch.SHEN: HeavenlyStem.WU,    # 癸戊合
+    EarthlyBranch.XU: HeavenlyStem.XIN,     # 丙辛合
+    EarthlyBranch.HAI: HeavenlyStem.GENG,   # 乙庚合
+    EarthlyBranch.CHOU: HeavenlyStem.YI,    # 庚乙合
+    # 地支六合对应
+    EarthlyBranch.MAO: EarthlyBranch.SI,    # 巳申合
+    EarthlyBranch.WU: EarthlyBranch.YIN,    # 寅亥合
+    EarthlyBranch.YOU: EarthlyBranch.HAI,   # 寅亥合
+    EarthlyBranch.ZI: EarthlyBranch.SHEN,   # 巳申合
 }
 
 # 月德 (Monthly Virtue) - based on month branch
@@ -186,10 +213,48 @@ class ShenShaCalculator:
         targets = _TIAN_YI_GUI_REN.get(day_stem, set())
         return branch in targets
 
-    def is_tian_de(self, month_branch: EarthlyBranch, stem: HeavenlyStem) -> bool:
-        """Check if a stem is Heavenly Virtue for this month."""
-        target = _TIAN_DE.get(month_branch)
-        return target == stem if target else False
+    def is_tian_de(
+        self,
+        month_branch: EarthlyBranch,
+        target: Union[HeavenlyStem, EarthlyBranch]
+    ) -> bool:
+        """
+        Check if a stem or branch is Heavenly Virtue for this month.
+
+        天德贵人查法：以月支查四柱干支
+        - 寅申巳亥月配阴干
+        - 辰戌丑未月配阳干
+        - 子午卯酉月配地支
+        """
+        expected = _TIAN_DE.get(month_branch)
+        if expected is None:
+            return False
+        # 天德可能是天干或地支，需要类型匹配
+        if isinstance(expected, HeavenlyStem) and isinstance(target, HeavenlyStem):
+            return expected == target
+        elif isinstance(expected, EarthlyBranch) and isinstance(target, EarthlyBranch):
+            return expected == target
+        return False
+
+    def is_tian_de_he(
+        self,
+        month_branch: EarthlyBranch,
+        target: Union[HeavenlyStem, EarthlyBranch]
+    ) -> bool:
+        """
+        Check if a stem or branch is Heavenly Virtue Combination for this month.
+
+        天德合：天德的五合（天干）或六合（地支）对应
+        效果为天德的一半
+        """
+        expected = _TIAN_DE_HE.get(month_branch)
+        if expected is None:
+            return False
+        if isinstance(expected, HeavenlyStem) and isinstance(target, HeavenlyStem):
+            return expected == target
+        elif isinstance(expected, EarthlyBranch) and isinstance(target, EarthlyBranch):
+            return expected == target
+        return False
 
     def is_yue_de(self, month_branch: EarthlyBranch, stem: HeavenlyStem) -> bool:
         """Check if a stem is Monthly Virtue for this month."""
@@ -266,11 +331,32 @@ class ShenShaCalculator:
                     triggered_by=day_stem.chinese,
                 ))
 
-            # Check 天德 (based on month branch → stem)
+            # Check 天德 (based on month branch → stem or branch)
+            # 天德可能是天干或地支，需要分别检查
             if self.is_tian_de(month_branch, stem):
                 shensha_list.append(ShenSha(
                     type=ShenShaType.TIAN_DE,
                     position=f"{pos_name}_stem",
+                    triggered_by=month_branch.chinese,
+                ))
+            if self.is_tian_de(month_branch, branch):
+                shensha_list.append(ShenSha(
+                    type=ShenShaType.TIAN_DE,
+                    position=f"{pos_name}_branch",
+                    triggered_by=month_branch.chinese,
+                ))
+
+            # Check 天德合 (based on month branch → stem or branch)
+            if self.is_tian_de_he(month_branch, stem):
+                shensha_list.append(ShenSha(
+                    type=ShenShaType.TIAN_DE_HE,
+                    position=f"{pos_name}_stem",
+                    triggered_by=month_branch.chinese,
+                ))
+            if self.is_tian_de_he(month_branch, branch):
+                shensha_list.append(ShenSha(
+                    type=ShenShaType.TIAN_DE_HE,
+                    position=f"{pos_name}_branch",
                     triggered_by=month_branch.chinese,
                 ))
 

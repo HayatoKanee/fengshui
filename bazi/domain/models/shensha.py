@@ -16,6 +16,7 @@ class ShenShaType(Enum):
     # Beneficial stars (吉星)
     TIAN_YI_GUI_REN = "天乙贵人"    # Heavenly Noble
     TIAN_DE = "天德"                # Heavenly Virtue
+    TIAN_DE_HE = "天德合"           # Heavenly Virtue Combination
     YUE_DE = "月德"                 # Monthly Virtue
     WEN_CHANG = "文昌"              # Literary Prosperity
     LU_SHEN = "禄神"                # Prosperity Spirit
@@ -66,6 +67,7 @@ class ShenShaType(Enum):
 _BENEFICIAL_SHENSHA = {
     ShenShaType.TIAN_YI_GUI_REN,
     ShenShaType.TIAN_DE,
+    ShenShaType.TIAN_DE_HE,
     ShenShaType.YUE_DE,
     ShenShaType.WEN_CHANG,
     ShenShaType.LU_SHEN,
@@ -78,6 +80,7 @@ _BENEFICIAL_SHENSHA = {
 _SHENSHA_CATEGORIES = {
     ShenShaType.TIAN_YI_GUI_REN: "贵人",
     ShenShaType.TIAN_DE: "德星",
+    ShenShaType.TIAN_DE_HE: "德星",
     ShenShaType.YUE_DE: "德星",
     ShenShaType.WEN_CHANG: "文星",
     ShenShaType.LU_SHEN: "禄星",
