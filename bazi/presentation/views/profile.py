@@ -15,19 +15,27 @@ from bazi.presentation.forms import UserProfileForm
 from bazi.presentation.views.base import BaseProfileView, BaziLoginRequiredMixin, ContainerMixin
 
 
-class ProfileListView(BaziLoginRequiredMixin, ContainerMixin, ListView):
+class ProfileListView(ContainerMixin, ListView):
     """
     List all profiles for the current user.
 
     Displays a list of BaZi profiles with options to
     add, edit, delete, and set default profile.
+
+    For anonymous users, profiles are managed client-side via Alpine.js store.
+    For authenticated users, server profiles are loaded via Alpine.js API calls.
     """
     template_name = 'profiles.html'
     context_object_name = 'profiles'
 
     def get_queryset(self):
-        """Get profiles for current user via repository."""
-        return self.profile_repo.get_by_user(self.request.user.id)
+        """
+        Return empty queryset - profiles are loaded client-side via Alpine.js.
+
+        This allows the same template to work for both anonymous (IndexedDB)
+        and authenticated (server API) users.
+        """
+        return []
 
 
 class ProfileCreateView(BaziLoginRequiredMixin, ContainerMixin, View):

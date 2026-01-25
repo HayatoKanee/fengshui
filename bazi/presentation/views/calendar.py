@@ -8,42 +8,28 @@ Uses DayQualityService from the application layer for all calculations.
 """
 import datetime
 
-from django.contrib import messages
 from django.http import JsonResponse
-from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import TemplateView
 
-from bazi.presentation.views.base import BaziLoginRequiredMixin, ContainerMixin
+from bazi.presentation.views.base import ContainerMixin
 
 
 # =============================================================================
 # Class-Based Views
 # =============================================================================
 
-class CalendarPageView(BaziLoginRequiredMixin, ContainerMixin, TemplateView):
+class CalendarPageView(ContainerMixin, TemplateView):
     """
     Calendar page view.
 
     Displays a month calendar with day quality indicators
     based on the user's selected BaZi profile.
 
-    Requires user to have at least one profile.
+    Works for both anonymous (local profiles) and authenticated users.
+    Profile selection handled by Alpine.js store.
     """
     template_name = 'calendar.html'
-
-    def get(self, request, *args, **kwargs):
-        """Handle GET request."""
-        profiles = self.profile_repo.get_by_user(request.user.id)
-
-        if not profiles:
-            messages.warning(
-                request,
-                "您需要先创建八字资料才能使用日历功能。请先创建一个资料。"
-            )
-            return redirect("profiles")
-
-        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         """Build context for calendar template."""
@@ -57,7 +43,6 @@ class CalendarPageView(BaziLoginRequiredMixin, ContainerMixin, TemplateView):
             "month": current_month,
             "years": range(current_year - 10, current_year + 11),
             "months": range(1, 13),
-            "profiles": self.profile_repo.get_by_user(self.request.user.id),
         })
         return context
 
@@ -145,17 +130,44 @@ class CalendarDataView(ContainerMixin, View):
         })
 
     def _get_profile(self, request, profile_id):
-        """Get the user's profile by ID or default."""
-        if not request.user.is_authenticated:
+        """
+        Build profile from POST data.
+
+        Local-first architecture: Frontend always sends birth data directly
+        from IndexedDB, regardless of auth status.
+        """
+        from bazi.domain.models import BirthData
+        from bazi.domain.ports import ProfileData
+
+        try:
+            birth_year = int(request.POST.get("birth_year", 0))
+            birth_month = int(request.POST.get("birth_month", 0))
+            birth_day = int(request.POST.get("birth_day", 0))
+            birth_hour = int(request.POST.get("birth_hour", 0))
+            birth_minute = int(request.POST.get("birth_minute", 0))
+            is_male = request.POST.get("is_male", "true").lower() == "true"
+
+            if not all([birth_year, birth_month, birth_day]):
+                return None
+
+            birth_data = BirthData(
+                year=birth_year,
+                month=birth_month,
+                day=birth_day,
+                hour=birth_hour,
+                minute=birth_minute,
+                is_male=is_male,
+            )
+
+            return ProfileData(
+                id=0,
+                user_id=0,
+                name="",
+                birth_data=birth_data,
+                is_default=False,
+            )
+        except (ValueError, TypeError):
             return None
-
-        if profile_id:
-            profile = self.profile_repo.get_by_id(int(profile_id))
-            if profile and profile.user_id == request.user.id:
-                return profile
-
-        # Fall back to default profile
-        return self.profile_repo.get_default_for_user(request.user.id)
 
     def get(self, request):
         """Handle GET request (not allowed)."""

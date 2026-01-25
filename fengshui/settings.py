@@ -22,7 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-only-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Default to False for safety
+# Auto-detect: DEBUG=True if running locally (no DATABASE_URL), False in production
+DEBUG = os.environ.get('DEBUG', 'True' if not os.environ.get('DATABASE_URL') else 'False') == 'True'
 
 ALLOWED_HOSTS = ['.herokuapp.com', 'localhost', '127.0.0.1', "www.myfate.org", "myfate.org"]
 
@@ -55,11 +56,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # Required by django-allauth
+    # Authentication (django-allauth)
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.apple',
     # Frontend modernization (Vite + HTMX + Alpine + React Islands)
     'django_vite',
     'django_htmx',
     'django_browser_reload',
+    # Development tools
+    'django_extensions',
 ]
+
+# Required by django-allauth
+SITE_ID = 1
 
 # Internal IPs for debug toolbar and browser reload
 INTERNAL_IPS = ['127.0.0.1']
@@ -72,6 +85,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # django-allauth
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Frontend modernization
@@ -142,6 +156,66 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# ====================
+# django-allauth Configuration
+# ====================
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Session settings - keep users logged in
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Persist across browser sessions
+SESSION_SAVE_EVERY_REQUEST = True  # Refresh session on each request
+
+# Account settings (django-allauth 65+ syntax)
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}  # Allow both username and email login
+ACCOUNT_SIGNUP_FIELDS = ['email', 'username*', 'password1*']  # username and password required, email optional
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't block registration
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_SESSION_REMEMBER = True  # Keep users logged in
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
+
+# Custom adapter for frictionless signup and social account linking
+ACCOUNT_ADAPTER = 'bazi.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'bazi.adapters.CustomSocialAccountAdapter'
+
+# Redirects
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+ACCOUNT_LOGOUT_REDIRECT_URL = 'home'
+
+# Social account settings
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Frictionless social signup
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Allow GET for social login
+
+# Provider-specific settings (credentials via environment variables)
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'APP': {
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID', ''),
+            'secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+            'key': ''
+        }
+    },
+    'apple': {
+        'APP': {
+            'client_id': os.environ.get('APPLE_CLIENT_ID', ''),
+            'secret': os.environ.get('APPLE_CLIENT_SECRET', ''),
+            'key': os.environ.get('APPLE_KEY_ID', ''),
+            'settings': {
+                'team_id': os.environ.get('APPLE_TEAM_ID', ''),
+            }
+        }
+    }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

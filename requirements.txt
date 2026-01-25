@@ -8,6 +8,11 @@ whitenoise>=6.9.0
 psycopg2-binary>=2.9
 dj-database-url>=1.0
 
+# Authentication
+django-allauth>=65.0.0
+PyJWT>=2.10.0
+cryptography>=46.0.0
+
 # Frontend integration
 django-vite>=3.0.0
 django-htmx>=1.17.0
@@ -24,3 +29,8 @@ httpx>=0.28.0
 pydantic>=2.11.0
 tqdm>=4.67.0
 tzdata>=2025.2
+
+# Development
+django-extensions>=3.2.0
+Werkzeug>=3.0.0
+pyOpenSSL>=24.0.0

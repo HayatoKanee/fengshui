@@ -1,84 +1,141 @@
 {% extends 'base_content.html' %}
+{% load i18n %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-3xl font-bold mb-6">个人资料管理</h2>
+<div class="container mx-auto px-4 py-8"
+     x-data="{
+         showDeleteModal: false,
+         profileToDelete: null,
+         async confirmDelete() {
+             if (this.profileToDelete) {
+                 await $store.profiles.deleteProfile(this.profileToDelete.id || this.profileToDelete.localId);
+                 this.showDeleteModal = false;
+                 this.profileToDelete = null;
+             }
+         }
+     }">
+
+    <!-- Header with title and user status -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h2 class="text-3xl font-bold">{% trans "个人资料管理" %}</h2>
+        {% if user.is_authenticated %}
+        <div class="flex items-center gap-3">
+            <span class="text-base-content/60">{{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="btn btn-ghost btn-sm">{% trans "退出登录" %}</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not user.is_authenticated %}
+    <!-- Sync Banner for Anonymous Users -->
+    <div class="alert alert-info mb-6 shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <div>
+            <h3 class="font-bold">{% trans "在多设备同步您的资料" %}</h3>
+            <p class="text-sm">{% trans "登录后，您的八字资料将自动同步到云端，可在任何设备访问。" %}</p>
+        </div>
+        <a href="{% url 'login' %}" class="btn btn-sm btn-primary">{% trans "登录 / 注册" %}</a>
+    </div>
+    {% endif %}
 
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-            <h3 class="card-title text-xl mb-4">已保存的八字资料</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="card-title text-xl">{% trans "已保存的八字资料" %}</h3>
+                <a href="{% url 'bazi' %}" class="btn btn-primary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    {% trans "添加资料" %}
+                </a>
+            </div>
 
-            {% if profiles %}
+            <!-- Loading State -->
+            <div x-show="$store.profiles.loading" class="flex justify-center py-12">
+                <span class="loading loading-spinner loading-lg"></span>
+            </div>
+
+            <!-- Profiles List -->
+            <div x-show="!$store.profiles.loading && $store.profiles.profiles.length > 0" x-cloak>
                 <div class="overflow-x-auto">
                     <table class="table table-zebra w-full">
                         <thead>
                             <tr>
-                                <th>姓名</th>
-                                <th>出生日期</th>
-                                <th>性别</th>
-                                <th>默认</th>
-                                <th>操作</th>
+                                <th>{% trans "姓名" %}</th>
+                                <th>{% trans "出生日期" %}</th>
+                                <th>{% trans "性别" %}</th>
+                                <th>{% trans "默认" %}</th>
+                                <th>{% trans "操作" %}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for profile in profiles %}
+                            <template x-for="profile in $store.profiles.profiles" :key="profile.id || profile.localId">
                                 <tr class="hover">
-                                    <td class="font-medium">{{ profile.name }}</td>
+                                    <td class="font-medium" x-text="profile.name"></td>
                                     <td>
-                                        {{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日
-                                        {{ profile.birth_data.hour }}时{% if profile.birth_data.minute %}{{ profile.birth_data.minute }}分{% endif %}
+                                        <span x-text="profile.birth_year + '年' + profile.birth_month + '月' + profile.birth_day + '日 ' + profile.birth_hour + '时'"></span>
+                                        <span x-show="profile.birth_minute" x-text="profile.birth_minute + '分'"></span>
                                     </td>
                                     <td>
-                                        {% if profile.birth_data.is_male %}
-                                            <span class="badge badge-info">男</span>
-                                        {% else %}
-                                            <span class="badge badge-secondary">女</span>
-                                        {% endif %}
+                                        <span x-show="profile.is_male" class="badge badge-info">{% trans "男" %}</span>
+                                        <span x-show="!profile.is_male" class="badge badge-secondary">{% trans "女" %}</span>
                                     </td>
                                     <td>
-                                        {% if profile.is_default %}
-                                            <span class="badge badge-success">默认</span>
-                                        {% else %}
-                                            <a href="{% url 'set_default_profile' profile.id %}"
-                                               class="btn btn-ghost btn-xs">
-                                                设为默认
-                                            </a>
-                                        {% endif %}
+                                        <span x-show="profile.is_default" class="badge badge-success">{% trans "默认" %}</span>
+                                        <button x-show="!profile.is_default"
+                                                @click="$store.profiles.setDefault(profile.id || profile.localId)"
+                                                class="btn btn-ghost btn-xs">
+                                            {% trans "设为默认" %}
+                                        </button>
                                     </td>
                                     <td>
                                         <div class="flex flex-wrap gap-2">
-                                            <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
+                                            <a :href="'{% url 'bazi' %}?year=' + profile.birth_year + '&month=' + profile.birth_month + '&day=' + profile.birth_day + '&hour=' + profile.birth_hour + '&minute=' + (profile.birth_minute || 0) + '&gender=' + (profile.is_male ? 'male' : 'female')"
                                                class="btn btn-info btn-sm">
-                                                查看八字
+                                                {% trans "查看八字" %}
                                             </a>
-                                            <a href="{% url 'edit_profile' profile.id %}"
-                                               class="btn btn-warning btn-sm">
-                                                编辑
-                                            </a>
-                                            <a href="{% url 'delete_profile' profile.id %}"
-                                               class="btn btn-error btn-sm"
-                                               onclick="return confirm('确定要删除此资料吗?')">
-                                                删除
-                                            </a>
+                                            <button @click="profileToDelete = profile; showDeleteModal = true"
+                                                    class="btn btn-error btn-sm">
+                                                {% trans "删除" %}
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
-                            {% endfor %}
+                            </template>
                         </tbody>
                     </table>
                 </div>
-            {% else %}
-                <div class="text-center py-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <p class="text-base-content/60 mb-4">您还没有保存任何八字资料</p>
-                    <a href="{% url 'bazi' %}" class="btn btn-primary">
-                        添加八字资料
-                    </a>
-                </div>
-            {% endif %}
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="!$store.profiles.loading && $store.profiles.profiles.length === 0" x-cloak class="text-center py-12">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <p class="text-base-content/60 mb-4">{% trans "您还没有保存任何八字资料" %}</p>
+                <a href="{% url 'bazi' %}" class="btn btn-primary">
+                    {% trans "添加八字资料" %}
+                </a>
+            </div>
         </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" :class="{ 'modal-open': showDeleteModal }">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg text-error">{% trans "确认删除" %}</h3>
+            <p class="py-4">
+                {% trans "确定要删除" %} <span class="font-bold" x-text="profileToDelete?.name"></span> {% trans "的资料吗？" %}
+            </p>
+            <p class="text-sm text-base-content/60">{% trans "此操作不可撤销。" %}</p>
+            <div class="modal-action">
+                <button @click="showDeleteModal = false; profileToDelete = null" class="btn btn-ghost">{% trans "取消" %}</button>
+                <button @click="confirmDelete()" class="btn btn-error">{% trans "删除" %}</button>
+            </div>
+        </div>
+        <div class="modal-backdrop" @click="showDeleteModal = false"></div>
     </div>
 </div>
 {% endblock %}

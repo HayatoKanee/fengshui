@@ -3,11 +3,9 @@
 {% block content %}
 <div class="container mx-auto px-4 py-6"
      x-data="{
-         showInputForm: {% if request.GET.profile_id %}false{% else %}true{% endif %},
+         showInputForm: true,
          showSaveModal: false,
-         showAddModal: false,
-         showDeleteModal: false,
-         profileToDelete: { id: null, name: '' },
+         saveName: '',
          formData: {
              year: '{{ form.year.value|default:"" }}',
              month: '{{ form.month.value|default:"" }}',
@@ -18,62 +16,48 @@
          }
      }">
 
-    <!-- Saved Profiles Section -->
-    {% if user.is_authenticated and profiles %}
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h3 class="card-title text-xl">选择已保存的资料</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {% for profile in profiles %}
-                    <div class="relative group">
-                        <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
-                           class="btn {% if request.GET.profile_id|add:'0' == profile.id %}btn-primary{% else %}btn-outline btn-primary{% endif %} w-full justify-start">
-                            {{ profile.name }} ({{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日)
-                        </a>
-                        <button type="button"
-                                @click.prevent="profileToDelete = { id: {{ profile.id }}, name: '{{ profile.name }}' }; showDeleteModal = true"
-                                class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-base-300/80 text-base-content/50 hover:bg-error hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center text-xs font-light leading-none"
-                                title="删除">×</button>
-                    </div>
-                {% endfor %}
-                <button @click="showAddModal = true"
-                        class="btn btn-outline btn-success w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    添加新资料
-                </button>
+    <!-- Saved Profiles Section - Only show after loading completes and has profiles -->
+    <template x-if="!$store.profiles.loading && $store.profiles.profiles.length > 0">
+        <div class="card bg-base-100 shadow-xl mb-6">
+            <div class="card-body">
+                <h3 class="card-title text-xl">选择已保存的资料</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <template x-for="profile in $store.profiles.profiles" :key="profile.id || profile.localId">
+                        <div class="relative group">
+                            <button type="button"
+                                    @click="
+                                        formData.year = profile.birth_year;
+                                        formData.month = profile.birth_month;
+                                        formData.day = profile.birth_day;
+                                        formData.hour = profile.birth_hour;
+                                        formData.minute = profile.birth_minute;
+                                        formData.gender = profile.is_male ? 'male' : 'female';
+                                        showInputForm = true;
+                                    "
+                                    class="btn btn-outline btn-primary w-full justify-start text-left truncate">
+                                <span x-text="profile.name"></span>
+                            </button>
+                            <button type="button"
+                                    @click.stop="
+                                        if (confirm('确定要删除 ' + profile.name + ' 吗？')) {
+                                            $store.profiles.deleteProfile(profile.id);
+                                        }
+                                    "
+                                    class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-base-300 text-base-content/60 hover:bg-error hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center text-xs"
+                                    title="删除">×</button>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
-    </div>
-    {% endif %}
+    </template>
 
-    <!-- Toggle Button for New Input Form when viewing profile -->
-    {% if request.GET.profile_id %}
-    <div class="mb-4">
-        <button @click="showInputForm = !showInputForm"
-                class="btn btn-outline btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            输入新八字
-        </button>
-    </div>
-    {% endif %}
-
-    <!-- New Birth Form -->
+    <!-- Birth Form -->
     <div x-show="showInputForm" x-transition class="card bg-base-100 shadow-xl mb-6">
         <div class="card-body">
-            <h3 class="card-title text-xl">
-                {% if user.is_authenticated %}
-                    输入新的八字资料
-                {% else %}
-                    输入八字资料
-                    <span class="text-sm font-normal text-base-content/60">(注册账号可保存资料)</span>
-                {% endif %}
-            </h3>
+            <h3 class="card-title text-xl">输入八字资料</h3>
 
-            <form action="{% url 'bazi' %}" method="post" class="space-y-4">
+            <form x-ref="baziForm" action="{% url 'bazi' %}" method="post" class="space-y-4">
                 {% csrf_token %}
 
                 <!-- Birth Date Row -->
@@ -165,19 +149,6 @@
                     <button type="submit" class="btn btn-primary w-full">
                         查看八字
                     </button>
-                    {% if user.is_authenticated %}
-                        <button type="button"
-                                @click="showSaveModal = true"
-                                class="btn btn-outline btn-secondary btn-sm">
-                            保存此资料
-                        </button>
-                    {% else %}
-                        <div class="text-center text-sm text-base-content/60">
-                            <a href="{% url 'login' %}?next={% url 'bazi' %}" class="link link-primary">登录</a> 或
-                            <a href="{% url 'register' %}?next={% url 'bazi' %}" class="link link-primary">注册</a>
-                            以保存八字资料
-                        </div>
-                    {% endif %}
                 </div>
             </form>
         </div>
@@ -185,9 +156,21 @@
 
     <!-- Bazi Results Display -->
     {% if bazi %}
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-xl"
+         x-data="baziSaveComponent()"
+         x-init="initBirthData({{ form.year.value }}, {{ form.month.value }}, {{ form.day.value }}, {{ form.hour.value }}, {{ form.minute.value|default:0 }}, {{ is_male|yesno:'true,false' }})">
         <div class="card-body">
-            <h2 class="card-title text-2xl mb-4">八字排盘</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title text-2xl">八字排盘</h2>
+                <button type="button"
+                        @click="if (!saved) { showSaveModal = true; saveName = ''; }"
+                        :disabled="saving || saved"
+                        class="btn btn-sm gap-2"
+                        :class="saved ? 'btn-success' : 'btn-outline btn-primary'">
+                    <span x-show="saving" class="loading loading-spinner loading-xs"></span>
+                    <span x-text="saved ? '✓ 已保存' : '保存此资料'"></span>
+                </button>
+            </div>
 
             <!-- Main Bazi Table -->
             <div class="overflow-x-auto mb-6">
@@ -425,119 +408,35 @@
     </div>
     {% endif %}
 
-    <!-- Save Profile Modal -->
-    {% if user.is_authenticated %}
-    <div class="modal" :class="{ 'modal-open': showSaveModal }">
+    <!-- Save Profile Modal (Unified - works for both anonymous and authenticated) -->
+    <div class="modal" :class="{ 'modal-open': showSaveModal }"
+         x-data="baziSaveComponent()"
+         x-init="initBirthData({{ form.year.value|default:0 }}, {{ form.month.value|default:0 }}, {{ form.day.value|default:0 }}, {{ form.hour.value|default:0 }}, {{ form.minute.value|default:0 }}, {{ is_male|yesno:'true,false' }})">
         <div class="modal-box">
             <h3 class="font-bold text-lg mb-4">保存八字资料</h3>
-            <form action="{% url 'add_profile' %}" method="post">
-                {% csrf_token %}
-                <div class="form-control mb-4">
-                    <label class="label" for="profile_name">
-                        <span class="label-text">姓名</span>
-                    </label>
-                    <input type="text" id="profile_name" name="name"
-                           class="input input-bordered w-full" required>
-                </div>
-                <input type="hidden" name="birth_year" :value="formData.year">
-                <input type="hidden" name="birth_month" :value="formData.month">
-                <input type="hidden" name="birth_day" :value="formData.day">
-                <input type="hidden" name="birth_hour" :value="formData.hour">
-                <input type="hidden" name="birth_minute" :value="formData.minute">
-                <input type="hidden" name="is_male" :value="formData.gender === 'male' ? 'True' : 'False'">
-                <input type="hidden" name="redirect_to_bazi" value="1">
-
-                <div class="modal-action">
-                    <button type="button" @click="showSaveModal = false" class="btn btn-ghost">取消</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
+            <div class="form-control mb-4">
+                <label class="label" for="save_profile_name">
+                    <span class="label-text">姓名 / 备注</span>
+                </label>
+                <input type="text" id="save_profile_name"
+                       x-model="$root.saveName"
+                       @keydown.enter.prevent="if ($root.saveName.trim()) { saveProfileWithName($root.saveName.trim()); showSaveModal = false; }"
+                       class="input input-bordered w-full"
+                       placeholder="例如：张三、爸爸、宝宝..."
+                       autofocus>
+            </div>
+            <div class="modal-action">
+                <button type="button" @click="showSaveModal = false" class="btn btn-ghost">取消</button>
+                <button type="button"
+                        @click="if ($root.saveName.trim()) { saveProfileWithName($root.saveName.trim()); showSaveModal = false; }"
+                        :disabled="!$root.saveName.trim() || saving"
+                        class="btn btn-primary">
+                    <span x-show="saving" class="loading loading-spinner loading-xs"></span>
+                    保存
+                </button>
+            </div>
         </div>
         <div class="modal-backdrop" @click="showSaveModal = false"></div>
     </div>
-
-    <!-- Add New Profile Modal -->
-    <div class="modal" :class="{ 'modal-open': showAddModal }">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">添加新八字资料</h3>
-            <form action="{% url 'add_profile' %}" method="post">
-                {% csrf_token %}
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text">姓名</span>
-                    </label>
-                    <input type="text" name="name" class="input input-bordered w-full" required>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生年</span></label>
-                        <input type="number" name="birth_year" class="input input-bordered w-full" min="0" required>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生月</span></label>
-                        <input type="number" name="birth_month" class="input input-bordered w-full" min="1" max="12" required>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生日</span></label>
-                        <input type="number" name="birth_day" class="input input-bordered w-full" min="1" max="31" required>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生时</span></label>
-                        <input type="number" name="birth_hour" class="input input-bordered w-full" min="0" max="23" required>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生分</span></label>
-                        <input type="number" name="birth_minute" class="input input-bordered w-full" min="0" max="59" value="0">
-                    </div>
-                </div>
-
-                <div class="form-control mb-4">
-                    <label class="label"><span class="label-text">性别</span></label>
-                    <div class="flex gap-6">
-                        <label class="label cursor-pointer gap-2">
-                            <input type="radio" name="is_male" value="True" class="radio radio-primary" checked>
-                            <span class="label-text">男</span>
-                        </label>
-                        <label class="label cursor-pointer gap-2">
-                            <input type="radio" name="is_male" value="False" class="radio radio-primary">
-                            <span class="label-text">女</span>
-                        </label>
-                    </div>
-                </div>
-
-                <input type="hidden" name="redirect_to_bazi" value="1">
-
-                <div class="modal-action">
-                    <button type="button" @click="showAddModal = false" class="btn btn-ghost">取消</button>
-                    <button type="submit" class="btn btn-primary">保存并查看八字</button>
-                </div>
-            </form>
-        </div>
-        <div class="modal-backdrop" @click="showAddModal = false"></div>
-    </div>
-
-    <!-- Delete Profile Confirmation Modal -->
-    <div class="modal" :class="{ 'modal-open': showDeleteModal }">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4 text-error">确认删除</h3>
-            <p class="py-4">
-                确定要删除 <span class="font-bold" x-text="profileToDelete.name"></span> 的八字资料吗？
-            </p>
-            <p class="text-sm text-base-content/60">此操作不可撤销。</p>
-            <form :action="'/profiles/delete/' + profileToDelete.id + '/'" method="post">
-                {% csrf_token %}
-                <div class="modal-action">
-                    <button type="button" @click="showDeleteModal = false; profileToDelete = { id: null, name: '' }" class="btn btn-ghost">取消</button>
-                    <button type="submit" class="btn btn-error">删除</button>
-                </div>
-            </form>
-        </div>
-        <div class="modal-backdrop" @click="showDeleteModal = false"></div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

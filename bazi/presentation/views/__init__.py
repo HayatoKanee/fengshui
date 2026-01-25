@@ -37,6 +37,12 @@ from .static_pages import (
 )
 from .lookup import bazi_lookup_view, zeri_view
 from .feixing import feixing_view
+from .api import (
+    profile_api,
+    profile_batch_api,
+    profile_detail_api,
+    profile_default_api,
+)
 
 __all__ = [
     # Auth
@@ -69,4 +75,9 @@ __all__ = [
     "zeri_view",
     # FeiXing
     "feixing_view",
+    # API
+    "profile_api",
+    "profile_batch_api",
+    "profile_detail_api",
+    "profile_default_api",
 ]

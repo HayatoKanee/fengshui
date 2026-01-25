@@ -69,7 +69,6 @@ class BaziContextBuilder(ContainerMixin):
         lunar,
         is_male: bool,
         liunian_year: int,
-        profiles=None,
     ) -> Dict[str, Any]:
         """
         Build the template context for BaZi analysis.
@@ -80,7 +79,6 @@ class BaziContextBuilder(ContainerMixin):
             lunar: The lunar_python Lunar object
             is_male: Whether the person is male
             liunian_year: Year for LiuNian analysis
-            profiles: Optional list of user profiles
 
         Returns:
             Dict with all template context data
@@ -142,7 +140,7 @@ class BaziContextBuilder(ContainerMixin):
             "liunian_analysis": liunian_analysis,
             "personality": personality,
             "shensha_list": shensha_list,
-            "profiles": profiles,
+            # Local-first: profiles loaded from IndexedDB via Alpine store
         }
 
 
@@ -169,23 +167,13 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
             'form': BirthTimeForm(),
             'current_year': current_year,
             'years': range(current_year - 20, current_year + 50),
-            'profiles': self.get_user_profiles(),
+            # Local-first: profiles loaded from IndexedDB via Alpine store
         })
         return context
 
     def get(self, request, *args, **kwargs):
-        """Handle GET request - display form or profile analysis."""
-        current_year = datetime.datetime.now().year
-        profile_id = request.GET.get('profile_id')
-
-        # Check if viewing a saved profile
-        if profile_id and request.user.is_authenticated:
-            profile = self.profile_repo.get_by_id(int(profile_id))
-
-            if profile and profile.user_id == request.user.id:
-                return self._render_profile_analysis(request, profile, current_year)
-
-        # Default: show empty form
+        """Handle GET request - display empty form."""
+        # Local-first: profiles loaded from IndexedDB via Alpine store
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -223,47 +211,6 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
             lunar=lunar,
             is_male=is_male,
             liunian_year=liunian_year,
-            profiles=self.get_user_profiles(),
-        )
-
-        return render(request, self.template_name, context)
-
-    def _render_profile_analysis(self, request, profile, current_year: int):
-        """Render analysis for a saved profile."""
-        is_male = profile.birth_data.is_male
-
-        # Use current year as default for liunian analysis
-        liunian_year = date.today().year
-
-        # Calculate BaZi for the profile
-        lunar, bazi = self.container.lunar_adapter.get_raw_lunar_and_bazi(
-            profile.birth_data.year,
-            profile.birth_data.month,
-            profile.birth_data.day,
-            profile.birth_data.hour,
-            profile.birth_data.minute,
-        )
-
-        # Pre-fill form with profile data
-        initial_data = {
-            'year': profile.birth_data.year,
-            'month': profile.birth_data.month,
-            'day': profile.birth_data.day,
-            'hour': profile.birth_data.hour,
-            'minute': profile.birth_data.minute,
-            'gender': 'male' if is_male else 'female',
-        }
-        form = BirthTimeForm(initial=initial_data)
-
-        # Build context
-        builder = BaziContextBuilder()
-        context = builder.build(
-            form=form,
-            bazi=bazi,
-            lunar=lunar,
-            is_male=is_male,
-            liunian_year=liunian_year,
-            profiles=self.get_user_profiles(),
         )
 
         return render(request, self.template_name, context)
@@ -283,19 +230,11 @@ class BaziDetailView(ProfileMixin, View):
         month = request.POST.get('month')
         day = request.POST.get('day')
         hour = request.POST.get('hour')
-        profile_id = request.POST.get('profile_id')
 
         if not all([year, month, day, hour]):
             return HttpResponse(status=400)
 
-        # Get profile if provided
-        profile = None
-        if profile_id and request.user.is_authenticated:
-            profile = self.profile_repo.get_by_id(int(profile_id))
-            if profile and profile.user_id != request.user.id:
-                profile = None
-
-        # Calculate BaZi
+        # Calculate BaZi (local-first: birth data always passed directly)
         lunar, bazi = self.container.lunar_adapter.get_raw_lunar_and_bazi(
             int(year), int(month), int(day), int(hour), 0
         )
