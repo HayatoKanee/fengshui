@@ -512,15 +512,34 @@ class TestIsKongWang:
 
 
 class TestSanQiRule:
-    """Tests for SanQi (三奇) rule."""
+    """Tests for SanQi (三奇) rule.
 
-    def test_tian_shang_san_qi(self):
-        """天上三奇：乙丙丁 顺序出现."""
+    三奇规则（参考《八字金书》《渊海子平》）：
+    - 天上三奇：乙丙丁
+    - 地上三奇：甲戊庚
+    - 人中三奇：辛壬癸
+
+    必须在连续三柱（年月日 或 月日时）中顺序出现。
+    """
+
+    def test_tian_shang_san_qi_year_month_day(self):
+        """天上三奇：年月日为乙丙丁."""
         from bazi.domain.models.shensha_rule import SanQiRule
         rule = SanQiRule()
 
-        # 乙年丙月丁日 - 天上三奇
+        # 乙年丙月丁日 - 天上三奇（年月日）
         bazi = BaZi.from_chinese("乙丑 丙寅 丁卯 戊辰")
+        result = rule.find_matches(bazi)
+        assert len(result) == 1
+        assert result[0].triggered_by == "乙丙丁"
+
+    def test_tian_shang_san_qi_month_day_hour(self):
+        """天上三奇：月日时为乙丙丁."""
+        from bazi.domain.models.shensha_rule import SanQiRule
+        rule = SanQiRule()
+
+        # 月日时为乙丙丁 - 天上三奇（月日时）
+        bazi = BaZi.from_chinese("庚子 乙丑 丙寅 丁卯")
         result = rule.find_matches(bazi)
         assert len(result) == 1
         assert result[0].triggered_by == "乙丙丁"
@@ -547,17 +566,6 @@ class TestSanQiRule:
         assert len(result) == 1
         assert result[0].triggered_by == "辛壬癸"
 
-    def test_san_qi_in_month_day_hour(self):
-        """三奇在月日时位置也有效."""
-        from bazi.domain.models.shensha_rule import SanQiRule
-        rule = SanQiRule()
-
-        # 年柱其他干，月日时为乙丙丁
-        bazi = BaZi.from_chinese("庚子 乙丑 丙寅 丁卯")
-        result = rule.find_matches(bazi)
-        assert len(result) == 1
-        assert result[0].triggered_by == "乙丙丁"
-
     def test_no_san_qi_wrong_order(self):
         """顺序错误不是三奇."""
         from bazi.domain.models.shensha_rule import SanQiRule
@@ -568,28 +576,38 @@ class TestSanQiRule:
         result = rule.find_matches(bazi)
         assert len(result) == 0
 
-    def test_no_san_qi_not_consecutive(self):
-        """不连续的三奇模式无效."""
+    def test_no_san_qi_scattered(self):
+        """散落的三奇模式无效（必须连续三柱）."""
         from bazi.domain.models.shensha_rule import SanQiRule
         rule = SanQiRule()
 
-        # 乙X丁 - 中间有其他干，但检查的是顺序出现，不要求连续位置
-        # 实际上 乙-X-丙-丁 是有效的，只要顺序正确
+        # 乙X丙丁 - 乙在年，X在月，丙在日，丁在时
+        # 不符合"年月日"或"月日时"的连续三柱要求
         bazi = BaZi.from_chinese("乙丑 甲寅 丙卯 丁辰")
         result = rule.find_matches(bazi)
-        # 乙在年，丙在日，丁在时 - 顺序正确
-        assert len(result) == 1
+        # 年月日=乙甲丙，月日时=甲丙丁，都不匹配
+        assert len(result) == 0
 
-    def test_no_san_qi_random_stems(self):
-        """无三奇模式."""
+    def test_san_qi_requires_consecutive_pillars(self):
+        """三奇必须在连续三柱中."""
         from bazi.domain.models.shensha_rule import SanQiRule
         rule = SanQiRule()
 
-        # 甲乙丙丁 - 不符合任何三奇模式
+        # 甲乙丙丁 - 月日时=乙丙丁，是天上三奇
         bazi = BaZi.from_chinese("甲子 乙丑 丙寅 丁卯")
         result = rule.find_matches(bazi)
-        # 乙丙丁存在于月日时，是天上三奇
-        assert len(result) == 1  # 实际上有三奇
+        assert len(result) == 1
+        assert result[0].triggered_by == "乙丙丁"
+
+    def test_no_san_qi_random_stems(self):
+        """随机天干无三奇."""
+        from bazi.domain.models.shensha_rule import SanQiRule
+        rule = SanQiRule()
+
+        # 甲乙丙戊 - 年月日=甲乙丙，月日时=乙丙戊，都不匹配任何三奇
+        bazi = BaZi.from_chinese("甲子 乙丑 丙寅 戊卯")
+        result = rule.find_matches(bazi)
+        assert len(result) == 0
 
 
 class TestCalculateForBaZi:

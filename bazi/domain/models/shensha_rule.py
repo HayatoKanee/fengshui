@@ -266,12 +266,17 @@ class SanQiRule:
     """
     三奇 (Three Wonders) rule.
 
-    三奇需要检查天干序列（按顺序出现在年月日时四柱中）：
-    - 天上三奇：乙丙丁 顺序出现（宜夜生）
-    - 地上三奇：甲戊庚 顺序出现（宜昼生）
-    - 人中三奇：辛壬癸 顺序出现
+    三奇需要检查天干在连续三柱中顺序出现：
+    - 天上三奇：乙丙丁（年月日 或 月日时）
+    - 地上三奇：甲戊庚（年月日 或 月日时）
+    - 人中三奇：辛壬癸（年月日 或 月日时）
 
-    参考《渊海子平》等古籍。
+    关键规则（参考《八字金书》《渊海子平》）：
+    1. 必须在连续三柱中顺序出现（年月日 或 月日时）
+    2. 顺序不可颠倒，否则不算三奇
+    3. 不可散落在四柱中（如年-X-日-时）
+
+    "凡三奇需要顺，有不依次者，亦得半力"
     """
     # 三组三奇
     san_qi_groups: Tuple[Tuple[str, str, str], ...] = (
@@ -289,16 +294,19 @@ class SanQiRule:
         from .shensha import ShenSha
 
         # Get stems in order: year, month, day, hour
-        stems = [
+        stems = (
             bazi.year_pillar.stem.chinese,
             bazi.month_pillar.stem.chinese,
             bazi.day_pillar.stem.chinese,
             bazi.hour_pillar.stem.chinese,
-        ]
+        )
+
+        # 检查年月日 或 月日时 是否匹配三奇（必须连续三柱）
+        year_month_day = (stems[0], stems[1], stems[2])
+        month_day_hour = (stems[1], stems[2], stems[3])
 
         for group in self.san_qi_groups:
-            if self._check_sequence(stems, group):
-                # 三奇是整体格局，位置标记为 "chart"
+            if year_month_day == group or month_day_hour == group:
                 return [ShenSha(
                     type=self.shensha_type,
                     position="chart",
@@ -306,17 +314,6 @@ class SanQiRule:
                 )]
 
         return []
-
-    @staticmethod
-    def _check_sequence(stems: List[str], pattern: Tuple[str, str, str]) -> bool:
-        """Check if pattern appears in order within stems."""
-        pattern_idx = 0
-        for stem in stems:
-            if stem == pattern[pattern_idx]:
-                pattern_idx += 1
-                if pattern_idx == len(pattern):
-                    return True
-        return False
 
 
 # ============================================================
