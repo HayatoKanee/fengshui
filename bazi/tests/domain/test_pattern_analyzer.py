@@ -158,6 +158,20 @@ class TestZhuanWangClassicalExamples:
         yan_shang = [p for p in result.detected_patterns if p.pattern_type == PatternType.YAN_SHANG]
         assert len(yan_shang) >= 1, "应检测到炎上格"
 
+    def test_yan_shang_ge_classic_3(self, pattern_analyzer, wuxing_calculator):
+        """
+        炎上格案例3: 丙戌 甲午 丙寅 甲午
+        来源: 《神机阁》命例
+        日主丙火生于午月，地支全寅午戌合成火局，柱中纯火无制
+        """
+        bazi = BaZi.from_chinese("丙戌 甲午 丙寅 甲午")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        yan_shang = [p for p in result.detected_patterns if p.pattern_type == PatternType.YAN_SHANG]
+        assert len(yan_shang) >= 1, "应检测到炎上格 - 寅午戌火局"
+        assert yan_shang[0].element == WuXing.FIRE
+
     def test_yan_shang_ge_with_wood_month(self, pattern_analyzer, wuxing_calculator):
         """
         炎上格案例: 丙寅 甲午 丙戌 癸巳
@@ -255,6 +269,20 @@ class TestZhuanWangClassicalExamples:
 
         cong_ge = [p for p in result.detected_patterns if p.pattern_type == PatternType.CONG_GE_METAL]
         assert len(cong_ge) >= 1, "应检测到从革格"
+
+    def test_cong_ge_metal_classic_3(self, pattern_analyzer, wuxing_calculator):
+        """
+        从革格案例3: 庚申 甲申 辛酉 戊戌
+        来源: 《神机阁》命例
+        日干辛金，申月金旺，地支全申酉戌西方金局，无火破格
+        """
+        bazi = BaZi.from_chinese("庚申 甲申 辛酉 戊戌")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        cong_ge = [p for p in result.detected_patterns if p.pattern_type == PatternType.CONG_GE_METAL]
+        assert len(cong_ge) >= 1, "应检测到从革格 - 申酉戌金局"
+        assert cong_ge[0].element == WuXing.METAL
 
     # ==================== 润下格 (Water Dominant) ====================
 
