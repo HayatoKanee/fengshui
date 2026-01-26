@@ -2,29 +2,25 @@
 Integrated 用神 (Favorable Elements) analyzer service.
 
 Combines three traditional methods into a modern scoring system:
-1. 扶抑用神 - Support/Suppress based on day master strength (50%)
-2. 调候用神 - Climate adjustment based on season (30%)
-3. 通关用神 - Mediation for element conflicts (20%)
+1. 扶抑用神 - Support/Suppress based on day master strength
+2. 调候用神 - Climate adjustment based on season
+3. 通关用神 - Mediation for element conflicts
 
+Default weights: 扶抑 50% + 调候 30% + 通关 20%
 Based on traditional proportion: 扶抑占5分，调候占3分，通关占2分 (徐乐吾)
+
+Weights are configurable and can be adjusted based on season.
 
 Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
 from ..models import BaZi, WuXing, DayMasterStrength, FavorableElements, WuXingStrength
 from .tiaohao_analyzer import TiaoHouAnalyzer, TiaoHouResult, SeasonType
 from .tongguan_analyzer import TongGuanAnalyzer, TongGuanResult
-
-
-class AnalysisMode(Enum):
-    """Analysis mode/school of thought."""
-    BALANCED = "平衡派"      # Standard balanced approach
-    TIAOHAO_PRIORITY = "调候优先"  # Climate-first approach (穷通宝鉴 style)
 
 
 @dataclass(frozen=True)
@@ -76,32 +72,16 @@ class IntegratedYongShenResult:
     tongguan_result: Optional[TongGuanResult] = None
 
     # Analysis summary
-    mode: AnalysisMode = AnalysisMode.BALANCED
     method_used: str = ""       # 主要采用的方法
     notes: Tuple[str, ...] = () # 分析备注
 
 
-# 平衡派权重配置（默认）
-# 标准：扶抑 50% + 调候 30% + 通关 20%
-# 极端季节：扶抑 40% + 调候 40% + 通关 20%
-BALANCED_WEIGHTS = {
-    SeasonType.EXTREME_COLD: MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
-    SeasonType.EXTREME_HOT: MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
-    SeasonType.COLD: MethodWeights(fuyi=0.45, tiaohao=0.35, tongguan=0.20),
-    SeasonType.HOT: MethodWeights(fuyi=0.45, tiaohao=0.35, tongguan=0.20),
-    SeasonType.MODERATE: MethodWeights(fuyi=0.50, tiaohao=0.30, tongguan=0.20),
-}
+# 默认权重配置
+# 基于徐乐吾的传统比例：扶抑占5分，调候占3分，通关占2分 = 50%, 30%, 20%
+DEFAULT_WEIGHTS = MethodWeights(fuyi=0.50, tiaohao=0.30, tongguan=0.20)
 
-# 调候优先派权重配置（穷通宝鉴风格）
-# 标准：扶抑 40% + 调候 40% + 通关 20%
-# 极端季节：扶抑 30% + 调候 50% + 通关 20%
-TIAOHAO_PRIORITY_WEIGHTS = {
-    SeasonType.EXTREME_COLD: MethodWeights(fuyi=0.30, tiaohao=0.50, tongguan=0.20),
-    SeasonType.EXTREME_HOT: MethodWeights(fuyi=0.30, tiaohao=0.50, tongguan=0.20),
-    SeasonType.COLD: MethodWeights(fuyi=0.35, tiaohao=0.45, tongguan=0.20),
-    SeasonType.HOT: MethodWeights(fuyi=0.35, tiaohao=0.45, tongguan=0.20),
-    SeasonType.MODERATE: MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
-}
+# 极端季节权重调整：扶抑 40% + 调候 40% + 通关 20%
+EXTREME_SEASON_WEIGHTS = MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20)
 
 
 class IntegratedYongShenAnalyzer:
@@ -110,36 +90,48 @@ class IntegratedYongShenAnalyzer:
 
     Combines 扶抑用神, 调候用神, and 通关用神 using a weighted scoring system.
 
-    Default weights (平衡派):
+    Default weights (based on 徐乐吾):
     - Standard: 扶抑 50% + 调候 30% + 通关 20%
-    - Extreme seasons: 扶抑 40% + 调候 40% + 通关 20%
+    - Extreme seasons (子丑午未): 扶抑 40% + 调候 40% + 通关 20%
 
-    Alternative (调候优先派):
-    - Standard: 扶抑 40% + 调候 40% + 通关 20%
-    - Extreme seasons: 扶抑 30% + 调候 50% + 通关 20%
+    Weights are configurable via constructor.
     """
 
     def __init__(
         self,
-        mode: AnalysisMode = AnalysisMode.BALANCED,
+        default_weights: MethodWeights | None = None,
+        extreme_weights: MethodWeights | None = None,
         tiaohao_analyzer: TiaoHouAnalyzer | None = None,
         tongguan_analyzer: TongGuanAnalyzer | None = None,
     ):
-        self._mode = mode
+        """
+        Initialize the analyzer with configurable weights.
+
+        Args:
+            default_weights: Weights for moderate seasons (default: 50/30/20)
+            extreme_weights: Weights for extreme seasons (default: 40/40/20)
+            tiaohao_analyzer: Optional custom 调候 analyzer
+            tongguan_analyzer: Optional custom 通关 analyzer
+        """
+        self._default_weights = default_weights or DEFAULT_WEIGHTS
+        self._extreme_weights = extreme_weights or EXTREME_SEASON_WEIGHTS
         self._tiaohao = tiaohao_analyzer or TiaoHouAnalyzer()
         self._tongguan = tongguan_analyzer or TongGuanAnalyzer()
 
     def _get_weights(self, season_type: SeasonType) -> MethodWeights:
         """
-        Get weights for each method based on season and analysis mode.
+        Get weights for each method based on season.
+
+        Extreme seasons (极寒/极热) use extreme_weights,
+        others use default_weights.
 
         Returns:
             MethodWeights with fuyi, tiaohao, and tongguan weights
         """
-        if self._mode == AnalysisMode.TIAOHAO_PRIORITY:
-            return TIAOHAO_PRIORITY_WEIGHTS[season_type]
+        if season_type in (SeasonType.EXTREME_COLD, SeasonType.EXTREME_HOT):
+            return self._extreme_weights
         else:
-            return BALANCED_WEIGHTS[season_type]
+            return self._default_weights
 
     def _calculate_fuyi_scores(
         self,
@@ -367,7 +359,6 @@ class IntegratedYongShenAnalyzer:
             fuyi_result=fuyi_result,
             tiaohao_result=tiaohao_result,
             tongguan_result=tongguan_result,
-            mode=self._mode,
             method_used=method_used,
             notes=tuple(notes),
         )

@@ -10,7 +10,6 @@ from bazi.domain.services import (
     IntegratedYongShenAnalyzer,
     IntegratedYongShenResult,
     SeasonType,
-    AnalysisMode,
     MethodWeights,
 )
 
@@ -30,40 +29,44 @@ class TestMethodWeights:
 
 
 class TestWeightCalculation:
-    """Tests for weight calculation based on season and mode."""
+    """Tests for weight calculation based on season."""
 
     @pytest.fixture
-    def balanced_analyzer(self):
-        return IntegratedYongShenAnalyzer(mode=AnalysisMode.BALANCED)
+    def default_analyzer(self):
+        return IntegratedYongShenAnalyzer()
 
     @pytest.fixture
-    def tiaohao_priority_analyzer(self):
-        return IntegratedYongShenAnalyzer(mode=AnalysisMode.TIAOHAO_PRIORITY)
+    def custom_analyzer(self):
+        """Custom weights: 30/50/20 for extreme, 40/40/20 for normal."""
+        return IntegratedYongShenAnalyzer(
+            default_weights=MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
+            extreme_weights=MethodWeights(fuyi=0.30, tiaohao=0.50, tongguan=0.20),
+        )
 
-    def test_balanced_extreme_cold_weights(self, balanced_analyzer):
-        """平衡派极寒季节权重: 扶抑40% + 调候40% + 通关20%"""
-        weights = balanced_analyzer._get_weights(SeasonType.EXTREME_COLD)
+    def test_default_extreme_cold_weights(self, default_analyzer):
+        """默认极寒季节权重: 扶抑40% + 调候40% + 通关20%"""
+        weights = default_analyzer._get_weights(SeasonType.EXTREME_COLD)
         assert weights.fuyi == 0.40
         assert weights.tiaohao == 0.40
         assert weights.tongguan == 0.20
 
-    def test_balanced_moderate_weights(self, balanced_analyzer):
-        """平衡派温和季节权重: 扶抑50% + 调候30% + 通关20%"""
-        weights = balanced_analyzer._get_weights(SeasonType.MODERATE)
+    def test_default_moderate_weights(self, default_analyzer):
+        """默认温和季节权重: 扶抑50% + 调候30% + 通关20%"""
+        weights = default_analyzer._get_weights(SeasonType.MODERATE)
         assert weights.fuyi == 0.50
         assert weights.tiaohao == 0.30
         assert weights.tongguan == 0.20
 
-    def test_tiaohao_priority_extreme_cold_weights(self, tiaohao_priority_analyzer):
-        """调候优先派极寒季节权重: 扶抑30% + 调候50% + 通关20%"""
-        weights = tiaohao_priority_analyzer._get_weights(SeasonType.EXTREME_COLD)
+    def test_custom_extreme_cold_weights(self, custom_analyzer):
+        """自定义极寒季节权重"""
+        weights = custom_analyzer._get_weights(SeasonType.EXTREME_COLD)
         assert weights.fuyi == 0.30
         assert weights.tiaohao == 0.50
         assert weights.tongguan == 0.20
 
-    def test_tiaohao_priority_moderate_weights(self, tiaohao_priority_analyzer):
-        """调候优先派温和季节权重: 扶抑40% + 调候40% + 通关20%"""
-        weights = tiaohao_priority_analyzer._get_weights(SeasonType.MODERATE)
+    def test_custom_moderate_weights(self, custom_analyzer):
+        """自定义温和季节权重"""
+        weights = custom_analyzer._get_weights(SeasonType.MODERATE)
         assert weights.fuyi == 0.40
         assert weights.tiaohao == 0.40
         assert weights.tongguan == 0.20
@@ -205,32 +208,38 @@ class TestScoreDetails:
         assert hasattr(fire_score, 'total_score')
 
 
-class TestAnalysisModes:
-    """Tests for different analysis modes."""
+class TestConfigurableWeights:
+    """Tests for configurable weights."""
 
-    def test_balanced_mode_default(self):
-        """默认使用平衡派模式"""
+    def test_default_weights(self):
+        """默认权重: 50/30/20"""
         analyzer = IntegratedYongShenAnalyzer()
-        assert analyzer._mode == AnalysisMode.BALANCED
+        assert analyzer._default_weights.fuyi == 0.50
+        assert analyzer._default_weights.tiaohao == 0.30
+        assert analyzer._default_weights.tongguan == 0.20
 
-    def test_tiaohao_priority_mode(self):
-        """可以指定调候优先模式"""
-        analyzer = IntegratedYongShenAnalyzer(mode=AnalysisMode.TIAOHAO_PRIORITY)
-        assert analyzer._mode == AnalysisMode.TIAOHAO_PRIORITY
+    def test_custom_weights(self):
+        """可以自定义权重"""
+        custom = MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20)
+        analyzer = IntegratedYongShenAnalyzer(default_weights=custom)
+        assert analyzer._default_weights.fuyi == 0.40
+        assert analyzer._default_weights.tiaohao == 0.40
 
-    def test_mode_affects_weights(self):
-        """不同模式产生不同权重"""
-        bazi = BaZi.from_chinese("甲子甲子甲子甲子")
+    def test_custom_weights_affect_analysis(self):
+        """自定义权重影响分析结果"""
+        bazi = BaZi.from_chinese("甲子甲卯甲子甲子")  # 温和季节
         strength = DayMasterStrength(beneficial_value=50.0, harmful_value=50.0)
 
-        balanced = IntegratedYongShenAnalyzer(mode=AnalysisMode.BALANCED)
-        tiaohao_priority = IntegratedYongShenAnalyzer(mode=AnalysisMode.TIAOHAO_PRIORITY)
+        default = IntegratedYongShenAnalyzer()
+        custom = IntegratedYongShenAnalyzer(
+            default_weights=MethodWeights(fuyi=0.30, tiaohao=0.50, tongguan=0.20)
+        )
 
-        result_balanced = balanced.analyze(bazi, strength)
-        result_priority = tiaohao_priority.analyze(bazi, strength)
+        result_default = default.analyze(bazi, strength)
+        result_custom = custom.analyze(bazi, strength)
 
-        # 调候优先派的调候权重应该更高
-        assert result_priority.weights.tiaohao > result_balanced.weights.tiaohao
+        # 自定义权重的调候权重应该更高
+        assert result_custom.weights.tiaohao > result_default.weights.tiaohao
 
 
 class TestMethodUsedDescription:

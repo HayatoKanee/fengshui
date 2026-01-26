@@ -17,7 +17,6 @@ from .integrated_yongshen_analyzer import (
     IntegratedYongShenAnalyzer,
     IntegratedYongShenResult,
     WuXingScore,
-    AnalysisMode,
     MethodWeights,
 )
 
@@ -38,6 +37,5 @@ __all__ = [
     "IntegratedYongShenAnalyzer",
     "IntegratedYongShenResult",
     "WuXingScore",
-    "AnalysisMode",
     "MethodWeights",
 ]
