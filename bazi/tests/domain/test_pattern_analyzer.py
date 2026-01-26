@@ -639,6 +639,71 @@ class TestPatternAnalyzerEdgeCases:
                 assert qu_zhi[0].is_partial or len(qu_zhi[0].conditions_failed) > 0
 
 
+class TestSpecialPatternFavorableElements:
+    """Tests for special pattern favorable elements (特殊格局喜用神)."""
+
+    def test_zhuan_wang_favorable_elements(self, pattern_analyzer, wuxing_calculator):
+        """
+        专旺格喜用神: 喜旺神及其所生，忌克神
+        曲直格(木): 用神=木，喜神=水(生木)，忌神=金(克木)
+        """
+        bazi = BaZi.from_chinese("癸卯 乙卯 甲寅 乙亥")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        if result.has_special_pattern:
+            favorable = result.get_special_favorable_elements(bazi.day_master_wuxing)
+            assert favorable is not None
+            yong, xi, ji, chou = favorable
+            # 曲直格：用神=木，喜神=水，忌神=金
+            assert yong == WuXing.WOOD, "曲直格用神应为木"
+            assert xi == WuXing.WATER, "曲直格喜神应为水(生木)"
+            assert ji == WuXing.METAL, "曲直格忌神应为金(克木)"
+
+    def test_yan_shang_favorable_elements(self, pattern_analyzer, wuxing_calculator):
+        """
+        炎上格喜用神: 用神=火，喜神=木(生火)，忌神=水(克火)
+        """
+        bazi = BaZi.from_chinese("丙戌 甲午 丙寅 甲午")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        if result.has_special_pattern:
+            favorable = result.get_special_favorable_elements(bazi.day_master_wuxing)
+            assert favorable is not None
+            yong, xi, ji, chou = favorable
+            assert yong == WuXing.FIRE, "炎上格用神应为火"
+            assert xi == WuXing.WOOD, "炎上格喜神应为木(生火)"
+            assert ji == WuXing.WATER, "炎上格忌神应为水(克火)"
+
+    def test_hua_ge_favorable_elements(self, pattern_analyzer, wuxing_calculator):
+        """
+        化格喜用神: 喜化神旺相，忌化神被克
+        甲己化土: 用神=土，喜神=火(生土)，忌神=木(克土)
+        """
+        bazi = BaZi.from_chinese("己辰 己未 甲辰 己丑")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        if result.has_special_pattern:
+            favorable = result.get_special_favorable_elements(bazi.day_master_wuxing)
+            assert favorable is not None
+            yong, xi, ji, chou = favorable
+            assert yong == WuXing.EARTH, "化土格用神应为土"
+            assert xi == WuXing.FIRE, "化土格喜神应为火(生土)"
+            assert ji == WuXing.WOOD, "化土格忌神应为木(克土)"
+
+    def test_normal_pattern_no_special_favorable(self, pattern_analyzer, wuxing_calculator):
+        """普通格局应返回None，使用常规扶抑取用。"""
+        bazi = BaZi.from_chinese("甲子 丙寅 戊午 庚申")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        if not result.has_special_pattern:
+            favorable = result.get_special_favorable_elements(bazi.day_master_wuxing)
+            assert favorable is None, "普通格局应返回None"
+
+
 class TestRealBaZiIntegration:
     """
     Integration tests with real BaZi objects from the system.

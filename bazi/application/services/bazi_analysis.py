@@ -178,6 +178,21 @@ class BaziAnalysisService:
             bazi, wuxing_strength.adjusted_values
         )
 
+        # Step 7b: Override favorable elements if special pattern detected
+        # 特殊格局的喜用神与普通命局完全不同！
+        if pattern_analysis.has_special_pattern:
+            special_favorable = pattern_analysis.get_special_favorable_elements(
+                bazi.day_master_wuxing
+            )
+            if special_favorable:
+                yong, xi, ji, chou = special_favorable
+                favorable = FavorableElements(
+                    yong_shen=yong,
+                    xi_shen=xi,
+                    ji_shen=ji,
+                    chou_shen=chou,
+                )
+
         # Step 8: Get Chinese zodiac animal (生肖)
         shengxiao = self._lunar.get_shengxiao(
             birth_data.year,

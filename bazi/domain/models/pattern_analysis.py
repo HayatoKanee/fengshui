@@ -268,3 +268,81 @@ class PatternAnalysis:
                 advice.append("忌化神被克破格")
 
         return advice
+
+    def get_special_favorable_elements(self, day_master_element: WuXing) -> Optional[tuple]:
+        """
+        获取特殊格局的喜用神。
+
+        特殊格局的喜用神与普通命局完全不同：
+        - 从格：顺从旺势，喜所从之神
+        - 专旺格：顺势为吉，喜旺神及其所生
+        - 化格：喜化神旺相
+
+        Args:
+            day_master_element: 日主五行
+
+        Returns:
+            Tuple of (用神, 喜神, 忌神, 仇神) or None if no special pattern
+        """
+        if not self.has_special_pattern:
+            return None
+
+        pattern = self.primary_pattern
+        element = pattern.element
+
+        if element is None:
+            return None
+
+        if pattern.category == PatternCategory.CONG_GE:
+            # 从格：喜所从之神，忌比劫印绶
+            # 从财格：喜财官，忌印比
+            # 从官杀格：喜官印，忌食伤
+            # 从儿格：喜食伤财，忌印
+            if pattern.pattern_type == PatternType.CONG_CAI:
+                # 从财格：用神=财星，喜神=官星(财生官)，忌神=印星，仇神=比劫
+                yong_shen = element  # 财星
+                xi_shen = element.generates  # 官星 (财生官)
+                ji_shen = day_master_element.generated_by  # 印星
+                chou_shen = day_master_element  # 比劫
+            elif pattern.pattern_type in (PatternType.CONG_GUAN, PatternType.CONG_SHA):
+                # 从官杀格：用神=官杀，喜神=财星(财生官)，忌神=食伤，仇神=比劫
+                yong_shen = element  # 官杀
+                xi_shen = element.generated_by  # 财星 (财生官)
+                ji_shen = day_master_element.generates  # 食伤
+                chou_shen = day_master_element  # 比劫
+            elif pattern.pattern_type == PatternType.CONG_ER:
+                # 从儿格：用神=食伤，喜神=财星(食伤生财)，忌神=印星(枭印夺食)，仇神=比劫
+                yong_shen = element  # 食伤
+                xi_shen = element.generates  # 财星
+                ji_shen = day_master_element.generated_by  # 印星
+                chou_shen = day_master_element.overcome_by  # 官杀
+            else:
+                # 从势格：顺从旺势
+                yong_shen = element
+                xi_shen = element.generates
+                ji_shen = day_master_element.generated_by
+                chou_shen = day_master_element
+
+        elif pattern.category == PatternCategory.ZHUAN_WANG:
+            # 专旺格：喜旺神及其所生，忌克神
+            # 曲直格(木)：喜木水，忌金
+            # 炎上格(火)：喜火木，忌水
+            # 稼穑格(土)：喜土火，忌木
+            # 从革格(金)：喜金土，忌火
+            # 润下格(水)：喜水金，忌土
+            yong_shen = element  # 旺神本身
+            xi_shen = element.generated_by  # 生旺神者 (印)
+            ji_shen = element.overcome_by  # 克旺神者
+            chou_shen = element.generates  # 泄旺神者 (可用但次之)
+
+        elif pattern.category == PatternCategory.HUA_GE:
+            # 化格：喜化神旺相，忌化神被克
+            yong_shen = element  # 化神
+            xi_shen = element.generated_by  # 生化神者
+            ji_shen = element.overcome_by  # 克化神者
+            chou_shen = element.overcomes  # 化神所克者 (耗气)
+
+        else:
+            return None
+
+        return (yong_shen, xi_shen, ji_shen, chou_shen)
