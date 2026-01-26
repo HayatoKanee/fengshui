@@ -24,26 +24,40 @@ if TYPE_CHECKING:
 # ============================================================================
 # 地支关系对五行力量的调整系数
 # 基于传统命理：三会 > 三合 > 半合 > 六合
-# 六冲双方互损
+# 六冲、刑双方互损
 # ============================================================================
 
 # 三会局 - 同一方位汇聚，最强
 # 寅卯辰会东方木、巳午未会南方火、申酉戌会西方金、亥子丑会北方水
-SAN_HUI_MULTIPLIER = 2.0  # 力量翻倍
+SAN_HUI_MULTIPLIER = 2.0  # 中神力量翻倍
+SAN_HUI_SIDE_REDUCTION = 0.7  # 两侧减力30%
 
 # 三合局 - 多方来合，次强
 # 申子辰合水、亥卯未合木、寅午戌合火、巳酉丑合金
-SAN_HE_MULTIPLIER = 1.8  # +80%
+SAN_HE_MULTIPLIER = 1.8  # 中神+80%
+SAN_HE_SIDE_REDUCTION = 0.7  # 两侧减力30%
 
 # 半合局 - 根据类型不同
 BAN_HE_SHENG_WANG_MULTIPLIER = 1.3  # 生旺半合 +30%
 BAN_HE_WANG_MU_MULTIPLIER = 1.2     # 旺墓半合 +20%
-BAN_HE_DEFAULT_MULTIPLIER = 1.15   # 其他半合 +15%
+BAN_HE_DEFAULT_MULTIPLIER = 1.15    # 其他半合 +15%
+
+# 六合 - 力量弱于三合
+# 子丑合土、寅亥合木、卯戌合火、辰酉合金、巳申合水、午未合土
+LIU_HE_MULTIPLIER = 1.3  # 化神+30%
 
 # 六冲 - 双方互损，根据距离
 CHONG_ADJACENT_MULTIPLIER = 0.7    # 紧贴冲 -30%
 CHONG_SEPARATED_MULTIPLIER = 0.8   # 隔支冲 -20%
 CHONG_DISTANT_MULTIPLIER = 0.9     # 遥冲 -10%
+
+# 刑 - 损伤关系
+SAN_XING_MULTIPLIER = 0.6   # 三刑 -40% (寅巳申、丑戌未)
+ER_XING_MULTIPLIER = 0.7    # 二刑 -30%
+ZI_XING_MULTIPLIER = 0.85   # 自刑 -15% (辰午酉亥)
+
+# 害 - 较轻损伤
+HAI_MULTIPLIER = 0.9  # 害 -10%
 
 
 # Season to WangXiang mapping for each element
@@ -278,7 +292,8 @@ class WuXingCalculator:
         """
         Apply branch relation adjustments to WuXing values.
 
-        三会局、三合局增强对应五行；六冲减弱双方五行。
+        合局增强化神五行，两侧五行减力；
+        冲、刑、害减弱相关五行。
 
         Args:
             values: Current WuXing strength values
@@ -289,33 +304,69 @@ class WuXingCalculator:
         """
         result = dict(values)  # Copy
 
-        # 三会局 - 最强加成
+        # 三会局 - 最强加成，中神增力，两侧减力
         for relation in branch_analysis.san_hui:
             if relation.element:
+                # 化神五行增力
                 result[relation.element] *= SAN_HUI_MULTIPLIER
+                # 两侧五行减力（非中神的地支）
+                for branch_char in relation.branches:
+                    branch = EarthlyBranch.from_chinese(branch_char)
+                    if branch.wuxing != relation.element:
+                        result[branch.wuxing] *= SAN_HUI_SIDE_REDUCTION
 
-        # 三合局 - 次强加成
+        # 三合局 - 次强加成，中神增力，两侧减力
         for relation in branch_analysis.san_he:
             if relation.element:
+                # 化神五行增力
                 result[relation.element] *= SAN_HE_MULTIPLIER
+                # 两侧五行减力
+                for branch_char in relation.branches:
+                    branch = EarthlyBranch.from_chinese(branch_char)
+                    if branch.wuxing != relation.element:
+                        result[branch.wuxing] *= SAN_HE_SIDE_REDUCTION
 
         # 半合局
         for relation in branch_analysis.ban_he:
             if relation.element:
-                # TODO: 区分生旺半合和旺墓半合
                 result[relation.element] *= BAN_HE_DEFAULT_MULTIPLIER
+
+        # 六合 - 化神增力
+        for relation in branch_analysis.liu_he:
+            if relation.element:
+                result[relation.element] *= LIU_HE_MULTIPLIER
 
         # 六冲 - 双方减弱
         for relation in branch_analysis.chong:
-            # 根据柱位判断距离
             pillars = relation.pillars
             multiplier = self._get_chong_multiplier(pillars)
-
-            # 获取冲的两个地支的五行
-            # 从 branches 中获取，branches 是中文字符如 ('子', '午')
             for branch_char in relation.branches:
                 branch = EarthlyBranch.from_chinese(branch_char)
                 result[branch.wuxing] *= multiplier
+
+        # 刑 - 根据类型减弱
+        for relation in branch_analysis.xing:
+            # 判断是三刑还是二刑
+            num_branches = len(relation.branches)
+            if num_branches >= 3:
+                multiplier = SAN_XING_MULTIPLIER
+            else:
+                multiplier = ER_XING_MULTIPLIER
+            for branch_char in relation.branches:
+                branch = EarthlyBranch.from_chinese(branch_char)
+                result[branch.wuxing] *= multiplier
+
+        # 自刑
+        for relation in branch_analysis.zi_xing:
+            for branch_char in relation.branches:
+                branch = EarthlyBranch.from_chinese(branch_char)
+                result[branch.wuxing] *= ZI_XING_MULTIPLIER
+
+        # 害
+        for relation in branch_analysis.hai:
+            for branch_char in relation.branches:
+                branch = EarthlyBranch.from_chinese(branch_char)
+                result[branch.wuxing] *= HAI_MULTIPLIER
 
         return result
 
