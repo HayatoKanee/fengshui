@@ -20,6 +20,7 @@ class PatternCategory(Enum):
     CONG_GE = "从格"           # Following patterns (weak day master)
     ZHUAN_WANG = "专旺格"       # Dominant patterns (one element rules)
     HUA_GE = "化格"            # Transformation patterns
+    ZHENG_GE = "正格"          # Regular patterns (based on month branch)
     NORMAL = "普通格局"         # Normal pattern (no special)
 
 
@@ -45,6 +46,18 @@ class PatternType(Enum):
     HUA_SHUI = "化水格"         # 丙辛化水
     HUA_MU = "化木格"           # 丁壬化木
     HUA_HUO = "化火格"          # 戊癸化火
+
+    # 正格 - Regular Patterns (根据月令定格)
+    ZHENG_GUAN_GE = "正官格"     # Regular Authority pattern
+    PIAN_GUAN_GE = "偏官格"      # Partial Authority (七杀格)
+    ZHENG_YIN_GE = "正印格"      # Regular Seal pattern
+    PIAN_YIN_GE = "偏印格"       # Partial Seal (枭神格)
+    ZHENG_CAI_GE = "正财格"      # Regular Wealth pattern
+    PIAN_CAI_GE = "偏财格"       # Partial Wealth pattern
+    SHI_SHEN_GE = "食神格"       # Food God pattern
+    SHANG_GUAN_GE = "伤官格"     # Injury Officer pattern
+    JIAN_LU_GE = "建禄格"        # Established Salary pattern
+    YUE_REN_GE = "月刃格"        # Month Blade pattern
 
     # 普通
     NORMAL = "普通格局"
@@ -172,6 +185,68 @@ class SpecialPattern:
         return 0.4 <= self.strength < 0.7
 
 
+@dataclass(frozen=True)
+class RegularPattern:
+    """
+    正格 (Regular Pattern) - determined by month branch (月令).
+
+    正格 is based on the ShiShen relationship between the month branch's
+    main hidden stem and the day master.
+    """
+    pattern_type: PatternType
+    shishen: str  # The ShiShen that defines this pattern (e.g., "正官", "食神")
+    month_branch: str  # The month branch (月令)
+    description: str = ""
+
+    @property
+    def name(self) -> str:
+        """Get the pattern name."""
+        return self.pattern_type.value
+
+    @property
+    def is_wealth_pattern(self) -> bool:
+        """财格：正财格或偏财格"""
+        return self.pattern_type in (PatternType.ZHENG_CAI_GE, PatternType.PIAN_CAI_GE)
+
+    @property
+    def is_authority_pattern(self) -> bool:
+        """官杀格：正官格或偏官格"""
+        return self.pattern_type in (PatternType.ZHENG_GUAN_GE, PatternType.PIAN_GUAN_GE)
+
+    @property
+    def is_seal_pattern(self) -> bool:
+        """印格：正印格或偏印格"""
+        return self.pattern_type in (PatternType.ZHENG_YIN_GE, PatternType.PIAN_YIN_GE)
+
+    @property
+    def is_output_pattern(self) -> bool:
+        """食伤格：食神格或伤官格"""
+        return self.pattern_type in (PatternType.SHI_SHEN_GE, PatternType.SHANG_GUAN_GE)
+
+    @property
+    def is_bijie_pattern(self) -> bool:
+        """比劫格：建禄格或月刃格"""
+        return self.pattern_type in (PatternType.JIAN_LU_GE, PatternType.YUE_REN_GE)
+
+
+# 正格对应的十神
+REGULAR_PATTERN_SHISHEN_MAP = {
+    "正官": PatternType.ZHENG_GUAN_GE,
+    "七杀": PatternType.PIAN_GUAN_GE,
+    "偏官": PatternType.PIAN_GUAN_GE,
+    "正印": PatternType.ZHENG_YIN_GE,
+    "偏印": PatternType.PIAN_YIN_GE,
+    "枭神": PatternType.PIAN_YIN_GE,
+    "正财": PatternType.ZHENG_CAI_GE,
+    "偏财": PatternType.PIAN_CAI_GE,
+    "食神": PatternType.SHI_SHEN_GE,
+    "伤官": PatternType.SHANG_GUAN_GE,
+    "比肩": PatternType.JIAN_LU_GE,  # 建禄格
+    "劫财": PatternType.YUE_REN_GE,  # 月刃格
+    "比劫": PatternType.YUE_REN_GE,  # 月刃格
+}
+
+
 @dataclass
 class PatternAnalysis:
     """
@@ -179,11 +254,14 @@ class PatternAnalysis:
 
     Contains detected special patterns and their characteristics.
     """
-    # Primary pattern (strongest/most valid)
+    # Primary special pattern (strongest/most valid)
     primary_pattern: Optional[SpecialPattern] = None
 
-    # All detected patterns (including partial)
+    # All detected special patterns (including partial)
     detected_patterns: List[SpecialPattern] = field(default_factory=list)
+
+    # Regular pattern (正格) - based on month branch
+    regular_pattern: Optional[RegularPattern] = None
 
     # Analysis metadata
     day_master_strength: float = 0.5  # 0=极弱, 1=极强

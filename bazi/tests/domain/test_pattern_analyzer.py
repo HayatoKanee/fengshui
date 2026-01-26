@@ -757,3 +757,101 @@ class TestRealBaZiIntegration:
         # Results should be identical
         assert len(result1.detected_patterns) == len(result2.detected_patterns)
         assert result1.dominant_element == result2.dominant_element
+
+
+class TestRegularPatternDetection:
+    """Tests for 正格 (Regular Pattern) detection."""
+
+    def test_zheng_guan_ge(self, pattern_analyzer, wuxing_calculator):
+        """
+        正官格案例: 月令正官
+        甲日干，酉月(金)，金克木，金为甲木之官星
+        """
+        bazi = BaZi.from_chinese("甲子 癸酉 甲寅 乙丑")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        assert result.regular_pattern is not None
+        # 酉月藏辛金，辛克甲为正官
+        assert result.regular_pattern.shishen in ("正官", "七杀", "偏官")
+        assert result.regular_pattern.month_branch == "酉"
+
+    def test_shi_shen_ge(self, pattern_analyzer, wuxing_calculator):
+        """
+        食神格案例: 月令食神
+        甲日干，巳月(火)，木生火，火为甲木之食伤
+        """
+        bazi = BaZi.from_chinese("甲子 己巳 甲寅 乙丑")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        assert result.regular_pattern is not None
+        # 巳月藏丙火，甲木生丙火
+        assert result.regular_pattern.shishen in ("食神", "伤官")
+        assert result.regular_pattern.month_branch == "巳"
+
+    def test_zheng_cai_ge(self, pattern_analyzer, wuxing_calculator):
+        """
+        正财格案例: 月令财星
+        甲日干，戌月(土)，木克土，土为甲木之财
+        """
+        bazi = BaZi.from_chinese("甲子 甲戌 甲寅 乙丑")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        assert result.regular_pattern is not None
+        # 戌月藏戊土，甲木克戊土为偏财
+        assert result.regular_pattern.shishen in ("正财", "偏财")
+
+    def test_zheng_yin_ge(self, pattern_analyzer, wuxing_calculator):
+        """
+        正印格案例: 月令印星
+        甲日干，子月(水)，水生木，水为甲木之印
+        """
+        bazi = BaZi.from_chinese("甲子 丙子 甲寅 乙丑")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        assert result.regular_pattern is not None
+        # 子月藏癸水，癸水生甲木
+        assert result.regular_pattern.shishen in ("正印", "偏印")
+        assert result.regular_pattern.month_branch == "子"
+
+    def test_jian_lu_ge(self, pattern_analyzer, wuxing_calculator):
+        """
+        建禄格案例: 月令比肩
+        甲日干，寅月(木)，寅中藏甲，比肩当令
+        """
+        bazi = BaZi.from_chinese("甲子 丙寅 甲寅 乙丑")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        assert result.regular_pattern is not None
+        # 寅月藏甲，甲见甲为比肩 -> 建禄格
+        assert result.regular_pattern.shishen == "比肩"
+        assert result.regular_pattern.pattern_type == PatternType.JIAN_LU_GE
+
+    def test_yue_ren_ge(self, pattern_analyzer, wuxing_calculator):
+        """
+        月刃格案例: 月令劫财
+        乙日干，寅月(木)，寅中藏甲，甲为乙之劫财
+        """
+        bazi = BaZi.from_chinese("甲子 丙寅 乙卯 戊辰")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        assert result.regular_pattern is not None
+        # 寅月藏甲，乙见甲为劫财 -> 月刃格
+        assert result.regular_pattern.shishen in ("劫财", "比劫")
+
+    def test_regular_pattern_always_detected(self, pattern_analyzer, wuxing_calculator):
+        """正格应该总是被检测出来，即使有特殊格局。"""
+        # 经典曲直格案例
+        bazi = BaZi.from_chinese("癸卯 乙卯 甲寅 乙亥")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        # 即使有特殊格局，正格也应该被检测
+        assert result.regular_pattern is not None
+        # 卯月藏乙，甲见乙为劫财
+        assert result.regular_pattern.month_branch == "卯"

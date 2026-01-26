@@ -44,7 +44,9 @@ from .pattern_analysis import (
     PatternCategory,
     PatternType,
     SpecialPattern,
+    RegularPattern,
     PatternAnalysis,
+    REGULAR_PATTERN_SHISHEN_MAP,
 )
 
 __all__ = [
@@ -86,5 +88,7 @@ __all__ = [
     "PatternCategory",
     "PatternType",
     "SpecialPattern",
+    "RegularPattern",
     "PatternAnalysis",
+    "REGULAR_PATTERN_SHISHEN_MAP",
 ]

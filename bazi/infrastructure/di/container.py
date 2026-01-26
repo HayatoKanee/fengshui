@@ -15,6 +15,8 @@ from bazi.domain.services import (
     ShiShenCalculator,
     DayMasterAnalyzer,
     ShenShaCalculator,
+    BranchAnalyzer,
+    PatternAnalyzer,
 )
 from bazi.domain.feixing import FeiXingCalculator
 from bazi.infrastructure.adapters import LunarPythonAdapter
@@ -92,6 +94,8 @@ class Container:
         shishen_calc = ShiShenCalculator()
         day_master_analyzer = DayMasterAnalyzer()
         shensha_calc = ShenShaCalculator()
+        branch_analyzer = BranchAnalyzer()
+        pattern_analyzer = PatternAnalyzer()
         feixing_calc = FeiXingCalculator()
 
         # Sexagenary calculator for optimized lookup
@@ -114,6 +118,8 @@ class Container:
             shishen_calculator=shishen_calc,
             day_master_analyzer=day_master_analyzer,
             shensha_calculator=shensha_calc,
+            branch_analyzer=branch_analyzer,
+            pattern_analyzer=pattern_analyzer,
         )
 
         calendar_service = CalendarService(

@@ -354,6 +354,48 @@
                                         {% if sheng_hao.0 > sheng_hao.1 %}身强{% else %}身弱{% endif %}
                                     </span>
                                 </li>
+                                <!-- 格局分析 -->
+                                <li>
+                                    <span class="font-medium">格局：</span>
+                                    <div class="mt-2 space-y-2">
+                                        {% if has_special_pattern %}
+                                        <div class="alert alert-warning py-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                            <div>
+                                                <span class="font-bold">特殊格局：{{ special_pattern_name }}</span>
+                                                <p class="text-sm">{{ special_pattern_desc }}</p>
+                                            </div>
+                                        </div>
+                                        {% if favorable_elements %}
+                                        <div class="p-2 bg-base-300 rounded-lg">
+                                            <p class="text-sm font-medium mb-1">特殊格局喜用神：</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <span class="badge badge-success">用神：{{ favorable_elements.yong_shen }}</span>
+                                                <span class="badge badge-info">喜神：{{ favorable_elements.xi_shen }}</span>
+                                                <span class="badge badge-error">忌神：{{ favorable_elements.ji_shen }}</span>
+                                                <span class="badge badge-warning">仇神：{{ favorable_elements.chou_shen }}</span>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endif %}
+                                        {% if regular_pattern_name %}
+                                        <div class="flex items-center gap-2">
+                                            <span class="badge badge-outline">{{ regular_pattern_name }}</span>
+                                            <span class="tooltip" data-tip="正格以月令定格，以我们的流派来说影响不大，仅供参考">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-4 h-4 text-base-content/50">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </span>
+                                            {% if regular_pattern_desc %}
+                                            <span class="text-sm text-base-content/70">{{ regular_pattern_desc }}</span>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                        {% if not has_special_pattern and not regular_pattern_name %}
+                                        <span class="text-base-content/60">普通格局，按正常旺衰论命</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
                                 <li>
                                     <span class="font-medium">生肖：</span>
                                     <span class="text-lg">{{ shengxiao }}</span>

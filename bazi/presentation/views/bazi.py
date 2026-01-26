@@ -24,6 +24,7 @@ from bazi.presentation.presenters.shensha_rules import (
 )
 from bazi.presentation.forms import BirthTimeForm
 from bazi.presentation.views.base import ContainerMixin, ProfileMixin
+from bazi.domain.models import BaZi as DomainBaZi, WuXing
 
 
 class BaziContextBuilder(ContainerMixin):
@@ -37,6 +38,75 @@ class BaziContextBuilder(ContainerMixin):
     def __init__(self):
         self.presenter = BaziPresenter()
         self.current_year = datetime.datetime.now().year
+
+    def _analyze_patterns(self, bazi_eight_char, wuxing_value: Dict[str, float]) -> Dict[str, Any]:
+        """
+        Analyze BaZi patterns (格局分析).
+
+        Converts lunar_python BaZi to domain BaZi and runs pattern analysis.
+
+        Args:
+            bazi_eight_char: lunar_python EightChar object
+            wuxing_value: WuXing strength values (string keys like '木', '火')
+
+        Returns:
+            Dict with pattern analysis data for templates
+        """
+        from bazi.domain.services import PatternAnalyzer
+
+        # Convert lunar_python BaZi to domain BaZi
+        bazi_string = bazi_eight_char.toString()  # e.g., "甲子 乙丑 丙寅 丁卯"
+        domain_bazi = DomainBaZi.from_chinese(bazi_string)
+
+        # Convert string wuxing_value keys to WuXing enum
+        wuxing_values = {
+            WuXing.WOOD: wuxing_value.get('木', 0),
+            WuXing.FIRE: wuxing_value.get('火', 0),
+            WuXing.EARTH: wuxing_value.get('土', 0),
+            WuXing.METAL: wuxing_value.get('金', 0),
+            WuXing.WATER: wuxing_value.get('水', 0),
+        }
+
+        # Run pattern analysis
+        analyzer = PatternAnalyzer()
+        pattern_result = analyzer.analyze(domain_bazi, wuxing_values)
+
+        # Format results for template
+        context = {
+            'has_special_pattern': pattern_result.has_special_pattern,
+            'special_pattern_name': None,
+            'special_pattern_desc': None,
+            'special_pattern_advice': [],
+            'regular_pattern_name': None,
+            'regular_pattern_desc': None,
+            'favorable_elements': None,
+        }
+
+        # Special pattern info
+        if pattern_result.has_special_pattern:
+            pattern = pattern_result.primary_pattern
+            context['special_pattern_name'] = pattern.pattern_type.value
+            context['special_pattern_desc'] = pattern_result.get_pattern_description()
+            context['special_pattern_advice'] = pattern_result.get_favorable_advice()
+
+            # Get special pattern favorable elements
+            favorable = pattern_result.get_special_favorable_elements(domain_bazi.day_master_wuxing)
+            if favorable:
+                yong, xi, ji, chou = favorable
+                context['favorable_elements'] = {
+                    'yong_shen': yong.value,  # 用神
+                    'xi_shen': xi.value,      # 喜神
+                    'ji_shen': ji.value,      # 忌神
+                    'chou_shen': chou.value,  # 仇神
+                }
+
+        # Regular pattern info (正格)
+        if pattern_result.regular_pattern:
+            context['regular_pattern_name'] = pattern_result.regular_pattern.name
+            context['regular_pattern_desc'] = pattern_result.regular_pattern.description
+            context['regular_pattern_shishen'] = pattern_result.regular_pattern.shishen
+
+        return context
 
     def _get_liunian_year_options(self, birth_year: int = None) -> list:
         """
@@ -120,6 +190,9 @@ class BaziContextBuilder(ContainerMixin):
         birth_year = form.cleaned_data.get('year') if form.is_valid() else None
         liunian_year_options = self._get_liunian_year_options(birth_year)
 
+        # Pattern analysis (格局分析)
+        pattern_context = self._analyze_patterns(bazi, view_data.wuxing_value)
+
         return {
             "form": form,
             "bazi": bazi,
@@ -147,6 +220,8 @@ class BaziContextBuilder(ContainerMixin):
             "personality": personality,
             "shensha_list": shensha_list,
             "profiles": profiles,
+            # Pattern analysis (格局分析)
+            **pattern_context,
         }
 
 

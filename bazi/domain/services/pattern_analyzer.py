@@ -16,9 +16,11 @@ from ..models.pattern_analysis import (
     PatternCategory,
     PatternType,
     SpecialPattern,
+    RegularPattern,
     PatternAnalysis,
     ZHUAN_WANG_REQUIREMENTS,
     HUA_GE_COMBINATIONS,
+    REGULAR_PATTERN_SHISHEN_MAP,
 )
 from ..models.elements import WuXing
 
@@ -127,6 +129,10 @@ class PatternAnalyzer:
             partial = [p for p in detected if p.is_partial]
             if partial:
                 analysis.primary_pattern = max(partial, key=lambda p: p.strength)
+
+        # 4. Detect 正格 (Regular pattern based on month branch)
+        # 正格 is always calculated, even if special pattern exists
+        analysis.regular_pattern = self._detect_regular_pattern(bazi)
 
         return analysis
 
@@ -627,3 +633,71 @@ class PatternAnalyzer:
                 ))
 
         return patterns
+
+    def _detect_regular_pattern(self, bazi: BaZi) -> Optional[RegularPattern]:
+        """
+        Detect 正格 (Regular pattern) based on month branch (月令).
+
+        正格是八字中最基本的格局分类，取法以月令(月支)为主：
+        1. 看月支藏干本气(主气)
+        2. 以日干论本气之十神
+        3. 该十神即为格局
+
+        十大正格:
+        - 正官格、偏官格(七杀格)
+        - 正印格、偏印格(枭神格)
+        - 正财格、偏财格
+        - 食神格、伤官格
+        - 建禄格、月刃格(劫财格)
+        """
+        from ..models.shishen import calculate_shishen
+
+        month_branch = bazi.month_pillar.branch
+        day_master = bazi.day_pillar.stem
+
+        # Get the main hidden stem (本气) of month branch
+        # 本气 is the strongest hidden stem with the highest ratio
+        main_hidden_stem = None
+        max_ratio = 0.0
+
+        for hidden_stem, ratio in bazi.month_pillar.hidden_stems.items():
+            if ratio > max_ratio:
+                max_ratio = ratio
+                main_hidden_stem = hidden_stem
+
+        if main_hidden_stem is None:
+            return None
+
+        # Calculate ShiShen relationship between day master and month branch main qi
+        shishen = calculate_shishen(day_master, main_hidden_stem)
+        shishen_name = shishen.value if shishen else None
+
+        if shishen_name is None:
+            return None
+
+        # Map ShiShen to pattern type
+        pattern_type = REGULAR_PATTERN_SHISHEN_MAP.get(shishen_name)
+
+        if pattern_type is None:
+            return None
+
+        # Generate description
+        descriptions = {
+            PatternType.ZHENG_GUAN_GE: "正官格以官星为用，喜印星护官，忌伤官克官",
+            PatternType.PIAN_GUAN_GE: "偏官格(七杀格)以杀为用，喜印化杀或食神制杀",
+            PatternType.ZHENG_YIN_GE: "正印格以印星为用，喜官星生印，忌财星坏印",
+            PatternType.PIAN_YIN_GE: "偏印格(枭神格)以印星为用，注意枭印夺食",
+            PatternType.ZHENG_CAI_GE: "正财格以财星为用，喜官星护财，忌比劫夺财",
+            PatternType.PIAN_CAI_GE: "偏财格以财星为用，喜食伤生财，忌比劫争财",
+            PatternType.SHI_SHEN_GE: "食神格以食神为用，喜财星泄秀，忌枭印夺食",
+            PatternType.SHANG_GUAN_GE: "伤官格以伤官为用，喜财星或印星，伤官见官须有制",
+            PatternType.JIAN_LU_GE: "建禄格日主有根气，需另取财官食伤为用",
+            PatternType.YUE_REN_GE: "月刃格劫财当令，身旺需官杀制刃或食伤泄秀",
+        }
+
+        return RegularPattern(
+            pattern_type=pattern_type,
+            shishen=shishen_name,
+            month_branch=month_branch.chinese,
+            description=descriptions.get(pattern_type, ""),
+        )
