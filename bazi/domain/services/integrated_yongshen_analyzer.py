@@ -108,10 +108,17 @@ DEFAULT_WEIGHTS = MethodWeights(fuyi=0.50, tiaohao=0.30, tongguan=0.20)
 EXTREME_SEASON_WEIGHTS = MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20)
 
 # ============================================================================
-# 扶抑法说明
-# 扶抑评分基于实际五行力量（生耗值），而非固定常量
-# 身强 → 缺什么泄克五行，评分就高（需要补充）
-# 身弱 → 缺什么生扶五行，评分就高（需要补充）
+# 扶抑法说明 - 纯平衡计算，无优先级权重
+#
+# 原理：生耗值的差值直接告诉我们需要补多少
+# - deficit = (beneficial - harmful) / 2
+# - 身强(deficit>0)：所有泄克五行(食伤、财星、官杀)同等有效
+# - 身弱(deficit<0)：所有生扶五行(印星、比劫)同等有效
+#
+# 各法分工：
+# - 扶抑法：纯平衡计算（需要多少点）
+# - 调候法：季节偏好（哪个天干更适合，保留阴阳）
+# - 通关法：化解相战（五行冲突时的桥梁）
 # ============================================================================
 
 # ============================================================================
@@ -181,53 +188,56 @@ class IntegratedYongShenAnalyzer:
         """
         Calculate 扶抑法 scores for each WuXing element.
 
-        Based on 生耗值 imbalance ratio:
-        - The imbalance ratio directly determines the score magnitude
-        - 身强(生>耗): need 泄克, imbalance = (生-耗)/(生+耗)
-        - 身弱(耗>生): need 生扶, imbalance = (耗-生)/(生+耗)
+        Pure balance calculation - no priority weights.
+        The deficit value represents how much of each element type is needed.
+
+        Principle:
+        - 身强: ALL 泄克 elements (食伤、财星、官杀) equally help balance
+        - 身弱: ALL 生扶 elements (印星、比劫) equally help balance
+
+        The differentiation between elements comes from:
+        - 调候法: seasonal preferences (e.g., 冬用丙火)
+        - 通关法: conflict resolution (e.g., 金木相战用水)
 
         Example:
-            beneficial=70, harmful=30 → 身强, imbalance=0.4
-            → 泄克五行 +0.4, 生扶五行 -0.4
+            beneficial=70, harmful=30 → 身强
+            deficit = (70-30)/2 = 20 → need 20 points of 泄克
+            All 泄克 elements get +20, all 生扶 elements get -20
 
         Args:
             day_master_element: The day master's WuXing
             day_master_strength: Contains beneficial/harmful values
 
         Returns:
-            Dict mapping each WuXing to its fuyi score
+            Dict mapping each WuXing to its fuyi score (deficit value)
         """
         scores = {element: 0.0 for element in WuXing}
 
         beneficial = day_master_strength.beneficial_value
         harmful = day_master_strength.harmful_value
-        total = beneficial + harmful
 
-        if total == 0:
-            return scores
+        # 计算达到平衡需要多少点
+        # 正值=身强需泄克, 负值=身弱需生扶
+        deficit = (beneficial - harmful) / 2
 
-        # 计算失衡比例：生耗值差值 / 总值
-        # 这个比例直接决定评分的大小
-        imbalance = abs(beneficial - harmful) / total
-
-        if day_master_strength.is_strong:
-            # 身强：生扶过多，需要泄克来平衡
-            # 泄克五行获得正分，生扶五行获得负分
-            # 十神优先级：食伤泄秀 > 官杀制身 > 财星耗身
-            scores[day_master_element.generates] = imbalance * 1.0       # 食伤泄秀（最佳）
-            scores[day_master_element.overcome_by] = imbalance * 0.8     # 官杀制身
-            scores[day_master_element.overcomes] = imbalance * 0.6       # 财星耗身
-            scores[day_master_element.generated_by] = -imbalance * 0.8   # 印星生身（忌）
-            scores[day_master_element] = -imbalance * 1.0                # 比劫帮身（最忌）
+        if deficit > 0:
+            # 身强：需要泄克来平衡
+            # 所有泄克五行都能帮助平衡，分数相同
+            scores[day_master_element.generates] = deficit      # 食伤（泄）
+            scores[day_master_element.overcomes] = deficit      # 财星（耗）
+            scores[day_master_element.overcome_by] = deficit    # 官杀（克）
+            # 生扶五行是忌神
+            scores[day_master_element.generated_by] = -deficit  # 印星
+            scores[day_master_element] = -deficit               # 比劫
         else:
-            # 身弱：耗泄克过多，需要生扶来平衡
-            # 生扶五行获得正分，泄克五行获得负分
-            # 十神优先级：印星生身 > 比劫帮身
-            scores[day_master_element.generated_by] = imbalance * 1.0    # 印星生身（最佳）
-            scores[day_master_element] = imbalance * 0.8                 # 比劫帮身
-            scores[day_master_element.overcome_by] = -imbalance * 0.8    # 官杀克身（忌）
-            scores[day_master_element.generates] = -imbalance * 0.6      # 食伤泄身
-            scores[day_master_element.overcomes] = -imbalance * 1.0      # 财星耗身（最忌）
+            # 身弱：需要生扶来平衡
+            deficit = abs(deficit)
+            scores[day_master_element.generated_by] = deficit   # 印星（生）
+            scores[day_master_element] = deficit                # 比劫（扶）
+            # 泄克五行是忌神
+            scores[day_master_element.generates] = -deficit     # 食伤
+            scores[day_master_element.overcomes] = -deficit     # 财星
+            scores[day_master_element.overcome_by] = -deficit   # 官杀
 
         return scores
 

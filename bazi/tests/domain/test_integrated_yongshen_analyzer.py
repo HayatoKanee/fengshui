@@ -73,47 +73,58 @@ class TestWeightCalculation:
 
 
 class TestFuyiScores:
-    """Tests for 扶抑法 scoring based on 生耗值 imbalance."""
+    """Tests for 扶抑法 pure balance scoring (no priority weights)."""
 
     @pytest.fixture
     def analyzer(self):
         return IntegratedYongShenAnalyzer()
 
     def test_strong_day_master_fuyi_scores(self, analyzer):
-        """身强时喜泄克，忌生扶 - 生耗值失衡比例决定评分"""
-        # 身强: beneficial(70) > harmful(30), imbalance = 0.4
+        """身强时所有泄克五行同等有效，所有生扶五行同等忌"""
+        # 身强: beneficial(70) > harmful(30), deficit = (70-30)/2 = 20
         strong_strength = DayMasterStrength(beneficial_value=70.0, harmful_value=30.0)
         scores = analyzer._calculate_fuyi_scores(WuXing.WOOD, strong_strength)
 
-        # 身强木喜火（食伤泄）和金（官杀克）
-        assert scores[WuXing.FIRE] > 0  # 食伤
-        assert scores[WuXing.METAL] > 0  # 官杀
+        # 身强木：所有泄克五行都得正分
+        assert scores[WuXing.FIRE] > 0   # 食伤（泄）
+        assert scores[WuXing.EARTH] > 0  # 财星（耗）
+        assert scores[WuXing.METAL] > 0  # 官杀（克）
 
-        # 身强木忌水（印）和木（比劫）
+        # 身强木：所有生扶五行都得负分
         assert scores[WuXing.WATER] < 0  # 印星
-        assert scores[WuXing.WOOD] < 0  # 比劫
+        assert scores[WuXing.WOOD] < 0   # 比劫
 
-        # 验证评分大小符合失衡比例 (imbalance = 0.4)
-        assert abs(scores[WuXing.FIRE] - 0.4) < 0.01  # 食伤最优 = imbalance * 1.0
-        assert abs(scores[WuXing.WOOD] + 0.4) < 0.01  # 比劫最忌 = -imbalance * 1.0
+        # 验证：所有泄克五行分数相同（无优先级）
+        assert scores[WuXing.FIRE] == scores[WuXing.EARTH] == scores[WuXing.METAL]
+
+        # 验证：分数就是deficit值
+        assert abs(scores[WuXing.FIRE] - 20.0) < 0.01  # deficit = 20
+        assert abs(scores[WuXing.WOOD] + 20.0) < 0.01  # -deficit = -20
 
     def test_weak_day_master_fuyi_scores(self, analyzer):
-        """身弱时喜生扶，忌泄克 - 生耗值失衡比例决定评分"""
-        # 身弱: beneficial(30) < harmful(70), imbalance = 0.4
+        """身弱时所有生扶五行同等有效，所有泄克五行同等忌"""
+        # 身弱: beneficial(30) < harmful(70), deficit = (30-70)/2 = -20 → abs = 20
         weak_strength = DayMasterStrength(beneficial_value=30.0, harmful_value=70.0)
         scores = analyzer._calculate_fuyi_scores(WuXing.WOOD, weak_strength)
 
-        # 身弱木喜水（印）和木（比劫）
+        # 身弱木：所有生扶五行都得正分
         assert scores[WuXing.WATER] > 0  # 印星
-        assert scores[WuXing.WOOD] > 0  # 比劫
+        assert scores[WuXing.WOOD] > 0   # 比劫
 
-        # 身弱木忌火（食伤）和土（财星）
-        assert scores[WuXing.FIRE] < 0  # 食伤
+        # 身弱木：所有泄克五行都得负分
+        assert scores[WuXing.FIRE] < 0   # 食伤
         assert scores[WuXing.EARTH] < 0  # 财星
+        assert scores[WuXing.METAL] < 0  # 官杀
 
-        # 验证评分大小符合失衡比例 (imbalance = 0.4)
-        assert abs(scores[WuXing.WATER] - 0.4) < 0.01  # 印星最优 = imbalance * 1.0
-        assert abs(scores[WuXing.EARTH] + 0.4) < 0.01  # 财星最忌 = -imbalance * 1.0
+        # 验证：所有生扶五行分数相同（无优先级）
+        assert scores[WuXing.WATER] == scores[WuXing.WOOD]
+
+        # 验证：所有泄克五行分数相同（无优先级）
+        assert scores[WuXing.FIRE] == scores[WuXing.EARTH] == scores[WuXing.METAL]
+
+        # 验证：分数就是deficit值
+        assert abs(scores[WuXing.WATER] - 20.0) < 0.01  # deficit = 20
+        assert abs(scores[WuXing.EARTH] + 20.0) < 0.01  # -deficit = -20
 
 
 class TestIntegratedAnalysis:
