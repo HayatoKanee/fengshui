@@ -17,12 +17,14 @@ from bazi.domain.models import (
     WuXingStrength,
     DayMasterStrength,
     FavorableElements,
+    BranchRelationsAnalysis,
 )
 from bazi.domain.services import (
     WuXingCalculator,
     ShiShenCalculator,
     DayMasterAnalyzer,
     ShenShaCalculator,
+    BranchAnalyzer,
 )
 
 if TYPE_CHECKING:
@@ -53,6 +55,9 @@ class BaziAnalysisResult:
 
     # ShenSha analysis
     shensha_analysis: ShenShaAnalysis
+
+    # Branch relations (刑冲合害破)
+    branch_relations: BranchRelationsAnalysis
 
     # Lunar calendar info
     shengxiao: str  # Chinese zodiac animal
@@ -90,6 +95,7 @@ class BaziAnalysisService:
     4. Calculate favorable/unfavorable elements
     5. Generate ShiShen chart
     6. Calculate ShenSha (auxiliary stars)
+    7. Analyze branch relations (刑冲合害破)
 
     Usage:
         service = BaziAnalysisService(lunar_adapter)
@@ -104,6 +110,7 @@ class BaziAnalysisService:
         shishen_calculator: Optional[ShiShenCalculator] = None,
         day_master_analyzer: Optional[DayMasterAnalyzer] = None,
         shensha_calculator: Optional[ShenShaCalculator] = None,
+        branch_analyzer: Optional[BranchAnalyzer] = None,
     ):
         """
         Initialize the service with required adapters and calculators.
@@ -114,12 +121,14 @@ class BaziAnalysisService:
             shishen_calculator: Calculator for ShiShen relationships (optional)
             day_master_analyzer: Analyzer for day master strength (optional)
             shensha_calculator: Calculator for ShenSha stars (optional)
+            branch_analyzer: Analyzer for branch relations (optional)
         """
         self._lunar = lunar_adapter
         self._wuxing_calc = wuxing_calculator or WuXingCalculator()
         self._shishen_calc = shishen_calculator or ShiShenCalculator()
         self._day_master = day_master_analyzer or DayMasterAnalyzer()
         self._shensha_calc = shensha_calculator or ShenShaCalculator()
+        self._branch_analyzer = branch_analyzer or BranchAnalyzer()
 
     def analyze(self, birth_data: BirthData) -> BaziAnalysisResult:
         """
@@ -152,7 +161,10 @@ class BaziAnalysisService:
         # Step 5: Calculate ShenSha
         shensha_analysis = self._shensha_calc.calculate_for_bazi(bazi)
 
-        # Step 6: Get Chinese zodiac animal (生肖)
+        # Step 6: Analyze branch relations (刑冲合害破)
+        branch_relations = self._branch_analyzer.analyze(bazi)
+
+        # Step 7: Get Chinese zodiac animal (生肖)
         shengxiao = self._lunar.get_shengxiao(
             birth_data.year,
             birth_data.month,
@@ -167,6 +179,7 @@ class BaziAnalysisService:
             favorable_elements=favorable,
             shishen_chart=shishen_chart,
             shensha_analysis=shensha_analysis,
+            branch_relations=branch_relations,
             shengxiao=shengxiao,
             is_earth_dominant=is_earth_dominant,
         )

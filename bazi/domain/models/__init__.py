@@ -33,6 +33,13 @@ from .analysis import (
     FavorableElements,
     BaZiAnalysis,
 )
+from .branch_analysis import (
+    RelationType,
+    BranchRelation,
+    BranchRelationsAnalysis,
+    SI_KU_BRANCHES,
+    SI_KU_SET,
+)
 
 __all__ = [
     # Elements
@@ -63,4 +70,10 @@ __all__ = [
     "DayMasterStrength",
     "FavorableElements",
     "BaZiAnalysis",
+    # Branch Relations
+    "RelationType",
+    "BranchRelation",
+    "BranchRelationsAnalysis",
+    "SI_KU_BRANCHES",
+    "SI_KU_SET",
 ]
