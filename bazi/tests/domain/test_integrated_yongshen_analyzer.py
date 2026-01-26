@@ -363,6 +363,61 @@ class TestToFavorableElements:
         assert favorable.chou_shen == result.chou_shen
 
 
+class TestClassicalDerivation:
+    """Tests for classical five-element relationship derivation."""
+
+    @pytest.fixture
+    def analyzer(self):
+        return IntegratedYongShenAnalyzer()
+
+    def test_classical_derivation_wood_yongshen(self, analyzer):
+        """
+        验证古籍定义的五行生克推导：
+        用神=木 → 喜神=水(水生木) → 忌神=金(金克木) → 仇神=土(土生金) → 闲神=火(木生火)
+        """
+        bazi = BaZi.from_chinese("甲子甲子甲子甲子")
+        # 身弱，用神应该是印星(水)或比劫(木)
+        strength = DayMasterStrength(beneficial_value=30.0, harmful_value=70.0)
+
+        result = analyzer.analyze(bazi, strength)
+
+        # 验证五行生克关系链
+        assert result.xi_shen == result.yong_shen.generated_by  # 喜神=生用神
+        assert result.ji_shen == result.yong_shen.overcome_by   # 忌神=克用神
+        assert result.chou_shen == result.ji_shen.generated_by  # 仇神=生忌神
+        assert result.xian_shen == result.yong_shen.generates   # 闲神=用神所生
+
+    def test_all_five_elements_covered(self, analyzer):
+        """五神应覆盖全部五行"""
+        bazi = BaZi.from_chinese("甲子甲子甲子甲子")
+        strength = DayMasterStrength(beneficial_value=50.0, harmful_value=50.0)
+
+        result = analyzer.analyze(bazi, strength)
+
+        all_shens = {
+            result.yong_shen,
+            result.xi_shen,
+            result.ji_shen,
+            result.chou_shen,
+            result.xian_shen
+        }
+        # 五神应该覆盖全部五行
+        assert len(all_shens) == 5
+        assert all_shens == set(WuXing)
+
+    def test_notes_include_derivation_chain(self, analyzer):
+        """备注应包含推导链说明"""
+        bazi = BaZi.from_chinese("甲子甲子甲子甲子")
+        strength = DayMasterStrength(beneficial_value=50.0, harmful_value=50.0)
+
+        result = analyzer.analyze(bazi, strength)
+
+        notes_text = " ".join(result.notes)
+        assert "生用神" in notes_text
+        assert "克用神" in notes_text
+        assert "生忌神" in notes_text
+
+
 class TestDayMasterAnalyzerIntegration:
     """Tests for DayMasterAnalyzer integration."""
 

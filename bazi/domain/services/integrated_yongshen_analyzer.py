@@ -55,12 +55,20 @@ class IntegratedYongShenResult:
 
     Contains both the final recommendation and detailed scoring
     for transparency and debugging.
+
+    Classical definitions (《子平真诠》):
+    - 用神: Element with highest beneficial score (最需要的五行)
+    - 喜神: Element that generates 用神 (生用神者为喜神)
+    - 忌神: Element that controls 用神 (克用神者为忌神)
+    - 仇神: Element that generates 忌神 (生忌神者为仇神)
+    - 闲神: Remaining element, what 用神 generates (用神所生)
     """
-    # Final recommendations
-    yong_shen: WuXing           # 用神 - Most needed element
-    xi_shen: Optional[WuXing]   # 喜神 - Supportive element
-    ji_shen: WuXing             # 忌神 - Element to avoid
-    chou_shen: Optional[WuXing] # 仇神 - Hostile element
+    # Final recommendations (based on classical five-element relationships)
+    yong_shen: WuXing           # 用神 - Most needed element (highest score)
+    xi_shen: WuXing             # 喜神 - Generates 用神 (生用神)
+    ji_shen: WuXing             # 忌神 - Controls 用神 (克用神)
+    chou_shen: WuXing           # 仇神 - Generates 忌神 (生忌神)
+    xian_shen: WuXing           # 闲神 - 用神 generates (用神所生)
 
     # Analysis details
     weights: MethodWeights
@@ -209,29 +217,42 @@ class IntegratedYongShenAnalyzer:
     def _determine_favorable_unfavorable(
         self,
         combined_scores: Dict[WuXing, float],
-    ) -> Tuple[WuXing, Optional[WuXing], WuXing, Optional[WuXing]]:
+    ) -> Tuple[WuXing, Optional[WuXing], WuXing, Optional[WuXing], Optional[WuXing]]:
         """
-        Determine 用神/喜神/忌神/仇神 from combined scores.
+        Determine 用神/喜神/忌神/仇神/闲神 based on classical five-element relationships.
+
+        Traditional definitions (《子平真诠》):
+        - 用神: Element with highest beneficial score
+        - 喜神: Element that generates 用神 (生用神者为喜神)
+        - 忌神: Element that controls 用神 (克用神者为忌神)
+        - 仇神: Element that generates 忌神 (生忌神者为仇神)
+        - 闲神: Remaining element (用神 generates)
 
         Returns:
-            Tuple of (yong_shen, xi_shen, ji_shen, chou_shen)
+            Tuple of (yong_shen, xi_shen, ji_shen, chou_shen, xian_shen)
         """
-        # Sort by score
+        # 用神: Highest score
         sorted_elements = sorted(
             combined_scores.items(),
             key=lambda x: x[1],
             reverse=True
         )
-
-        # Favorable: top 2
         yong_shen = sorted_elements[0][0]
-        xi_shen = sorted_elements[1][0] if len(sorted_elements) > 1 else None
 
-        # Unfavorable: bottom 2
-        ji_shen = sorted_elements[-1][0]
-        chou_shen = sorted_elements[-2][0] if len(sorted_elements) > 1 else None
+        # Classical five-element derivation:
+        # 喜神 = 生用神者 (what generates 用神)
+        xi_shen = yong_shen.generated_by
 
-        return yong_shen, xi_shen, ji_shen, chou_shen
+        # 忌神 = 克用神者 (what controls 用神)
+        ji_shen = yong_shen.overcome_by
+
+        # 仇神 = 生忌神者 (what generates 忌神)
+        chou_shen = ji_shen.generated_by
+
+        # 闲神 = 用神所生者 (what 用神 generates)
+        xian_shen = yong_shen.generates
+
+        return yong_shen, xi_shen, ji_shen, chou_shen, xian_shen
 
     def analyze(
         self,
@@ -312,8 +333,8 @@ class IntegratedYongShenAnalyzer:
                 reasons=tuple(reasons),
             )
 
-        # Determine final recommendations
-        yong_shen, xi_shen, ji_shen, chou_shen = self._determine_favorable_unfavorable(
+        # Determine final recommendations using classical five-element relationships
+        yong_shen, xi_shen, ji_shen, chou_shen, xian_shen = self._determine_favorable_unfavorable(
             combined_scores
         )
 
@@ -326,6 +347,9 @@ class IntegratedYongShenAnalyzer:
 
         if tongguan_result and tongguan_result.has_conflict:
             notes.append(f"相战：{tongguan_result.description}")
+
+        # Add classical derivation explanation
+        notes.append(f"用神{yong_shen.chinese}→喜神{xi_shen.chinese}(生用神)→忌神{ji_shen.chinese}(克用神)→仇神{chou_shen.chinese}(生忌神)")
 
         # Determine primary method description
         method_parts = []
@@ -354,6 +378,7 @@ class IntegratedYongShenAnalyzer:
             xi_shen=xi_shen,
             ji_shen=ji_shen,
             chou_shen=chou_shen,
+            xian_shen=xian_shen,
             weights=weights,
             scores=element_scores,
             fuyi_result=fuyi_result,

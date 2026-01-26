@@ -108,6 +108,96 @@ class BaziContextBuilder(ContainerMixin):
 
         return context
 
+    def _analyze_yongshen(
+        self,
+        bazi_eight_char,
+        wuxing_value: Dict[str, float],
+        sheng_hao: tuple,
+    ) -> Dict[str, Any]:
+        """
+        Analyze 喜用神 using integrated method (扶抑+调候+通关).
+
+        Args:
+            bazi_eight_char: lunar_python BaZi object
+            wuxing_value: WuXing strength values (string keys like '木', '火')
+            sheng_hao: Tuple of (beneficial_value, harmful_value)
+
+        Returns:
+            Dict with yongshen analysis data for templates
+        """
+        from bazi.domain.services import DayMasterAnalyzer
+        from bazi.domain.models import DayMasterStrength, WuXingStrength, WangXiang
+
+        # Convert lunar_python BaZi to domain BaZi
+        bazi_string = bazi_eight_char.toString()
+        domain_bazi = DomainBaZi.from_chinese(bazi_string)
+
+        # Create DayMasterStrength from sheng_hao
+        dm_strength = DayMasterStrength(
+            beneficial_value=sheng_hao[0],
+            harmful_value=sheng_hao[1],
+        )
+
+        # Create WuXingStrength for 通关 analysis
+        wuxing_values = {
+            WuXing.WOOD: wuxing_value.get('木', 0),
+            WuXing.FIRE: wuxing_value.get('火', 0),
+            WuXing.EARTH: wuxing_value.get('土', 0),
+            WuXing.METAL: wuxing_value.get('金', 0),
+            WuXing.WATER: wuxing_value.get('水', 0),
+        }
+        wang_xiang = {element: WangXiang.XIU for element in WuXing}  # Default
+        wuxing_strength = WuXingStrength(
+            raw_values=wuxing_values,
+            wang_xiang=wang_xiang,
+            adjusted_values=wuxing_values,
+        )
+
+        # Run integrated analysis
+        analyzer = DayMasterAnalyzer()
+        _, _, _, integrated_result = analyzer.full_analysis_integrated(domain_bazi)
+
+        # Format scores for template (sorted by total_score descending)
+        scores_list = sorted(
+            integrated_result.scores.values(),
+            key=lambda s: s.total_score,
+            reverse=True
+        )
+
+        # Format for display
+        formatted_scores = []
+        for score in scores_list:
+            formatted_scores.append({
+                'element': score.element.chinese,
+                'element_value': score.element.value,
+                'fuyi_score': score.fuyi_score,
+                'tiaohao_score': score.tiaohao_score,
+                'tongguan_score': score.tongguan_score,
+                'total_score': score.total_score,
+                'reasons': list(score.reasons),
+            })
+
+        return {
+            'yongshen_analysis': {
+                'yong_shen': integrated_result.yong_shen.chinese,
+                'xi_shen': integrated_result.xi_shen.chinese,
+                'ji_shen': integrated_result.ji_shen.chinese,
+                'chou_shen': integrated_result.chou_shen.chinese,
+                'xian_shen': integrated_result.xian_shen.chinese,
+                'weights': {
+                    'fuyi': integrated_result.weights.fuyi,
+                    'tiaohao': integrated_result.weights.tiaohao,
+                    'tongguan': integrated_result.weights.tongguan,
+                },
+                'method_used': integrated_result.method_used,
+                'notes': list(integrated_result.notes),
+                'scores': formatted_scores,
+                'tiaohao_desc': integrated_result.tiaohao_result.description if integrated_result.tiaohao_result else '',
+                'has_conflict': integrated_result.tongguan_result.has_conflict if integrated_result.tongguan_result else False,
+                'conflict_desc': integrated_result.tongguan_result.description if integrated_result.tongguan_result else '',
+            }
+        }
+
     def _get_liunian_year_options(self, birth_year: int = None) -> list:
         """
         Generate year options with 干支 for the dropdown.
@@ -193,6 +283,11 @@ class BaziContextBuilder(ContainerMixin):
         # Pattern analysis (格局分析)
         pattern_context = self._analyze_patterns(bazi, view_data.wuxing_value)
 
+        # Yongshen analysis (喜用神分析)
+        yongshen_context = self._analyze_yongshen(
+            bazi, view_data.wuxing_value, view_data.sheng_hao
+        )
+
         return {
             "form": form,
             "bazi": bazi,
@@ -222,6 +317,8 @@ class BaziContextBuilder(ContainerMixin):
             "profiles": profiles,
             # Pattern analysis (格局分析)
             **pattern_context,
+            # Yongshen analysis (喜用神分析)
+            **yongshen_context,
         }
 
 
