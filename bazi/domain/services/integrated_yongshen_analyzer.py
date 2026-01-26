@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from ..models import BaZi, WuXing, DayMasterStrength, FavorableElements, WuXingStrength
+from ..models.stems_branches import HeavenlyStem
 from .tiaohao_analyzer import TiaoHouAnalyzer, TiaoHouResult, SeasonType
 from .tongguan_analyzer import TongGuanAnalyzer, TongGuanResult
 
@@ -62,6 +63,10 @@ class IntegratedYongShenResult:
     - 忌神: Element that controls 用神 (克用神者为忌神)
     - 仇神: Element that generates 忌神 (生忌神者为仇神)
     - 闲神: Remaining element, what 用神 generates (用神所生)
+
+    Yin/Yang distinction (《穷通宝鉴》):
+    - "用甲木的时候，绝对不可以用乙木" - Specific stems matter
+    - yongshen_stems provides specific HeavenlyStem recommendations preserving Yin/Yang
     """
     # Final recommendations (based on classical five-element relationships)
     yong_shen: WuXing           # 用神 - Most needed element (highest score)
@@ -69,6 +74,15 @@ class IntegratedYongShenResult:
     ji_shen: WuXing             # 忌神 - Controls 用神 (克用神)
     chou_shen: WuXing           # 仇神 - Generates 忌神 (生忌神)
     xian_shen: WuXing           # 闲神 - 用神 generates (用神所生)
+
+    # Multiple yongshen support (ranked by score)
+    # 《穷通宝鉴》: "大抵甲庚丁一组，三个是黄金搭档"
+    yongshen_ranked: Tuple[WuXing, ...] = ()  # All elements ranked by score (favorable to unfavorable)
+
+    # HeavenlyStem-level recommendations (preserving Yin/Yang)
+    # Primary stems from 调候 analysis (e.g., 丁火 not just 火)
+    yongshen_stems: Tuple[HeavenlyStem, ...] = ()  # Specific stems (primary)
+    secondary_stems: Tuple[HeavenlyStem, ...] = () # Secondary stems
 
     # Analysis details
     weights: MethodWeights
@@ -90,6 +104,37 @@ DEFAULT_WEIGHTS = MethodWeights(fuyi=0.50, tiaohao=0.30, tongguan=0.20)
 
 # 极端季节权重调整：扶抑 40% + 调候 40% + 通关 20%
 EXTREME_SEASON_WEIGHTS = MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20)
+
+# ============================================================================
+# 扶抑法评分常量
+# Based on traditional十神 (Ten Gods) priority for strong/weak day masters
+# ============================================================================
+# 身强喜泄克 (Strong day master prefers draining/controlling)
+FUYI_STRONG_SCORES = {
+    "shishang": 1.0,   # 食伤泄秀 - Best for strong (drains day master)
+    "guansha": 0.8,    # 官杀制身 - Good (controls day master)
+    "caixing": 0.4,    # 财星耗身 - Moderate (consumes day master)
+    "yinxing": -0.8,   # 印星生身 - Unfavorable (strengthens further)
+    "bijie": -1.0,     # 比劫帮身 - Worst (adds more strength)
+}
+
+# 身弱喜生扶 (Weak day master prefers generating/supporting)
+FUYI_WEAK_SCORES = {
+    "yinxing": 1.0,    # 印星生身 - Best for weak (generates day master)
+    "bijie": 0.8,      # 比劫帮身 - Good (supports day master)
+    "guansha": -0.4,   # 官杀克身 - Moderate unfavorable (attacks weak)
+    "shishang": -0.8,  # 食伤泄身 - Unfavorable (drains weak)
+    "caixing": -1.0,   # 财星耗身 - Worst (exhausts weak)
+}
+
+# ============================================================================
+# 调候法评分常量
+# Based on《穷通宝鉴》priority rankings
+# ============================================================================
+# Primary yongshen scores (most important)
+TIAOHAO_PRIMARY_SCORES = (1.0, 0.85, 0.7)  # First 3 primary stems
+# Secondary yongshen scores
+TIAOHAO_SECONDARY_SCORES = (0.5, 0.4, 0.3)  # First 3 secondary stems
 
 
 class IntegratedYongShenAnalyzer:
@@ -155,19 +200,19 @@ class IntegratedYongShenAnalyzer:
         scores = {element: 0.0 for element in WuXing}
 
         if is_strong:
-            # 身强喜泄克
-            scores[day_master_element.generates] = 1.0     # 食伤泄秀 (最佳)
-            scores[day_master_element.overcome_by] = 0.8   # 官杀制身
-            scores[day_master_element.overcomes] = 0.4     # 财星耗身
-            scores[day_master_element.generated_by] = -0.8  # 印星生身 (忌)
-            scores[day_master_element] = -1.0              # 比劫帮身 (最忌)
+            # 身强喜泄克 - Use FUYI_STRONG_SCORES constants
+            scores[day_master_element.generates] = FUYI_STRONG_SCORES["shishang"]     # 食伤泄秀
+            scores[day_master_element.overcome_by] = FUYI_STRONG_SCORES["guansha"]    # 官杀制身
+            scores[day_master_element.overcomes] = FUYI_STRONG_SCORES["caixing"]      # 财星耗身
+            scores[day_master_element.generated_by] = FUYI_STRONG_SCORES["yinxing"]   # 印星生身
+            scores[day_master_element] = FUYI_STRONG_SCORES["bijie"]                  # 比劫帮身
         else:
-            # 身弱喜生扶
-            scores[day_master_element.generated_by] = 1.0  # 印星生身 (最佳)
-            scores[day_master_element] = 0.8               # 比劫帮身
-            scores[day_master_element.overcome_by] = -0.4  # 官杀克身
-            scores[day_master_element.generates] = -0.8    # 食伤泄身 (忌)
-            scores[day_master_element.overcomes] = -1.0    # 财星耗身 (最忌)
+            # 身弱喜生扶 - Use FUYI_WEAK_SCORES constants
+            scores[day_master_element.generated_by] = FUYI_WEAK_SCORES["yinxing"]     # 印星生身
+            scores[day_master_element] = FUYI_WEAK_SCORES["bijie"]                    # 比劫帮身
+            scores[day_master_element.overcome_by] = FUYI_WEAK_SCORES["guansha"]      # 官杀克身
+            scores[day_master_element.generates] = FUYI_WEAK_SCORES["shishang"]       # 食伤泄身
+            scores[day_master_element.overcomes] = FUYI_WEAK_SCORES["caixing"]        # 财星耗身
 
         return scores
 
@@ -179,19 +224,27 @@ class IntegratedYongShenAnalyzer:
         Calculate 调候法 scores for each WuXing element.
 
         Based on《穷通宝鉴》recommendations for day stem + month branch.
+        Uses TIAOHAO_PRIMARY_SCORES and TIAOHAO_SECONDARY_SCORES constants.
         """
         scores = {element: 0.0 for element in WuXing}
 
-        # Score primary 用神
+        # Score primary 用神 using predefined constants
         for i, stem in enumerate(tiaohao_result.primary_yongshen):
-            # First is best, decreasing value
-            score = 1.0 - (i * 0.2)
+            if i < len(TIAOHAO_PRIMARY_SCORES):
+                score = TIAOHAO_PRIMARY_SCORES[i]
+            else:
+                # Fallback for more than 3 primary yongshen (rare)
+                score = TIAOHAO_PRIMARY_SCORES[-1] * 0.8
             wuxing = stem.wuxing
             scores[wuxing] = max(scores[wuxing], score)
 
-        # Score secondary 用神
+        # Score secondary 用神 using predefined constants
         for i, stem in enumerate(tiaohao_result.secondary_yongshen):
-            score = 0.5 - (i * 0.1)
+            if i < len(TIAOHAO_SECONDARY_SCORES):
+                score = TIAOHAO_SECONDARY_SCORES[i]
+            else:
+                # Fallback for more than 3 secondary yongshen
+                score = TIAOHAO_SECONDARY_SCORES[-1] * 0.8
             wuxing = stem.wuxing
             scores[wuxing] = max(scores[wuxing], score)
 
@@ -338,6 +391,19 @@ class IntegratedYongShenAnalyzer:
             combined_scores
         )
 
+        # Generate ranked list of all elements (favorable to unfavorable)
+        sorted_elements = sorted(
+            combined_scores.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+        yongshen_ranked = tuple(elem for elem, _ in sorted_elements)
+
+        # Extract HeavenlyStem-level recommendations from 调候 (preserving Yin/Yang)
+        # 《穷通宝鉴》: "用甲木的时候，绝对不可以用乙木"
+        yongshen_stems = tuple(tiaohao_result.primary_yongshen)
+        secondary_stems = tuple(tiaohao_result.secondary_yongshen)
+
         # Build notes
         notes = []
         strength_desc = "身强" if day_master_strength.is_strong else "身弱"
@@ -350,6 +416,11 @@ class IntegratedYongShenAnalyzer:
 
         # Add classical derivation explanation
         notes.append(f"用神{yong_shen.chinese}→喜神{xi_shen.chinese}(生用神)→忌神{ji_shen.chinese}(克用神)→仇神{chou_shen.chinese}(生忌神)")
+
+        # Add specific stem recommendations if available
+        if yongshen_stems:
+            stem_chars = "、".join(s.chinese for s in yongshen_stems)
+            notes.append(f"调候用神（天干）：{stem_chars}")
 
         # Determine primary method description
         method_parts = []
@@ -379,6 +450,9 @@ class IntegratedYongShenAnalyzer:
             ji_shen=ji_shen,
             chou_shen=chou_shen,
             xian_shen=xian_shen,
+            yongshen_ranked=yongshen_ranked,
+            yongshen_stems=yongshen_stems,
+            secondary_stems=secondary_stems,
             weights=weights,
             scores=element_scores,
             fuyi_result=fuyi_result,

@@ -125,6 +125,27 @@
             </div>
         </div>
 
+        <!-- 调候用神天干（保留阴阳信息）-->
+        {% if yongshen_analysis.yongshen_stems %}
+        <div class="mt-4 p-3 bg-base-300 rounded-lg">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-sm font-medium">调候用神（天干）：</span>
+                {% for stem in yongshen_analysis.yongshen_stems %}
+                <span class="badge badge-success">{{ stem }}</span>
+                {% endfor %}
+            </div>
+            {% if yongshen_analysis.secondary_stems %}
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">次要用神：</span>
+                {% for stem in yongshen_analysis.secondary_stems %}
+                <span class="badge badge-ghost">{{ stem }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <p class="text-xs text-base-content/50 mt-2">《穷通宝鉴》：阴阳有别，用甲不可代乙</p>
+        </div>
+        {% endif %}
+
         <!-- 权重说明 -->
         <div class="mt-4 text-xs text-base-content/60">
             <p>分析方法：{{ yongshen_analysis.method_used }}</p>
