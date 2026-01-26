@@ -51,46 +51,102 @@ class PatternType(Enum):
 
 
 # 专旺格对应的五行和日干要求
+# 根据《子平真诠》《三命通会》等古籍，月令是专旺格成格的关键条件
 ZHUAN_WANG_REQUIREMENTS = {
     PatternType.QU_ZHI: {
         'element': WuXing.WOOD,
         'day_stems': ['甲', '乙'],
+        # 曲直格：生于春季(寅卯)或亥子月(水生木)，木气得令
+        'valid_months': ['寅', '卯', '辰', '亥', '子'],
+        # 木方局地支
+        'element_branches': ['寅', '卯', '辰'],
         'name': '曲直格',
         'description': '木气专旺，仁寿之格',
     },
     PatternType.YAN_SHANG: {
         'element': WuXing.FIRE,
         'day_stems': ['丙', '丁'],
+        # 炎上格：生于夏季(巳午)或寅卯月(木生火)
+        'valid_months': ['巳', '午', '未', '寅', '卯'],
+        # 火方局地支
+        'element_branches': ['巳', '午', '未'],
         'name': '炎上格',
         'description': '火气专旺，文明之象',
     },
     PatternType.JIA_SE: {
         'element': WuXing.EARTH,
         'day_stems': ['戊', '己'],
+        # 稼穑格：生于四季月(辰戌丑未)，土旺月
+        'valid_months': ['辰', '戌', '丑', '未'],
+        # 四库(土)地支
+        'element_branches': ['辰', '戌', '丑', '未'],
         'name': '稼穑格',
         'description': '土气专旺，厚重之德',
     },
     PatternType.CONG_GE_METAL: {
         'element': WuXing.METAL,
         'day_stems': ['庚', '辛'],
+        # 从革格：生于秋季(申酉)或四季土月(土生金)
+        'valid_months': ['申', '酉', '戌', '丑', '辰', '未'],
+        # 金方局地支
+        'element_branches': ['申', '酉', '戌'],
         'name': '从革格',
         'description': '金气专旺，刚毅之质',
     },
     PatternType.RUN_XIA: {
         'element': WuXing.WATER,
         'day_stems': ['壬', '癸'],
+        # 润下格：生于冬季(亥子)或申酉月(金生水)
+        'valid_months': ['亥', '子', '丑', '申', '酉'],
+        # 水方局地支
+        'element_branches': ['亥', '子', '丑'],
         'name': '润下格',
         'description': '水气专旺，智慧之源',
     },
 }
 
 # 化格对应的天干组合和化出五行
+# 根据《渊海子平》《三命通会》等古籍，化格需满足：
+# 1. 日干与邻干(月干或时干)相合
+# 2. 月令为化神旺相之地
+# 3. 命局化神有力，无克神破化
+# 4. 辰时为"逢龙而化"，更易成格
 HUA_GE_COMBINATIONS = {
-    ('甲', '己'): {'element': WuXing.EARTH, 'type': PatternType.HUA_TU, 'name': '甲己化土'},
-    ('乙', '庚'): {'element': WuXing.METAL, 'type': PatternType.HUA_JIN, 'name': '乙庚化金'},
-    ('丙', '辛'): {'element': WuXing.WATER, 'type': PatternType.HUA_SHUI, 'name': '丙辛化水'},
-    ('丁', '壬'): {'element': WuXing.WOOD, 'type': PatternType.HUA_MU, 'name': '丁壬化木'},
-    ('戊', '癸'): {'element': WuXing.FIRE, 'type': PatternType.HUA_HUO, 'name': '戊癸化火'},
+    ('甲', '己'): {
+        'element': WuXing.EARTH,
+        'type': PatternType.HUA_TU,
+        'name': '甲己化土',
+        # 化土需四季月(土旺)
+        'valid_months': ['辰', '戌', '丑', '未'],
+    },
+    ('乙', '庚'): {
+        'element': WuXing.METAL,
+        'type': PatternType.HUA_JIN,
+        'name': '乙庚化金',
+        # 化金需秋季(金旺)
+        'valid_months': ['申', '酉'],
+    },
+    ('丙', '辛'): {
+        'element': WuXing.WATER,
+        'type': PatternType.HUA_SHUI,
+        'name': '丙辛化水',
+        # 化水需冬季(水旺)
+        'valid_months': ['亥', '子'],
+    },
+    ('丁', '壬'): {
+        'element': WuXing.WOOD,
+        'type': PatternType.HUA_MU,
+        'name': '丁壬化木',
+        # 化木需春季(木旺)
+        'valid_months': ['寅', '卯'],
+    },
+    ('戊', '癸'): {
+        'element': WuXing.FIRE,
+        'type': PatternType.HUA_HUO,
+        'name': '戊癸化火',
+        # 化火需夏季(火旺)
+        'valid_months': ['巳', '午'],
+    },
 }
 
 
