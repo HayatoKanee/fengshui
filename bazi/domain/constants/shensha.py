@@ -51,24 +51,3 @@ JIE_SHA: FrozenSet[Tuple[str, str]] = _JIE_SHA
 WANG_SHEN: FrozenSet[Tuple[str, str]] = _WANG_SHEN
 GU_CHEN: FrozenSet[Tuple[str, str]] = _GU_CHEN
 GUA_SU: FrozenSet[Tuple[str, str]] = _GUA_SU
-
-
-# 保留辅助函数供外部使用
-def has_gui_ren(day_gan: str, target_zhi: str) -> bool:
-    """Check if day stem and target branch form Gui Ren relationship."""
-    return (day_gan, target_zhi) in GUI_REN
-
-
-def has_tian_de(month_zhi: str, target_gan: str) -> bool:
-    """Check if month branch and target stem form Tian De relationship."""
-    return (month_zhi, target_gan) in TIAN_DE
-
-
-def has_yue_de(month_zhi: str, target_gan: str) -> bool:
-    """Check if month branch and target stem form Yue De relationship."""
-    return (month_zhi, target_gan) in YUE_DE
-
-
-def has_wen_chang(day_gan: str, target_zhi: str) -> bool:
-    """Check if day stem and target branch form Wen Chang relationship."""
-    return (day_gan, target_zhi) in WEN_CHANG

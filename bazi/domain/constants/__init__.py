@@ -61,7 +61,9 @@ from .clashes import (
 from .shensha import (
     GUI_REN,
     TIAN_DE,
+    TIAN_DE_HE,
     YUE_DE,
+    YUE_DE_HE,
     WEN_CHANG,
     LU_SHEN,
     YANG_REN,
@@ -75,10 +77,6 @@ from .shensha import (
     GU_CHEN,
     GUA_SU,
     XUN_KONG,
-    has_gui_ren,
-    has_tian_de,
-    has_yue_de,
-    has_wen_chang,
 )
 
 __all__ = [
@@ -129,7 +127,9 @@ __all__ = [
     # ShenSha
     "GUI_REN",
     "TIAN_DE",
+    "TIAN_DE_HE",
     "YUE_DE",
+    "YUE_DE_HE",
     "WEN_CHANG",
     "LU_SHEN",
     "YANG_REN",
@@ -143,8 +143,4 @@ __all__ = [
     "GU_CHEN",
     "GUA_SU",
     "XUN_KONG",
-    "has_gui_ren",
-    "has_tian_de",
-    "has_yue_de",
-    "has_wen_chang",
 ]
