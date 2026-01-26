@@ -312,7 +312,7 @@ class ShenShaRuleRegistry:
     @classmethod
     def _initialize_default_rules(cls) -> None:
         """Initialize default rules from Registry."""
-        from .shensha_registry import ShenShaRegistry, XUN_KONG
+        from .shensha_registry import ShenShaRegistry, _XUN_KONG
 
         rules: List[ShenShaRule] = []
 
@@ -328,7 +328,7 @@ class ShenShaRuleRegistry:
             ))
 
         # Add special rules
-        rules.append(KongWangRule(xun_kong_table=XUN_KONG))
+        rules.append(KongWangRule(xun_kong_table=_XUN_KONG))
         rules.append(SanQiRule())
 
         cls._rules = rules

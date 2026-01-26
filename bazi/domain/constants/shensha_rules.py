@@ -8,7 +8,7 @@ ShenSha Rules - 神煞规则便捷函数。
 """
 from typing import List
 
-from ..models.shensha_registry import XUN_KONG
+from ..models.shensha_registry import _XUN_KONG
 
 
 def get_kong_wang_branches(day_pillar_chinese: str) -> List[str]:
@@ -27,4 +27,4 @@ def get_kong_wang_branches(day_pillar_chinese: str) -> List[str]:
         >>> get_kong_wang_branches("甲戌")
         ['申', '酉']
     """
-    return XUN_KONG.get(day_pillar_chinese, [])
+    return _XUN_KONG.get(day_pillar_chinese, [])

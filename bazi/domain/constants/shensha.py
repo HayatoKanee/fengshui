@@ -30,7 +30,7 @@ from ..models.shensha_registry import (
     _WANG_SHEN,
     _GU_CHEN,
     _GUA_SU,
-    XUN_KONG,
+    _XUN_KONG,
 )
 
 # 重新导出（保持旧API）
@@ -51,3 +51,4 @@ JIE_SHA: FrozenSet[Tuple[str, str]] = _JIE_SHA
 WANG_SHEN: FrozenSet[Tuple[str, str]] = _WANG_SHEN
 GU_CHEN: FrozenSet[Tuple[str, str]] = _GU_CHEN
 GUA_SU: FrozenSet[Tuple[str, str]] = _GUA_SU
+XUN_KONG = _XUN_KONG  # dict[str, list[str]]

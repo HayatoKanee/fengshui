@@ -15,6 +15,12 @@ ShenSha Registry - 神煞注册中心（单一数据源）。
 - I: 提供精简的查询接口
 - D: Calculator 依赖 Registry 抽象
 
+命名规范 (Naming Conventions):
+- 私有查表数据: _PINYIN (下划线前缀，拼音大写，如 _GUI_REN, _TIAN_DE)
+- 公共导出: constants/shensha.py 重新导出为 PINYIN (无下划线)
+- 提取器函数: english_name (英文，下划线分隔，如 day_stem_extractor)
+- 枚举值: PINYIN (拼音大写，如 ShenShaType.TIAN_YI_GUI_REN)
+
 Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
@@ -224,7 +230,7 @@ _GUA_SU: FrozenSet[Tuple[str, str]] = frozenset([
 ])
 
 # 空亡（旬空）- Void/Emptiness (by day pillar)
-XUN_KONG: dict[str, list[str]] = {
+_XUN_KONG: dict[str, list[str]] = {
     # 甲子旬空戌亥
     '甲子': ['戌', '亥'], '乙丑': ['戌', '亥'], '丙寅': ['戌', '亥'], '丁卯': ['戌', '亥'],
     '戊辰': ['戌', '亥'], '己巳': ['戌', '亥'], '庚午': ['戌', '亥'], '辛未': ['戌', '亥'],
