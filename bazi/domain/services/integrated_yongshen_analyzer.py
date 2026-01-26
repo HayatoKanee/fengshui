@@ -75,6 +75,9 @@ class IntegratedYongShenResult:
     chou_shen: WuXing           # 仇神 - Generates 忌神 (生忌神)
     xian_shen: WuXing           # 闲神 - 用神 generates (用神所生)
 
+    # Analysis details (required field - must come before defaults)
+    weights: MethodWeights
+
     # Multiple yongshen support (ranked by score)
     # 《穷通宝鉴》: "大抵甲庚丁一组，三个是黄金搭档"
     yongshen_ranked: Tuple[WuXing, ...] = ()  # All elements ranked by score (favorable to unfavorable)
@@ -84,8 +87,7 @@ class IntegratedYongShenResult:
     yongshen_stems: Tuple[HeavenlyStem, ...] = ()  # Specific stems (primary)
     secondary_stems: Tuple[HeavenlyStem, ...] = () # Secondary stems
 
-    # Analysis details
-    weights: MethodWeights
+    # Detailed scores
     scores: Dict[WuXing, WuXingScore] = field(default_factory=dict)
 
     # Sub-results for transparency
@@ -106,26 +108,11 @@ DEFAULT_WEIGHTS = MethodWeights(fuyi=0.50, tiaohao=0.30, tongguan=0.20)
 EXTREME_SEASON_WEIGHTS = MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20)
 
 # ============================================================================
-# 扶抑法评分常量
-# Based on traditional十神 (Ten Gods) priority for strong/weak day masters
+# 扶抑法说明
+# 扶抑评分基于实际五行力量（生耗值），而非固定常量
+# 身强 → 缺什么泄克五行，评分就高（需要补充）
+# 身弱 → 缺什么生扶五行，评分就高（需要补充）
 # ============================================================================
-# 身强喜泄克 (Strong day master prefers draining/controlling)
-FUYI_STRONG_SCORES = {
-    "shishang": 1.0,   # 食伤泄秀 - Best for strong (drains day master)
-    "guansha": 0.8,    # 官杀制身 - Good (controls day master)
-    "caixing": 0.4,    # 财星耗身 - Moderate (consumes day master)
-    "yinxing": -0.8,   # 印星生身 - Unfavorable (strengthens further)
-    "bijie": -1.0,     # 比劫帮身 - Worst (adds more strength)
-}
-
-# 身弱喜生扶 (Weak day master prefers generating/supporting)
-FUYI_WEAK_SCORES = {
-    "yinxing": 1.0,    # 印星生身 - Best for weak (generates day master)
-    "bijie": 0.8,      # 比劫帮身 - Good (supports day master)
-    "guansha": -0.4,   # 官杀克身 - Moderate unfavorable (attacks weak)
-    "shishang": -0.8,  # 食伤泄身 - Unfavorable (drains weak)
-    "caixing": -1.0,   # 财星耗身 - Worst (exhausts weak)
-}
 
 # ============================================================================
 # 调候法评分常量
@@ -190,29 +177,76 @@ class IntegratedYongShenAnalyzer:
         self,
         day_master_element: WuXing,
         is_strong: bool,
+        wuxing_strength: WuXingStrength | None = None,
     ) -> Dict[WuXing, float]:
         """
         Calculate 扶抑法 scores for each WuXing element.
 
-        Strong day master: favor elements that drain/control
-        Weak day master: favor elements that support/generate
+        Based on actual WuXing strength (生耗值):
+        - Strong day master: favor elements that drain/control (泄克)
+          → Elements with lower strength get higher scores (need more)
+        - Weak day master: favor elements that support/generate (生扶)
+          → Elements with lower strength get higher scores (need more)
+
+        Args:
+            day_master_element: The day master's WuXing
+            is_strong: Whether day master is strong
+            wuxing_strength: Actual WuXing strength values for scoring
+
+        Returns:
+            Dict mapping each WuXing to its fuyi score
         """
         scores = {element: 0.0 for element in WuXing}
 
-        if is_strong:
-            # 身强喜泄克 - Use FUYI_STRONG_SCORES constants
-            scores[day_master_element.generates] = FUYI_STRONG_SCORES["shishang"]     # 食伤泄秀
-            scores[day_master_element.overcome_by] = FUYI_STRONG_SCORES["guansha"]    # 官杀制身
-            scores[day_master_element.overcomes] = FUYI_STRONG_SCORES["caixing"]      # 财星耗身
-            scores[day_master_element.generated_by] = FUYI_STRONG_SCORES["yinxing"]   # 印星生身
-            scores[day_master_element] = FUYI_STRONG_SCORES["bijie"]                  # 比劫帮身
+        # Define beneficial (生扶) and harmful (耗泄克) elements
+        beneficial_elements = [
+            day_master_element.generated_by,  # 印星 - generates day master
+            day_master_element,                # 比劫 - same as day master
+        ]
+        harmful_elements = [
+            day_master_element.generates,      # 食伤 - day master generates (drains)
+            day_master_element.overcomes,      # 财星 - day master overcomes (consumes)
+            day_master_element.overcome_by,    # 官杀 - overcomes day master (controls)
+        ]
+
+        if wuxing_strength:
+            # Use actual WuXing strength for scoring
+            values = wuxing_strength.adjusted_values
+            total = sum(values.values())
+
+            if total > 0:
+                if is_strong:
+                    # 身强需要泄克：泄克五行力量越弱→越需要→评分越高
+                    for element in harmful_elements:
+                        ratio = values.get(element, 0) / total
+                        # Invert: lower ratio = higher need = higher score
+                        scores[element] = 1.0 - ratio
+                    for element in beneficial_elements:
+                        ratio = values.get(element, 0) / total
+                        # Negative: these are unfavorable
+                        scores[element] = -ratio
+                else:
+                    # 身弱需要生扶：生扶五行力量越弱→越需要→评分越高
+                    for element in beneficial_elements:
+                        ratio = values.get(element, 0) / total
+                        # Invert: lower ratio = higher need = higher score
+                        scores[element] = 1.0 - ratio
+                    for element in harmful_elements:
+                        ratio = values.get(element, 0) / total
+                        # Negative: these are unfavorable
+                        scores[element] = -ratio
         else:
-            # 身弱喜生扶 - Use FUYI_WEAK_SCORES constants
-            scores[day_master_element.generated_by] = FUYI_WEAK_SCORES["yinxing"]     # 印星生身
-            scores[day_master_element] = FUYI_WEAK_SCORES["bijie"]                    # 比劫帮身
-            scores[day_master_element.overcome_by] = FUYI_WEAK_SCORES["guansha"]      # 官杀克身
-            scores[day_master_element.generates] = FUYI_WEAK_SCORES["shishang"]       # 食伤泄身
-            scores[day_master_element.overcomes] = FUYI_WEAK_SCORES["caixing"]        # 财星耗身
+            # Fallback: simple binary scoring if no wuxing_strength provided
+            if is_strong:
+                for element in harmful_elements:
+                    scores[element] = 1.0
+                for element in beneficial_elements:
+                    scores[element] = -1.0
+            else:
+                for element in beneficial_elements:
+                    scores[element] = 1.0
+                for element in harmful_elements:
+                    scores[element] = -1.0
 
         return scores
 
@@ -337,10 +371,11 @@ class IntegratedYongShenAnalyzer:
         # Determine weights based on season and mode
         weights = self._get_weights(tiaohao_result.season_type)
 
-        # Calculate individual scores
+        # Calculate individual scores (扶抑基于实际五行力量)
         fuyi_scores = self._calculate_fuyi_scores(
             day_master_element,
             day_master_strength.is_strong,
+            wuxing_strength,
         )
         tiaohao_scores = self._calculate_tiaohao_scores(tiaohao_result)
         tongguan_scores = (
@@ -450,10 +485,10 @@ class IntegratedYongShenAnalyzer:
             ji_shen=ji_shen,
             chou_shen=chou_shen,
             xian_shen=xian_shen,
+            weights=weights,
             yongshen_ranked=yongshen_ranked,
             yongshen_stems=yongshen_stems,
             secondary_stems=secondary_stems,
-            weights=weights,
             scores=element_scores,
             fuyi_result=fuyi_result,
             tiaohao_result=tiaohao_result,
