@@ -11,6 +11,12 @@ from .shensha_calculator import ShenShaCalculator
 from .sexagenary_calculator import SexagenaryCycleCalculator
 from .branch_analyzer import BranchAnalyzer
 from .pattern_analyzer import PatternAnalyzer
+from .tiaohao_analyzer import TiaoHouAnalyzer, TiaoHouResult, SeasonType
+from .integrated_yongshen_analyzer import (
+    IntegratedYongShenAnalyzer,
+    IntegratedYongShenResult,
+    WuXingScore,
+)
 
 __all__ = [
     "WuXingCalculator",
@@ -20,4 +26,10 @@ __all__ = [
     "SexagenaryCycleCalculator",
     "BranchAnalyzer",
     "PatternAnalyzer",
+    "TiaoHouAnalyzer",
+    "TiaoHouResult",
+    "SeasonType",
+    "IntegratedYongShenAnalyzer",
+    "IntegratedYongShenResult",
+    "WuXingScore",
 ]
