@@ -73,15 +73,17 @@ class TestWeightCalculation:
 
 
 class TestFuyiScores:
-    """Tests for 扶抑法 scoring."""
+    """Tests for 扶抑法 scoring based on 生耗值 imbalance."""
 
     @pytest.fixture
     def analyzer(self):
         return IntegratedYongShenAnalyzer()
 
     def test_strong_day_master_fuyi_scores(self, analyzer):
-        """身强时喜泄克，忌生扶"""
-        scores = analyzer._calculate_fuyi_scores(WuXing.WOOD, is_strong=True)
+        """身强时喜泄克，忌生扶 - 生耗值失衡比例决定评分"""
+        # 身强: beneficial(70) > harmful(30), imbalance = 0.4
+        strong_strength = DayMasterStrength(beneficial_value=70.0, harmful_value=30.0)
+        scores = analyzer._calculate_fuyi_scores(WuXing.WOOD, strong_strength)
 
         # 身强木喜火（食伤泄）和金（官杀克）
         assert scores[WuXing.FIRE] > 0  # 食伤
@@ -91,9 +93,15 @@ class TestFuyiScores:
         assert scores[WuXing.WATER] < 0  # 印星
         assert scores[WuXing.WOOD] < 0  # 比劫
 
+        # 验证评分大小符合失衡比例 (imbalance = 0.4)
+        assert abs(scores[WuXing.FIRE] - 0.4) < 0.01  # 食伤最优 = imbalance * 1.0
+        assert abs(scores[WuXing.WOOD] + 0.4) < 0.01  # 比劫最忌 = -imbalance * 1.0
+
     def test_weak_day_master_fuyi_scores(self, analyzer):
-        """身弱时喜生扶，忌泄克"""
-        scores = analyzer._calculate_fuyi_scores(WuXing.WOOD, is_strong=False)
+        """身弱时喜生扶，忌泄克 - 生耗值失衡比例决定评分"""
+        # 身弱: beneficial(30) < harmful(70), imbalance = 0.4
+        weak_strength = DayMasterStrength(beneficial_value=30.0, harmful_value=70.0)
+        scores = analyzer._calculate_fuyi_scores(WuXing.WOOD, weak_strength)
 
         # 身弱木喜水（印）和木（比劫）
         assert scores[WuXing.WATER] > 0  # 印星
@@ -102,6 +110,10 @@ class TestFuyiScores:
         # 身弱木忌火（食伤）和土（财星）
         assert scores[WuXing.FIRE] < 0  # 食伤
         assert scores[WuXing.EARTH] < 0  # 财星
+
+        # 验证评分大小符合失衡比例 (imbalance = 0.4)
+        assert abs(scores[WuXing.WATER] - 0.4) < 0.01  # 印星最优 = imbalance * 1.0
+        assert abs(scores[WuXing.EARTH] + 0.4) < 0.01  # 财星最忌 = -imbalance * 1.0
 
 
 class TestIntegratedAnalysis:

@@ -176,77 +176,58 @@ class IntegratedYongShenAnalyzer:
     def _calculate_fuyi_scores(
         self,
         day_master_element: WuXing,
-        is_strong: bool,
-        wuxing_strength: WuXingStrength | None = None,
+        day_master_strength: DayMasterStrength,
     ) -> Dict[WuXing, float]:
         """
         Calculate 扶抑法 scores for each WuXing element.
 
-        Based on actual WuXing strength (生耗值):
-        - Strong day master: favor elements that drain/control (泄克)
-          → Elements with lower strength get higher scores (need more)
-        - Weak day master: favor elements that support/generate (生扶)
-          → Elements with lower strength get higher scores (need more)
+        Based on 生耗值 imbalance ratio:
+        - The imbalance ratio directly determines the score magnitude
+        - 身强(生>耗): need 泄克, imbalance = (生-耗)/(生+耗)
+        - 身弱(耗>生): need 生扶, imbalance = (耗-生)/(生+耗)
+
+        Example:
+            beneficial=70, harmful=30 → 身强, imbalance=0.4
+            → 泄克五行 +0.4, 生扶五行 -0.4
 
         Args:
             day_master_element: The day master's WuXing
-            is_strong: Whether day master is strong
-            wuxing_strength: Actual WuXing strength values for scoring
+            day_master_strength: Contains beneficial/harmful values
 
         Returns:
             Dict mapping each WuXing to its fuyi score
         """
         scores = {element: 0.0 for element in WuXing}
 
-        # Define beneficial (生扶) and harmful (耗泄克) elements
-        beneficial_elements = [
-            day_master_element.generated_by,  # 印星 - generates day master
-            day_master_element,                # 比劫 - same as day master
-        ]
-        harmful_elements = [
-            day_master_element.generates,      # 食伤 - day master generates (drains)
-            day_master_element.overcomes,      # 财星 - day master overcomes (consumes)
-            day_master_element.overcome_by,    # 官杀 - overcomes day master (controls)
-        ]
+        beneficial = day_master_strength.beneficial_value
+        harmful = day_master_strength.harmful_value
+        total = beneficial + harmful
 
-        if wuxing_strength:
-            # Use actual WuXing strength for scoring
-            values = wuxing_strength.adjusted_values
-            total = sum(values.values())
+        if total == 0:
+            return scores
 
-            if total > 0:
-                if is_strong:
-                    # 身强需要泄克：泄克五行力量越弱→越需要→评分越高
-                    for element in harmful_elements:
-                        ratio = values.get(element, 0) / total
-                        # Invert: lower ratio = higher need = higher score
-                        scores[element] = 1.0 - ratio
-                    for element in beneficial_elements:
-                        ratio = values.get(element, 0) / total
-                        # Negative: these are unfavorable
-                        scores[element] = -ratio
-                else:
-                    # 身弱需要生扶：生扶五行力量越弱→越需要→评分越高
-                    for element in beneficial_elements:
-                        ratio = values.get(element, 0) / total
-                        # Invert: lower ratio = higher need = higher score
-                        scores[element] = 1.0 - ratio
-                    for element in harmful_elements:
-                        ratio = values.get(element, 0) / total
-                        # Negative: these are unfavorable
-                        scores[element] = -ratio
+        # 计算失衡比例：生耗值差值 / 总值
+        # 这个比例直接决定评分的大小
+        imbalance = abs(beneficial - harmful) / total
+
+        if day_master_strength.is_strong:
+            # 身强：生扶过多，需要泄克来平衡
+            # 泄克五行获得正分，生扶五行获得负分
+            # 十神优先级：食伤泄秀 > 官杀制身 > 财星耗身
+            scores[day_master_element.generates] = imbalance * 1.0       # 食伤泄秀（最佳）
+            scores[day_master_element.overcome_by] = imbalance * 0.8     # 官杀制身
+            scores[day_master_element.overcomes] = imbalance * 0.6       # 财星耗身
+            scores[day_master_element.generated_by] = -imbalance * 0.8   # 印星生身（忌）
+            scores[day_master_element] = -imbalance * 1.0                # 比劫帮身（最忌）
         else:
-            # Fallback: simple binary scoring if no wuxing_strength provided
-            if is_strong:
-                for element in harmful_elements:
-                    scores[element] = 1.0
-                for element in beneficial_elements:
-                    scores[element] = -1.0
-            else:
-                for element in beneficial_elements:
-                    scores[element] = 1.0
-                for element in harmful_elements:
-                    scores[element] = -1.0
+            # 身弱：耗泄克过多，需要生扶来平衡
+            # 生扶五行获得正分，泄克五行获得负分
+            # 十神优先级：印星生身 > 比劫帮身
+            scores[day_master_element.generated_by] = imbalance * 1.0    # 印星生身（最佳）
+            scores[day_master_element] = imbalance * 0.8                 # 比劫帮身
+            scores[day_master_element.overcome_by] = -imbalance * 0.8    # 官杀克身（忌）
+            scores[day_master_element.generates] = -imbalance * 0.6      # 食伤泄身
+            scores[day_master_element.overcomes] = -imbalance * 1.0      # 财星耗身（最忌）
 
         return scores
 
@@ -371,11 +352,10 @@ class IntegratedYongShenAnalyzer:
         # Determine weights based on season and mode
         weights = self._get_weights(tiaohao_result.season_type)
 
-        # Calculate individual scores (扶抑基于实际五行力量)
+        # Calculate individual scores (扶抑基于生耗值失衡比例)
         fuyi_scores = self._calculate_fuyi_scores(
             day_master_element,
-            day_master_strength.is_strong,
-            wuxing_strength,
+            day_master_strength,
         )
         tiaohao_scores = self._calculate_tiaohao_scores(tiaohao_result)
         tongguan_scores = (
