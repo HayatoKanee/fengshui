@@ -40,6 +40,12 @@ from .branch_analysis import (
     SI_KU_BRANCHES,
     SI_KU_SET,
 )
+from .pattern_analysis import (
+    PatternCategory,
+    PatternType,
+    SpecialPattern,
+    PatternAnalysis,
+)
 
 __all__ = [
     # Elements
@@ -76,4 +82,9 @@ __all__ = [
     "BranchRelationsAnalysis",
     "SI_KU_BRANCHES",
     "SI_KU_SET",
+    # Pattern Analysis
+    "PatternCategory",
+    "PatternType",
+    "SpecialPattern",
+    "PatternAnalysis",
 ]
