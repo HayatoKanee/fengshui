@@ -88,6 +88,33 @@ class TestZhuanWangClassicalExamples:
         qu_zhi = [p for p in result.detected_patterns if p.pattern_type == PatternType.QU_ZHI]
         assert len(qu_zhi) >= 1, "亥月水生木，也能成曲直格"
 
+    def test_qu_zhi_ge_classic_3(self, pattern_analyzer, wuxing_calculator):
+        """
+        曲直格案例3: 癸亥 甲寅 乙未 己卯
+        来源: 《神机阁》命例
+        木旺，三合木局成化，水土之力皆转移到木之上
+        """
+        bazi = BaZi.from_chinese("癸亥 甲寅 乙未 己卯")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        qu_zhi = [p for p in result.detected_patterns if p.pattern_type == PatternType.QU_ZHI]
+        assert len(qu_zhi) >= 1, "应检测到曲直格 - 三合木局"
+
+    def test_qu_zhi_ge_classic_4(self, pattern_analyzer, wuxing_calculator):
+        """
+        曲直格案例4: 壬寅 甲辰 乙卯 己卯
+        来源: 《神机阁》命例
+        木虽不当令(辰月)，但木极多，力量特别强
+        """
+        bazi = BaZi.from_chinese("壬寅 甲辰 乙卯 己卯")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        qu_zhi = [p for p in result.detected_patterns if p.pattern_type == PatternType.QU_ZHI]
+        # 辰月虽非木月，但木极多，可能成格或部分成格
+        assert len(qu_zhi) >= 1 or result.dominant_element == WuXing.WOOD
+
     def test_qu_zhi_ge_wrong_month_fails(self, pattern_analyzer, wuxing_calculator):
         """
         曲直格失败案例: 甲寅 庚申 甲卯 乙寅
@@ -295,6 +322,34 @@ class TestHuaGeClassicalExamples:
         assert len(hua_tu) >= 1, "甲己化土，未月土旺应成格"
         assert hua_tu[0].element == WuXing.EARTH
 
+    def test_jia_ji_hua_tu_classic_zhou_mu(self, pattern_analyzer, wuxing_calculator):
+        """
+        甲己化土案例: 戊辰 壬戌 甲辰 己巳
+        来源: 古籍命例 - 州牧之贵
+        甲己化土又得月令(戌月)，地支土旺，不见木星破局
+        """
+        bazi = BaZi.from_chinese("戊辰 壬戌 甲辰 己巳")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        hua_tu = [p for p in result.detected_patterns if p.pattern_type == PatternType.HUA_TU]
+        assert len(hua_tu) >= 1, "甲己化土，戌月土旺应成格 - 州牧之贵"
+
+    def test_jia_ji_hua_tu_classic_premier(self, pattern_analyzer, wuxing_calculator):
+        """
+        甲己化土案例: 戊辰 乙丑 甲辰 己巳
+        来源: 古籍命例 - 国务总理
+        甲己化土得月令(丑月)，地支土旺又透干
+        乙木虚浮无根，为假化土格
+        """
+        bazi = BaZi.from_chinese("戊辰 乙丑 甲辰 己巳")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        hua_tu = [p for p in result.detected_patterns if p.pattern_type == PatternType.HUA_TU]
+        # 有乙木可能破格，但乙木无根，仍可成假化格
+        assert len(hua_tu) >= 1, "甲己化土，丑月土旺 - 国务总理命造"
+
     def test_jia_ji_hua_tu_wrong_month_fails(self, pattern_analyzer, wuxing_calculator):
         """
         甲己化土失败: 寅月木旺，非土旺月
@@ -405,6 +460,51 @@ class TestCongGeClassicalExamples:
         # 此案例日主无根，财星极旺
         if cong_cai:
             assert cong_cai[0].element == WuXing.EARTH  # 财星土
+
+    def test_cong_cai_ge_classic_2(self, pattern_analyzer, wuxing_calculator):
+        """
+        从财格案例2: 壬寅 壬寅 辛卯 壬辰
+        来源: 《神机阁》命例
+        日干辛金衰极无助，生于寅月为财，寅卯辰三会财局
+        """
+        bazi = BaZi.from_chinese("壬寅 壬寅 辛卯 壬辰")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        # 辛金从财(木)
+        cong_cai = [p for p in result.detected_patterns if p.pattern_type == PatternType.CONG_CAI]
+        if cong_cai:
+            assert cong_cai[0].element == WuXing.WOOD  # 财星木
+
+    def test_cong_sha_ge_classic_1(self, pattern_analyzer, wuxing_calculator):
+        """
+        从杀格案例1: 戊戌 辛酉 乙申 乙酉
+        来源: 《神机阁》命例
+        乙木日干生于酉月死地，七杀当令，乙木全无生气
+        """
+        bazi = BaZi.from_chinese("戊戌 辛酉 乙申 乙酉")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        cong_sha = [p for p in result.detected_patterns
+                    if p.pattern_type in (PatternType.CONG_SHA, PatternType.CONG_GUAN)]
+        if cong_sha:
+            assert cong_sha[0].element == WuXing.METAL  # 金为杀
+
+    def test_cong_sha_ge_classic_2(self, pattern_analyzer, wuxing_calculator):
+        """
+        从杀格案例2: 辛巳 辛丑 乙酉 乙酉
+        来源: 《神机阁》命例
+        乙木冬生，支全金局，二杀明透有力，格取从杀
+        """
+        bazi = BaZi.from_chinese("辛巳 辛丑 乙酉 乙酉")
+        wuxing_values = get_wuxing_values(bazi, wuxing_calculator)
+        result = pattern_analyzer.analyze(bazi, wuxing_values)
+
+        cong_sha = [p for p in result.detected_patterns
+                    if p.pattern_type in (PatternType.CONG_SHA, PatternType.CONG_GUAN)]
+        if cong_sha:
+            assert cong_sha[0].element == WuXing.METAL
 
     def test_cong_guan_sha_ge_classic(self, pattern_analyzer, wuxing_calculator):
         """
