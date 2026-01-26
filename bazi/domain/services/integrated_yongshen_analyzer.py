@@ -1,29 +1,55 @@
 """
 Integrated 用神 (Favorable Elements) analyzer service.
 
-Combines multiple traditional methods into a modern scoring system:
-1. 扶抑用神 - Support/Suppress based on day master strength
-2. 调候用神 - Climate adjustment based on season
+Combines three traditional methods into a modern scoring system:
+1. 扶抑用神 - Support/Suppress based on day master strength (50%)
+2. 调候用神 - Climate adjustment based on season (30%)
+3. 通关用神 - Mediation for element conflicts (20%)
+
+Based on traditional proportion: 扶抑占5分，调候占3分，通关占2分 (徐乐吾)
 
 Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
-from ..models import BaZi, WuXing, DayMasterStrength, FavorableElements
+from ..models import BaZi, WuXing, DayMasterStrength, FavorableElements, WuXingStrength
 from .tiaohao_analyzer import TiaoHouAnalyzer, TiaoHouResult, SeasonType
+from .tongguan_analyzer import TongGuanAnalyzer, TongGuanResult
+
+
+class AnalysisMode(Enum):
+    """Analysis mode/school of thought."""
+    BALANCED = "平衡派"      # Standard balanced approach
+    TIAOHAO_PRIORITY = "调候优先"  # Climate-first approach (穷通宝鉴 style)
 
 
 @dataclass(frozen=True)
 class WuXingScore:
     """Score for a WuXing element as potential 用神."""
     element: WuXing
-    fuyi_score: float = 0.0      # 扶抑法评分
-    tiaohao_score: float = 0.0   # 调候法评分
-    total_score: float = 0.0     # 综合评分
+    fuyi_score: float = 0.0       # 扶抑法评分
+    tiaohao_score: float = 0.0    # 调候法评分
+    tongguan_score: float = 0.0   # 通关法评分
+    total_score: float = 0.0      # 综合评分
     reasons: Tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class MethodWeights:
+    """Weights for each analysis method."""
+    fuyi: float      # 扶抑权重
+    tiaohao: float   # 调候权重
+    tongguan: float  # 通关权重
+
+    def __post_init__(self):
+        # Verify weights sum to 1.0
+        total = self.fuyi + self.tiaohao + self.tongguan
+        if abs(total - 1.0) > 0.01:
+            raise ValueError(f"Weights must sum to 1.0, got {total}")
 
 
 @dataclass(frozen=True)
@@ -41,49 +67,79 @@ class IntegratedYongShenResult:
     chou_shen: Optional[WuXing] # 仇神 - Hostile element
 
     # Analysis details
-    fuyi_weight: float          # 扶抑法权重
-    tiaohao_weight: float       # 调候法权重
+    weights: MethodWeights
     scores: Dict[WuXing, WuXingScore] = field(default_factory=dict)
 
     # Sub-results for transparency
     fuyi_result: Optional[FavorableElements] = None
     tiaohao_result: Optional[TiaoHouResult] = None
+    tongguan_result: Optional[TongGuanResult] = None
 
     # Analysis summary
+    mode: AnalysisMode = AnalysisMode.BALANCED
     method_used: str = ""       # 主要采用的方法
     notes: Tuple[str, ...] = () # 分析备注
+
+
+# 平衡派权重配置（默认）
+# 标准：扶抑 50% + 调候 30% + 通关 20%
+# 极端季节：扶抑 40% + 调候 40% + 通关 20%
+BALANCED_WEIGHTS = {
+    SeasonType.EXTREME_COLD: MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
+    SeasonType.EXTREME_HOT: MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
+    SeasonType.COLD: MethodWeights(fuyi=0.45, tiaohao=0.35, tongguan=0.20),
+    SeasonType.HOT: MethodWeights(fuyi=0.45, tiaohao=0.35, tongguan=0.20),
+    SeasonType.MODERATE: MethodWeights(fuyi=0.50, tiaohao=0.30, tongguan=0.20),
+}
+
+# 调候优先派权重配置（穷通宝鉴风格）
+# 标准：扶抑 40% + 调候 40% + 通关 20%
+# 极端季节：扶抑 30% + 调候 50% + 通关 20%
+TIAOHAO_PRIORITY_WEIGHTS = {
+    SeasonType.EXTREME_COLD: MethodWeights(fuyi=0.30, tiaohao=0.50, tongguan=0.20),
+    SeasonType.EXTREME_HOT: MethodWeights(fuyi=0.30, tiaohao=0.50, tongguan=0.20),
+    SeasonType.COLD: MethodWeights(fuyi=0.35, tiaohao=0.45, tongguan=0.20),
+    SeasonType.HOT: MethodWeights(fuyi=0.35, tiaohao=0.45, tongguan=0.20),
+    SeasonType.MODERATE: MethodWeights(fuyi=0.40, tiaohao=0.40, tongguan=0.20),
+}
 
 
 class IntegratedYongShenAnalyzer:
     """
     现代综合取用神分析器 - Modern integrated favorable elements analyzer.
 
-    Combines 扶抑用神 and 调候用神 using a weighted scoring system.
+    Combines 扶抑用神, 调候用神, and 通关用神 using a weighted scoring system.
 
-    Weighting strategy:
-    - Extreme seasons (子丑午未): 扶抑 40% + 调候 60%
-    - Moderate seasons: 扶抑 70% + 调候 30%
+    Default weights (平衡派):
+    - Standard: 扶抑 50% + 调候 30% + 通关 20%
+    - Extreme seasons: 扶抑 40% + 调候 40% + 通关 20%
+
+    Alternative (调候优先派):
+    - Standard: 扶抑 40% + 调候 40% + 通关 20%
+    - Extreme seasons: 扶抑 30% + 调候 50% + 通关 20%
     """
 
-    def __init__(self, tiaohao_analyzer: TiaoHouAnalyzer | None = None):
+    def __init__(
+        self,
+        mode: AnalysisMode = AnalysisMode.BALANCED,
+        tiaohao_analyzer: TiaoHouAnalyzer | None = None,
+        tongguan_analyzer: TongGuanAnalyzer | None = None,
+    ):
+        self._mode = mode
         self._tiaohao = tiaohao_analyzer or TiaoHouAnalyzer()
+        self._tongguan = tongguan_analyzer or TongGuanAnalyzer()
 
-    def _get_weights(self, season_type: SeasonType) -> Tuple[float, float]:
+    def _get_weights(self, season_type: SeasonType) -> MethodWeights:
         """
-        Get weights for 扶抑 and 调候 based on season intensity.
+        Get weights for each method based on season and analysis mode.
 
         Returns:
-            Tuple of (fuyi_weight, tiaohao_weight)
+            MethodWeights with fuyi, tiaohao, and tongguan weights
         """
-        if season_type in (SeasonType.EXTREME_COLD, SeasonType.EXTREME_HOT):
-            # 极端季节：调候优先
-            return (0.4, 0.6)
-        elif season_type in (SeasonType.COLD, SeasonType.HOT):
-            # 较冷/较热：平衡取用
-            return (0.5, 0.5)
+        if self._mode == AnalysisMode.TIAOHAO_PRIORITY:
+            return TIAOHAO_PRIORITY_WEIGHTS[season_type]
         else:
-            # 温和季节：扶抑为主
-            return (0.7, 0.3)
+            return BALANCED_WEIGHTS[season_type]
 
     def _calculate_fuyi_scores(
         self,
@@ -141,6 +197,23 @@ class IntegratedYongShenAnalyzer:
 
         return scores
 
+    def _calculate_tongguan_scores(
+        self,
+        tongguan_result: TongGuanResult,
+    ) -> Dict[WuXing, float]:
+        """
+        Calculate 通关法 scores for each WuXing element.
+
+        Based on detected element conflicts and their mediators.
+        """
+        scores = {element: 0.0 for element in WuXing}
+
+        # Use the mediator scores directly
+        for element, score in tongguan_result.recommended_mediators.items():
+            scores[element] = score
+
+        return scores
+
     def _determine_favorable_unfavorable(
         self,
         combined_scores: Dict[WuXing, float],
@@ -172,13 +245,15 @@ class IntegratedYongShenAnalyzer:
         self,
         bazi: BaZi,
         day_master_strength: DayMasterStrength,
+        wuxing_strength: WuXingStrength | None = None,
     ) -> IntegratedYongShenResult:
         """
-        Perform integrated 用神 analysis.
+        Perform integrated 用神 analysis using three methods.
 
         Args:
             bazi: The BaZi chart to analyze
             day_master_strength: Pre-calculated day master strength
+            wuxing_strength: Pre-calculated WuXing strength (optional, for 通关)
 
         Returns:
             IntegratedYongShenResult with final recommendations and detailed scoring
@@ -188,8 +263,13 @@ class IntegratedYongShenAnalyzer:
         # Get 调候分析
         tiaohao_result = self._tiaohao.analyze(bazi)
 
-        # Determine weights based on season
-        fuyi_weight, tiaohao_weight = self._get_weights(tiaohao_result.season_type)
+        # Get 通关分析 (if wuxing_strength provided)
+        tongguan_result = None
+        if wuxing_strength:
+            tongguan_result = self._tongguan.analyze(bazi, wuxing_strength)
+
+        # Determine weights based on season and mode
+        weights = self._get_weights(tiaohao_result.season_type)
 
         # Calculate individual scores
         fuyi_scores = self._calculate_fuyi_scores(
@@ -197,6 +277,11 @@ class IntegratedYongShenAnalyzer:
             day_master_strength.is_strong,
         )
         tiaohao_scores = self._calculate_tiaohao_scores(tiaohao_result)
+        tongguan_scores = (
+            self._calculate_tongguan_scores(tongguan_result)
+            if tongguan_result
+            else {element: 0.0 for element in WuXing}
+        )
 
         # Combine scores with weights
         combined_scores: Dict[WuXing, float] = {}
@@ -205,23 +290,32 @@ class IntegratedYongShenAnalyzer:
         for element in WuXing:
             fuyi = fuyi_scores.get(element, 0.0)
             tiaohao = tiaohao_scores.get(element, 0.0)
-            total = (fuyi * fuyi_weight) + (tiaohao * tiaohao_weight)
+            tongguan = tongguan_scores.get(element, 0.0)
+
+            total = (
+                (fuyi * weights.fuyi) +
+                (tiaohao * weights.tiaohao) +
+                (tongguan * weights.tongguan)
+            )
 
             combined_scores[element] = total
 
             # Build reasons
             reasons = []
             if fuyi > 0:
-                reasons.append(f"扶抑法喜 (+{fuyi:.1f})")
+                reasons.append(f"扶抑喜(+{fuyi:.1f})")
             elif fuyi < 0:
-                reasons.append(f"扶抑法忌 ({fuyi:.1f})")
+                reasons.append(f"扶抑忌({fuyi:.1f})")
             if tiaohao > 0:
-                reasons.append(f"调候法喜 (+{tiaohao:.1f})")
+                reasons.append(f"调候喜(+{tiaohao:.1f})")
+            if tongguan > 0:
+                reasons.append(f"通关喜(+{tongguan:.1f})")
 
             element_scores[element] = WuXingScore(
                 element=element,
                 fuyi_score=fuyi,
                 tiaohao_score=tiaohao,
+                tongguan_score=tongguan,
                 total_score=total,
                 reasons=tuple(reasons),
             )
@@ -236,15 +330,24 @@ class IntegratedYongShenAnalyzer:
         strength_desc = "身强" if day_master_strength.is_strong else "身弱"
         notes.append(f"日主{day_master_element.chinese}{strength_desc}")
         notes.append(f"季节：{tiaohao_result.season_type.value}")
-        notes.append(f"权重：扶抑{fuyi_weight:.0%}，调候{tiaohao_weight:.0%}")
+        notes.append(f"扶抑{weights.fuyi:.0%}+调候{weights.tiaohao:.0%}+通关{weights.tongguan:.0%}")
 
-        # Determine primary method
-        if tiaohao_weight >= 0.6:
-            method_used = "调候为主，扶抑为辅"
-        elif fuyi_weight >= 0.6:
-            method_used = "扶抑为主，调候为辅"
+        if tongguan_result and tongguan_result.has_conflict:
+            notes.append(f"相战：{tongguan_result.description}")
+
+        # Determine primary method description
+        method_parts = []
+        if weights.fuyi >= 0.5:
+            method_parts.append("扶抑为主")
+        elif weights.tiaohao >= 0.5:
+            method_parts.append("调候为主")
         else:
-            method_used = "扶抑调候兼顾"
+            method_parts.append("扶抑调候兼顾")
+
+        if tongguan_result and tongguan_result.has_conflict:
+            method_parts.append("兼通关")
+
+        method_used = "，".join(method_parts)
 
         # Build traditional FavorableElements for compatibility
         fuyi_result = FavorableElements(
@@ -259,11 +362,12 @@ class IntegratedYongShenAnalyzer:
             xi_shen=xi_shen,
             ji_shen=ji_shen,
             chou_shen=chou_shen,
-            fuyi_weight=fuyi_weight,
-            tiaohao_weight=tiaohao_weight,
+            weights=weights,
             scores=element_scores,
             fuyi_result=fuyi_result,
             tiaohao_result=tiaohao_result,
+            tongguan_result=tongguan_result,
+            mode=self._mode,
             method_used=method_used,
             notes=tuple(notes),
         )

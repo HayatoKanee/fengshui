@@ -12,10 +12,13 @@ from .sexagenary_calculator import SexagenaryCycleCalculator
 from .branch_analyzer import BranchAnalyzer
 from .pattern_analyzer import PatternAnalyzer
 from .tiaohao_analyzer import TiaoHouAnalyzer, TiaoHouResult, SeasonType
+from .tongguan_analyzer import TongGuanAnalyzer, TongGuanResult, ElementConflict
 from .integrated_yongshen_analyzer import (
     IntegratedYongShenAnalyzer,
     IntegratedYongShenResult,
     WuXingScore,
+    AnalysisMode,
+    MethodWeights,
 )
 
 __all__ = [
@@ -29,7 +32,12 @@ __all__ = [
     "TiaoHouAnalyzer",
     "TiaoHouResult",
     "SeasonType",
+    "TongGuanAnalyzer",
+    "TongGuanResult",
+    "ElementConflict",
     "IntegratedYongShenAnalyzer",
     "IntegratedYongShenResult",
     "WuXingScore",
+    "AnalysisMode",
+    "MethodWeights",
 ]
