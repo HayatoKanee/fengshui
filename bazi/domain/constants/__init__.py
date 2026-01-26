@@ -58,6 +58,31 @@ from .clashes import (
     is_wu_bu_yu_shi,
 )
 
+from .branch_relations import (
+    # 三合
+    SAN_HE_TRIOS,
+    SAN_HE_PAIRS,
+    get_san_he_element,
+    get_ban_he_element,
+    # 三会
+    SAN_HUI_TRIOS,
+    get_san_hui_element,
+    # 刑
+    XING_TRIOS,
+    XING_PAIRS,
+    ZI_XING,
+    is_xing,
+    is_zi_xing,
+    has_zi_xing,
+    get_san_xing_type,
+    # 害
+    HAI_PAIRS,
+    is_hai,
+    # 破
+    PO_PAIRS,
+    is_po,
+)
+
 from .shensha import (
     GUI_REN,
     TIAN_DE,
@@ -143,4 +168,22 @@ __all__ = [
     "GU_CHEN",
     "GUA_SU",
     "XUN_KONG",
+    # Branch Relations (三合、三会、刑、害、破)
+    "SAN_HE_TRIOS",
+    "SAN_HE_PAIRS",
+    "get_san_he_element",
+    "get_ban_he_element",
+    "SAN_HUI_TRIOS",
+    "get_san_hui_element",
+    "XING_TRIOS",
+    "XING_PAIRS",
+    "ZI_XING",
+    "is_xing",
+    "is_zi_xing",
+    "has_zi_xing",
+    "get_san_xing_type",
+    "HAI_PAIRS",
+    "is_hai",
+    "PO_PAIRS",
+    "is_po",
 ]
