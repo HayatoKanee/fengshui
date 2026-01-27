@@ -5,7 +5,7 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional, TYPE_CHECKING
 
 from ..models import (
     WuXing,
@@ -15,6 +15,12 @@ from ..models import (
     WuXingStrength,
 )
 from .wuxing_calculator import WuXingCalculator
+
+if TYPE_CHECKING:
+    from .integrated_yongshen_analyzer import (
+        IntegratedYongShenAnalyzer,
+        IntegratedYongShenResult,
+    )
 
 
 class DayMasterAnalyzer:
@@ -133,6 +139,7 @@ class DayMasterAnalyzer:
         self,
         bazi: BaZi,
         is_earth_dominant: bool = False,
+        use_integrated: bool = False,
     ) -> tuple[DayMasterStrength, FavorableElements, WuXingStrength]:
         """
         Perform complete Day Master analysis.
@@ -140,6 +147,7 @@ class DayMasterAnalyzer:
         Args:
             bazi: The BaZi chart to analyze
             is_earth_dominant: Whether we're in earth-dominant period
+            use_integrated: Whether to use integrated 扶抑+调候+通关 method
 
         Returns:
             Tuple of (strength, favorable_elements, wuxing_strength)
@@ -156,6 +164,82 @@ class DayMasterAnalyzer:
             harmful_value=harmful,
         )
 
-        favorable = self.determine_favorable_elements(bazi, dm_strength)
+        if use_integrated:
+            favorable = self.determine_favorable_elements_integrated(
+                bazi, dm_strength, wuxing_strength
+            )
+        else:
+            favorable = self.determine_favorable_elements(bazi, dm_strength)
 
         return (dm_strength, favorable, wuxing_strength)
+
+    def determine_favorable_elements_integrated(
+        self,
+        bazi: BaZi,
+        strength: DayMasterStrength,
+        wuxing_strength: WuXingStrength | None = None,
+    ) -> FavorableElements:
+        """
+        Determine favorable elements using integrated 扶抑+调候+通关 method.
+
+        This modern approach combines (平衡派 weights):
+        - 扶抑用神 50%: Based on day master strength (strong/weak)
+        - 调候用神 30%: Based on season (climate adjustment from《穷通宝鉴》)
+        - 通关用神 20%: Based on element conflicts
+
+        Extreme seasons adjust to 扶抑 40% + 调候 40% + 通关 20%.
+
+        Args:
+            bazi: The BaZi chart
+            strength: The Day Master strength analysis
+            wuxing_strength: Pre-calculated WuXing strength (for 通关 analysis)
+
+        Returns:
+            FavorableElements with integrated analysis
+        """
+        from .integrated_yongshen_analyzer import IntegratedYongShenAnalyzer
+
+        analyzer = IntegratedYongShenAnalyzer()
+        result = analyzer.analyze(bazi, strength, wuxing_strength)
+        return analyzer.to_favorable_elements(result)
+
+    def full_analysis_integrated(
+        self,
+        bazi: BaZi,
+        is_earth_dominant: bool = False,
+    ) -> tuple[DayMasterStrength, FavorableElements, WuXingStrength, "IntegratedYongShenResult"]:
+        """
+        Perform complete Day Master analysis with integrated 用神 method.
+
+        Uses three methods combined (平衡派):
+        - 扶抑用神 50%: Based on day master strength
+        - 调候用神 30%: Based on season
+        - 通关用神 20%: Based on element conflicts
+
+        Args:
+            bazi: The BaZi chart to analyze
+            is_earth_dominant: Whether we're in earth-dominant period
+
+        Returns:
+            Tuple of (strength, favorable_elements, wuxing_strength, integrated_result)
+        """
+        from .integrated_yongshen_analyzer import IntegratedYongShenAnalyzer
+
+        wuxing_strength = self._wuxing_calc.calculate_strength(bazi, is_earth_dominant)
+
+        beneficial, harmful = self.calculate_shenghao(
+            wuxing_strength.adjusted_values,
+            bazi.day_master_wuxing,
+        )
+
+        dm_strength = DayMasterStrength(
+            beneficial_value=beneficial,
+            harmful_value=harmful,
+        )
+
+        # Use integrated analyzer with wuxing_strength for 通关
+        integrated_analyzer = IntegratedYongShenAnalyzer()
+        integrated_result = integrated_analyzer.analyze(bazi, dm_strength, wuxing_strength)
+        favorable = integrated_analyzer.to_favorable_elements(integrated_result)
+
+        return (dm_strength, favorable, wuxing_strength, integrated_result)

@@ -9,6 +9,16 @@ from .shishen_calculator import ShiShenCalculator
 from .day_master_analyzer import DayMasterAnalyzer
 from .shensha_calculator import ShenShaCalculator
 from .sexagenary_calculator import SexagenaryCycleCalculator
+from .branch_analyzer import BranchAnalyzer
+from .pattern_analyzer import PatternAnalyzer
+from .tiaohao_analyzer import TiaoHouAnalyzer, TiaoHouResult, SeasonType
+from .tongguan_analyzer import TongGuanAnalyzer, TongGuanResult, ElementConflict
+from .integrated_yongshen_analyzer import (
+    IntegratedYongShenAnalyzer,
+    IntegratedYongShenResult,
+    WuXingScore,
+    MethodWeights,
+)
 
 __all__ = [
     "WuXingCalculator",
@@ -16,4 +26,16 @@ __all__ = [
     "DayMasterAnalyzer",
     "ShenShaCalculator",
     "SexagenaryCycleCalculator",
+    "BranchAnalyzer",
+    "PatternAnalyzer",
+    "TiaoHouAnalyzer",
+    "TiaoHouResult",
+    "SeasonType",
+    "TongGuanAnalyzer",
+    "TongGuanResult",
+    "ElementConflict",
+    "IntegratedYongShenAnalyzer",
+    "IntegratedYongShenResult",
+    "WuXingScore",
+    "MethodWeights",
 ]

@@ -33,6 +33,21 @@ from .analysis import (
     FavorableElements,
     BaZiAnalysis,
 )
+from .branch_analysis import (
+    RelationType,
+    BranchRelation,
+    BranchRelationsAnalysis,
+    SI_KU_BRANCHES,
+    SI_KU_SET,
+)
+from .pattern_analysis import (
+    PatternCategory,
+    PatternType,
+    SpecialPattern,
+    RegularPattern,
+    PatternAnalysis,
+    REGULAR_PATTERN_SHISHEN_MAP,
+)
 
 __all__ = [
     # Elements
@@ -63,4 +78,17 @@ __all__ = [
     "DayMasterStrength",
     "FavorableElements",
     "BaZiAnalysis",
+    # Branch Relations
+    "RelationType",
+    "BranchRelation",
+    "BranchRelationsAnalysis",
+    "SI_KU_BRANCHES",
+    "SI_KU_SET",
+    # Pattern Analysis
+    "PatternCategory",
+    "PatternType",
+    "SpecialPattern",
+    "RegularPattern",
+    "PatternAnalysis",
+    "REGULAR_PATTERN_SHISHEN_MAP",
 ]

@@ -224,6 +224,20 @@ def shensha_calculator():
     return ShenShaCalculator()
 
 
+@pytest.fixture
+def branch_analyzer():
+    """Get a branch analyzer instance."""
+    from bazi.domain.services import BranchAnalyzer
+    return BranchAnalyzer()
+
+
+@pytest.fixture
+def pattern_analyzer():
+    """Get a pattern analyzer instance."""
+    from bazi.domain.services import PatternAnalyzer
+    return PatternAnalyzer()
+
+
 # =============================================================================
 # Infrastructure Fixtures
 # =============================================================================

@@ -152,7 +152,7 @@ class ShenShaCalculator:
         self, month_branch: "EarthlyBranch", target: "HeavenlyStem | EarthlyBranch"
     ) -> bool:
         """Check if a stem or branch is Heavenly Virtue Combination."""
-        from ..constants.shensha_rules import TIAN_DE_HE
+        from ..constants.shensha import TIAN_DE_HE
         return (month_branch.chinese, target.chinese) in TIAN_DE_HE
 
     def is_yue_de(
@@ -161,6 +161,13 @@ class ShenShaCalculator:
         """Check if a stem is Monthly Virtue for this month."""
         from ..constants.shensha import YUE_DE
         return (month_branch.chinese, stem.chinese) in YUE_DE
+
+    def is_yue_de_he(
+        self, month_branch: "EarthlyBranch", stem: "HeavenlyStem"
+    ) -> bool:
+        """Check if a stem is Monthly Virtue Combination for this month."""
+        from ..constants.shensha import YUE_DE_HE
+        return (month_branch.chinese, stem.chinese) in YUE_DE_HE
 
     def is_wen_chang(
         self, day_stem: "HeavenlyStem", branch: "EarthlyBranch"

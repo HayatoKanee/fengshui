@@ -1,0 +1,159 @@
+<!-- 喜用神分析 -->
+{% if yongshen_analysis %}
+<div class="card bg-base-200">
+    <div class="card-body p-4">
+        <h3 class="card-title text-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            喜用神分析
+        </h3>
+
+        <!-- 分析条件 -->
+        <div class="bg-base-300 rounded-lg p-3 mb-4">
+            <div class="text-sm space-y-1">
+                {% for note in yongshen_analysis.notes %}
+                <p class="flex items-center gap-2">
+                    <span class="text-base-content/60">•</span>
+                    <span>{{ note }}</span>
+                </p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 调候说明 -->
+        {% if yongshen_analysis.tiaohao_desc %}
+        <div class="alert alert-info py-2 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-sm">调候：{{ yongshen_analysis.tiaohao_desc }}</span>
+        </div>
+        {% endif %}
+
+        <!-- 通关说明 -->
+        {% if yongshen_analysis.has_conflict %}
+        <div class="alert alert-warning py-2 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="text-sm">通关：{{ yongshen_analysis.conflict_desc }}</span>
+        </div>
+        {% endif %}
+
+        <!-- 五行评分表 -->
+        <div class="overflow-x-auto mb-4">
+            <table class="table table-sm table-zebra">
+                <thead>
+                    <tr>
+                        <th>五行</th>
+                        <th class="text-center">扶抑</th>
+                        <th class="text-center">调候</th>
+                        <th class="text-center">通关</th>
+                        <th class="text-center">总分</th>
+                        <th>评分图</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in yongshen_analysis.scores %}
+                    <tr>
+                        <td>
+                            <span class="font-semibold
+                                {% if score.element == yongshen_analysis.yong_shen %}text-success{% endif %}
+                                {% if score.element == yongshen_analysis.ji_shen %}text-error{% endif %}
+                            ">{{ score.element }}</span>
+                        </td>
+                        <td class="text-center {% if score.fuyi_score > 0 %}text-success{% elif score.fuyi_score < 0 %}text-error{% endif %}">
+                            {% if score.fuyi_score >= 0 %}+{% endif %}{{ score.fuyi_score|floatformat:1 }}
+                        </td>
+                        <td class="text-center {% if score.tiaohao_score > 0 %}text-success{% endif %}">
+                            {% if score.tiaohao_score > 0 %}+{% endif %}{{ score.tiaohao_score|floatformat:1 }}
+                        </td>
+                        <td class="text-center {% if score.tongguan_score > 0 %}text-success{% endif %}">
+                            {% if score.tongguan_score > 0 %}+{% endif %}{{ score.tongguan_score|floatformat:1 }}
+                        </td>
+                        <td class="text-center font-semibold {% if score.total_score > 0 %}text-success{% elif score.total_score < 0 %}text-error{% endif %}">
+                            {% if score.total_score >= 0 %}+{% endif %}{{ score.total_score|floatformat:2 }}
+                        </td>
+                        <td class="w-24">
+                            {% if score.total_score >= 0 %}
+                            <div class="flex items-center gap-1">
+                                <div class="w-full bg-base-300 rounded h-3 overflow-hidden">
+                                    <div class="bg-success h-3" style="width: calc({{ score.total_score }} * 100%)"></div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="flex items-center gap-1">
+                                <div class="w-full bg-base-300 rounded h-3 overflow-hidden">
+                                    <div class="bg-error h-3" style="width: calc({{ score.total_score }} * -100%)"></div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 结论 -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div class="stat bg-success/20 rounded-box p-3 text-center">
+                <div class="stat-title text-xs">用神</div>
+                <div class="stat-value text-lg text-success">{{ yongshen_analysis.yong_shen }}</div>
+                <div class="stat-desc text-xs">最需要</div>
+            </div>
+            <div class="stat bg-info/20 rounded-box p-3 text-center">
+                <div class="stat-title text-xs">喜神</div>
+                <div class="stat-value text-lg text-info">{{ yongshen_analysis.xi_shen }}</div>
+                <div class="stat-desc text-xs">生用神</div>
+            </div>
+            <div class="stat bg-base-300 rounded-box p-3 text-center">
+                <div class="stat-title text-xs">闲神</div>
+                <div class="stat-value text-lg">{{ yongshen_analysis.xian_shen }}</div>
+                <div class="stat-desc text-xs">中立</div>
+            </div>
+            <div class="stat bg-warning/20 rounded-box p-3 text-center">
+                <div class="stat-title text-xs">仇神</div>
+                <div class="stat-value text-lg text-warning">{{ yongshen_analysis.chou_shen }}</div>
+                <div class="stat-desc text-xs">生忌神</div>
+            </div>
+            <div class="stat bg-error/20 rounded-box p-3 text-center">
+                <div class="stat-title text-xs">忌神</div>
+                <div class="stat-value text-lg text-error">{{ yongshen_analysis.ji_shen }}</div>
+                <div class="stat-desc text-xs">克用神</div>
+            </div>
+        </div>
+
+        <!-- 调候用神天干（保留阴阳信息）-->
+        {% if yongshen_analysis.yongshen_stems %}
+        <div class="mt-4 p-3 bg-base-300 rounded-lg">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-sm font-medium">调候用神（天干）：</span>
+                {% for stem in yongshen_analysis.yongshen_stems %}
+                <span class="badge badge-success">{{ stem }}</span>
+                {% endfor %}
+            </div>
+            {% if yongshen_analysis.secondary_stems %}
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">次要用神：</span>
+                {% for stem in yongshen_analysis.secondary_stems %}
+                <span class="badge badge-ghost">{{ stem }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <p class="text-xs text-base-content/50 mt-2">《穷通宝鉴》：阴阳有别，用甲不可代乙</p>
+        </div>
+        {% endif %}
+
+        <!-- 权重说明 -->
+        <div class="mt-4 text-xs text-base-content/60">
+            <p>分析方法：{{ yongshen_analysis.method_used }}</p>
+            {% widthratio yongshen_analysis.weights.fuyi 1 100 as fuyi_pct %}
+            {% widthratio yongshen_analysis.weights.tiaohao 1 100 as tiaohao_pct %}
+            {% widthratio yongshen_analysis.weights.tongguan 1 100 as tongguan_pct %}
+            <p>权重配比：扶抑{{ fuyi_pct }}% + 调候{{ tiaohao_pct }}% + 通关{{ tongguan_pct }}%</p>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -311,3 +311,245 @@ class TestAccumulateWuXingValues:
         # Should have Wood from stems and Water from hidden stems
         assert result[WuXing.WOOD] > 0
         assert result[WuXing.WATER] > 0
+
+
+class TestBranchRelationMultipliers:
+    """Tests for branch relation effects on WuXing strength."""
+
+    @pytest.fixture
+    def calculator(self):
+        return WuXingCalculator()
+
+    def test_san_hui_doubles_element_strength(self, calculator):
+        """三会局应该让对应五行力量翻倍"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        # 基础五行力量
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 亥子丑三会北方水局
+        san_hui = BranchRelation(
+            relation_type=RelationType.SAN_HUI,
+            branches=('亥', '子', '丑'),
+            pillars=('年', '月', '日'),
+            element=WuXing.WATER,
+        )
+        analysis = BranchRelationsAnalysis(san_hui=[san_hui])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 水的力量应该翻倍
+        assert result[WuXing.WATER] == base_values[WuXing.WATER] * 2.0
+        # 其他五行不变
+        assert result[WuXing.WOOD] == base_values[WuXing.WOOD]
+
+    def test_san_he_increases_element_strength(self, calculator):
+        """三合局应该增加对应五行力量80%"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 申子辰三合水局
+        san_he = BranchRelation(
+            relation_type=RelationType.SAN_HE,
+            branches=('申', '子', '辰'),
+            pillars=('年', '月', '日'),
+            element=WuXing.WATER,
+        )
+        analysis = BranchRelationsAnalysis(san_he=[san_he])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 水的力量应该增加80%
+        assert result[WuXing.WATER] == base_values[WuXing.WATER] * 1.8
+
+    def test_chong_adjacent_reduces_both_elements(self, calculator):
+        """紧贴六冲应该让双方五行减弱30%"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 子午冲（月日紧贴）
+        chong = BranchRelation(
+            relation_type=RelationType.CHONG,
+            branches=('子', '午'),
+            pillars=('月', '日'),  # 紧贴
+            element=None,
+        )
+        analysis = BranchRelationsAnalysis(chong=[chong])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 子(水)和午(火)都应该减弱30%
+        assert result[WuXing.WATER] == base_values[WuXing.WATER] * 0.7
+        assert result[WuXing.FIRE] == base_values[WuXing.FIRE] * 0.7
+
+    def test_chong_distant_reduces_less(self, calculator):
+        """遥冲（年时）应该只减弱10%"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 子午冲（年时遥冲）
+        chong = BranchRelation(
+            relation_type=RelationType.CHONG,
+            branches=('子', '午'),
+            pillars=('年', '时'),  # 遥冲
+            element=None,
+        )
+        analysis = BranchRelationsAnalysis(chong=[chong])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 遥冲只减弱10%
+        assert result[WuXing.WATER] == base_values[WuXing.WATER] * 0.9
+        assert result[WuXing.FIRE] == base_values[WuXing.FIRE] * 0.9
+
+    def test_get_chong_multiplier_adjacent(self, calculator):
+        """紧贴冲返回0.7"""
+        assert calculator._get_chong_multiplier(('年', '月')) == 0.7
+        assert calculator._get_chong_multiplier(('月', '日')) == 0.7
+        assert calculator._get_chong_multiplier(('日', '时')) == 0.7
+
+    def test_get_chong_multiplier_separated(self, calculator):
+        """隔支冲返回0.8"""
+        assert calculator._get_chong_multiplier(('年', '日')) == 0.8
+        assert calculator._get_chong_multiplier(('月', '时')) == 0.8
+
+    def test_get_chong_multiplier_distant(self, calculator):
+        """遥冲返回0.9"""
+        assert calculator._get_chong_multiplier(('年', '时')) == 0.9
+
+    def test_liu_he_increases_element(self, calculator):
+        """六合应该增加化神五行30%"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 子丑合土
+        liu_he = BranchRelation(
+            relation_type=RelationType.LIU_HE,
+            branches=('子', '丑'),
+            pillars=('年', '月'),
+            element=WuXing.EARTH,
+        )
+        analysis = BranchRelationsAnalysis(liu_he=[liu_he])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 土增加30%
+        assert result[WuXing.EARTH] == base_values[WuXing.EARTH] * 1.3
+
+    def test_san_xing_reduces_all_involved(self, calculator):
+        """三刑应该让三方五行都减弱40%"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 寅巳申三刑
+        xing = BranchRelation(
+            relation_type=RelationType.WU_EN_XING,
+            branches=('寅', '巳', '申'),
+            pillars=('年', '月', '日'),
+            element=None,
+        )
+        analysis = BranchRelationsAnalysis(xing=[xing])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 寅(木)、巳(火)、申(金) 都减弱40%
+        assert result[WuXing.WOOD] == base_values[WuXing.WOOD] * 0.6
+        assert result[WuXing.FIRE] == base_values[WuXing.FIRE] * 0.6
+        assert result[WuXing.METAL] == base_values[WuXing.METAL] * 0.6
+
+    def test_san_hui_side_reduction(self, calculator):
+        """三会局时，中神增力，两侧五行减力"""
+        from bazi.domain.models.branch_analysis import (
+            BranchRelation,
+            BranchRelationsAnalysis,
+            RelationType,
+        )
+
+        base_values = {
+            WuXing.WOOD: 50.0,
+            WuXing.FIRE: 30.0,
+            WuXing.EARTH: 20.0,
+            WuXing.METAL: 25.0,
+            WuXing.WATER: 40.0,
+        }
+
+        # 寅卯辰会东方木
+        san_hui = BranchRelation(
+            relation_type=RelationType.SAN_HUI,
+            branches=('寅', '卯', '辰'),
+            pillars=('年', '月', '日'),
+            element=WuXing.WOOD,
+        )
+        analysis = BranchRelationsAnalysis(san_hui=[san_hui])
+
+        result = calculator.apply_branch_relations(base_values, analysis)
+
+        # 木(中神)增力2倍
+        assert result[WuXing.WOOD] == base_values[WuXing.WOOD] * 2.0
+        # 辰(土)减力30% - 寅卯都是木，只有辰是土
+        assert result[WuXing.EARTH] == base_values[WuXing.EARTH] * 0.7

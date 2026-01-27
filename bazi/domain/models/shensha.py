@@ -18,6 +18,7 @@ class ShenShaType(Enum):
     TIAN_DE = "天德"                # Heavenly Virtue
     TIAN_DE_HE = "天德合"           # Heavenly Virtue Combination
     YUE_DE = "月德"                 # Monthly Virtue
+    YUE_DE_HE = "月德合"            # Monthly Virtue Combination
     WEN_CHANG = "文昌"              # Literary Prosperity
     LU_SHEN = "禄神"                # Prosperity Spirit
     JIANG_XING = "将星"             # General Star
@@ -69,11 +70,13 @@ _BENEFICIAL_SHENSHA = {
     ShenShaType.TIAN_DE,
     ShenShaType.TIAN_DE_HE,
     ShenShaType.YUE_DE,
+    ShenShaType.YUE_DE_HE,
     ShenShaType.WEN_CHANG,
     ShenShaType.LU_SHEN,
     ShenShaType.JIANG_XING,
     ShenShaType.HUA_GAI,
     ShenShaType.SAN_QI,
+    ShenShaType.YI_MA,  # 驿马主变动迁移，多视为吉星
 }
 
 # ShenSha categories
@@ -82,6 +85,7 @@ _SHENSHA_CATEGORIES = {
     ShenShaType.TIAN_DE: "德星",
     ShenShaType.TIAN_DE_HE: "德星",
     ShenShaType.YUE_DE: "德星",
+    ShenShaType.YUE_DE_HE: "德星",
     ShenShaType.WEN_CHANG: "文星",
     ShenShaType.LU_SHEN: "禄星",
     ShenShaType.JIANG_XING: "将星",

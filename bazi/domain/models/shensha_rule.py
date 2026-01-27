@@ -16,12 +16,25 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
-    Callable,
     FrozenSet,
     List,
     Protocol,
     Tuple,
     runtime_checkable,
+)
+
+# Import extractors from shared module (DRY principle)
+from .shensha_extractors import (
+    RefExtractor,
+    TargetExtractor,
+    day_stem_extractor,
+    month_branch_extractor,
+    year_branch_extractor,
+    day_branch_extractor,
+    day_pillar_extractor,
+    branch_target,
+    stem_target,
+    stem_and_branch_target,
 )
 
 if TYPE_CHECKING:
@@ -69,59 +82,6 @@ class ShenShaRule(Protocol):
 
 
 # ============================================================
-# Extractor Types (Functional approach for flexibility)
-# ============================================================
-
-# Type aliases for extractors
-RefExtractor = Callable[["BaZi"], str]
-TargetExtractor = Callable[["Pillar"], List[Tuple[str, str]]]  # [(value, position_suffix)]
-
-
-# Pre-defined extractors (factory functions)
-def day_stem_extractor(bazi: "BaZi") -> str:
-    """Extract day stem (日干) as reference."""
-    return bazi.day_master.chinese
-
-
-def month_branch_extractor(bazi: "BaZi") -> str:
-    """Extract month branch (月支) as reference."""
-    return bazi.month_pillar.branch.chinese
-
-
-def year_branch_extractor(bazi: "BaZi") -> str:
-    """Extract year branch (年支) as reference."""
-    return bazi.year_pillar.branch.chinese
-
-
-def day_branch_extractor(bazi: "BaZi") -> str:
-    """Extract day branch (日支) as reference."""
-    return bazi.day_pillar.branch.chinese
-
-
-def day_pillar_extractor(bazi: "BaZi") -> str:
-    """Extract day pillar (日柱) as reference (for 空亡)."""
-    return bazi.day_pillar.chinese
-
-
-def branch_target(pillar: "Pillar") -> List[Tuple[str, str]]:
-    """Extract only branch as target."""
-    return [(pillar.branch.chinese, "branch")]
-
-
-def stem_target(pillar: "Pillar") -> List[Tuple[str, str]]:
-    """Extract only stem as target."""
-    return [(pillar.stem.chinese, "stem")]
-
-
-def stem_and_branch_target(pillar: "Pillar") -> List[Tuple[str, str]]:
-    """Extract both stem and branch as targets (for 天德 etc.)."""
-    return [
-        (pillar.stem.chinese, "stem"),
-        (pillar.branch.chinese, "branch"),
-    ]
-
-
-# ============================================================
 # Table-Driven Rule Implementation
 # ============================================================
 
@@ -131,7 +91,7 @@ class TableLookupRule:
     Generic table-driven ShenSha rule.
 
     Most ShenSha (90%+) can be expressed as simple table lookups:
-    - Extract a reference value from BaZi (e.g., day_stem)
+    - Extract reference value(s) from BaZi (e.g., day_stem, year_branch)
     - For each pillar, extract target value(s) (e.g., branch)
     - Check if (ref, target) exists in lookup table
 
@@ -141,27 +101,35 @@ class TableLookupRule:
     Attributes:
         type_name: ShenShaType enum name (string for lazy resolution)
         lookup_table: FrozenSet of (ref, target) tuples
-        ref_extractor: Function to extract reference from BaZi
+        ref_extractors: Tuple of functions to extract reference from BaZi
+                       (supports multiple, e.g., both year_branch and day_branch for 桃花)
         target_extractor: Function to extract target(s) from Pillar
         positions: Which pillar positions to check
-        also_use_day_branch: Also use day branch as secondary ref (for 桃花/劫煞)
-        exclude_ref_position: Exclude the position that matches ref source
+        exclude_positions: Positions to exclude (e.g., ("year",) for 驿马)
 
     Example:
         >>> rule = TableLookupRule(
         ...     type_name="TIAN_YI_GUI_REN",
         ...     lookup_table=frozenset([("甲", "丑"), ("甲", "未"), ...]),
-        ...     ref_extractor=day_stem_extractor,
+        ...     ref_extractors=(day_stem_extractor,),
         ...     target_extractor=branch_target,
+        ... )
+
+        # Multiple ref extractors (桃花同时用年支和日支)
+        >>> rule = TableLookupRule(
+        ...     type_name="TAO_HUA",
+        ...     lookup_table=TAO_HUA,
+        ...     ref_extractors=(year_branch_extractor, day_branch_extractor),
+        ...     target_extractor=branch_target,
+        ...     exclude_positions=("year",),
         ... )
     """
     type_name: str
     lookup_table: FrozenSet[Tuple[str, str]]
-    ref_extractor: RefExtractor
+    ref_extractors: Tuple[RefExtractor, ...]
     target_extractor: TargetExtractor
     positions: Tuple[str, ...] = ("year", "month", "day", "hour")
-    also_use_day_branch: bool = False
-    exclude_ref_position: str | None = None  # e.g., "year" for year-branch based rules
+    exclude_positions: Tuple[str, ...] = ()
 
     @property
     def shensha_type(self) -> "ShenShaType":
@@ -174,40 +142,25 @@ class TableLookupRule:
         from .shensha import ShenSha
 
         results: List[ShenSha] = []
-        ref_value = self.ref_extractor(bazi)
 
-        # Check each position
-        for pos_name in self.positions:
-            if pos_name == self.exclude_ref_position:
-                continue
+        # Iterate over all ref extractors
+        for ref_extractor in self.ref_extractors:
+            ref_value = ref_extractor(bazi)
 
-            pillar = self._get_pillar(bazi, pos_name)
-            targets = self.target_extractor(pillar)
-
-            for target_value, position_suffix in targets:
-                if (ref_value, target_value) in self.lookup_table:
-                    results.append(ShenSha(
-                        type=self.shensha_type,
-                        position=f"{pos_name}_{position_suffix}",
-                        triggered_by=ref_value,
-                    ))
-
-        # Secondary check with day branch (for rules like 桃花, 劫煞)
-        if self.also_use_day_branch:
-            day_ref = bazi.day_pillar.branch.chinese
+            # Check each position
             for pos_name in self.positions:
-                if pos_name == "day":  # Skip day pillar when using day branch as ref
+                if pos_name in self.exclude_positions:
                     continue
 
                 pillar = self._get_pillar(bazi, pos_name)
                 targets = self.target_extractor(pillar)
 
                 for target_value, position_suffix in targets:
-                    if (day_ref, target_value) in self.lookup_table:
+                    if (ref_value, target_value) in self.lookup_table:
                         new_shensha = ShenSha(
                             type=self.shensha_type,
                             position=f"{pos_name}_{position_suffix}",
-                            triggered_by=day_ref,
+                            triggered_by=ref_value,
                         )
                         # Avoid duplicates
                         if new_shensha not in results:
@@ -273,16 +226,23 @@ class SanQiRule:
     """
     三奇 (Three Wonders) rule.
 
-    三奇需要检查天干序列：
-    - 天上三奇：甲戊庚 顺序出现
-    - 人中三奇：壬癸辛 顺序出现
-    - 地下三奇：乙丙丁 顺序出现
+    三奇需要检查天干在连续三柱中顺序出现：
+    - 天上三奇：乙丙丁（年月日 或 月日时）
+    - 地上三奇：甲戊庚（年月日 或 月日时）
+    - 人中三奇：辛壬癸（年月日 或 月日时）
+
+    关键规则（参考《八字金书》《渊海子平》）：
+    1. 必须在连续三柱中顺序出现（年月日 或 月日时）
+    2. 顺序不可颠倒，否则不算三奇
+    3. 不可散落在四柱中（如年-X-日-时）
+
+    "凡三奇需要顺，有不依次者，亦得半力"
     """
     # 三组三奇
     san_qi_groups: Tuple[Tuple[str, str, str], ...] = (
-        ("甲", "戊", "庚"),  # 天上三奇
-        ("壬", "癸", "辛"),  # 人中三奇
-        ("乙", "丙", "丁"),  # 地下三奇
+        ("乙", "丙", "丁"),  # 天上三奇
+        ("甲", "戊", "庚"),  # 地上三奇
+        ("辛", "壬", "癸"),  # 人中三奇
     )
 
     @property
@@ -294,16 +254,19 @@ class SanQiRule:
         from .shensha import ShenSha
 
         # Get stems in order: year, month, day, hour
-        stems = [
+        stems = (
             bazi.year_pillar.stem.chinese,
             bazi.month_pillar.stem.chinese,
             bazi.day_pillar.stem.chinese,
             bazi.hour_pillar.stem.chinese,
-        ]
+        )
+
+        # 检查年月日 或 月日时 是否匹配三奇（必须连续三柱）
+        year_month_day = (stems[0], stems[1], stems[2])
+        month_day_hour = (stems[1], stems[2], stems[3])
 
         for group in self.san_qi_groups:
-            if self._check_sequence(stems, group):
-                # 三奇是整体格局，位置标记为 "chart"
+            if year_month_day == group or month_day_hour == group:
                 return [ShenSha(
                     type=self.shensha_type,
                     position="chart",
@@ -311,17 +274,6 @@ class SanQiRule:
                 )]
 
         return []
-
-    @staticmethod
-    def _check_sequence(stems: List[str], pattern: Tuple[str, str, str]) -> bool:
-        """Check if pattern appears in order within stems."""
-        pattern_idx = 0
-        for stem in stems:
-            if stem == pattern[pattern_idx]:
-                pattern_idx += 1
-                if pattern_idx == len(pattern):
-                    return True
-        return False
 
 
 # ============================================================
@@ -359,7 +311,25 @@ class ShenShaRuleRegistry:
 
     @classmethod
     def _initialize_default_rules(cls) -> None:
-        """Initialize default rules from constants."""
-        from ..constants.shensha_rules import create_all_rules
-        cls._rules = create_all_rules()
+        """Initialize default rules from Registry."""
+        from .shensha_registry import ShenShaRegistry, _XUN_KONG
+
+        rules: List[ShenShaRule] = []
+
+        # Generate table-based rules from Registry
+        for type_name, defn in ShenShaRegistry.get_table_based():
+            rules.append(TableLookupRule(
+                type_name=type_name,
+                lookup_table=defn.lookup_table,
+                ref_extractors=defn.ref_extractors,
+                target_extractor=defn.target_extractor,
+                positions=defn.positions,
+                exclude_positions=defn.exclude_positions,
+            ))
+
+        # Add special rules
+        rules.append(KongWangRule(xun_kong_table=_XUN_KONG))
+        rules.append(SanQiRule())
+
+        cls._rules = rules
         cls._initialized = True
