@@ -526,22 +526,24 @@ class TestRealWorldYongShenCases:
         top_3 = ranked[:3]
         assert WuXing.WATER in top_3, f"水应在前3名，实际：{[e.chinese for e in top_3]}"
 
-    def test_yao_ming_earth_weak_not_true_cong_ge(self, day_master_analyzer):
+    def test_yao_ming_jia_cong_er_ge_follows_metal(self, day_master_analyzer):
         """
         姚明八字：庚申 乙酉 戊子 壬戌 (1980年9月12日)
 
         戊土日主生酉月，金旺泄土，年月申酉金局更旺。
-        但是！戌中藏戊土(本气)，日主有根，不是真从格。
+        戌中藏戊土(本气0.50)，看似有根。
 
-        从传统命理看，这是"假从"(pseudo-从格)：
-        - 戌中戊土为日主根气
-        - 虽然金水很旺，但日主有根不可弃
+        但关键是：申酉戌三会金局！
+        - 申酉戌三会金局成立，戌"背土向金"
+        - 戌中戊土虽有，但被金局吸收，"虽有若无"
+        - 这是典型的"假从儿格"
 
-        因此应按普通身弱格局处理：
-        用神：火土（印比）
-        忌神：金水木
+        假从格取用神原则：
+        - 顺势而从，以所从之神为用
+        - 从儿格（食伤格）以金（食伤）为用
+        - 喜金水，忌火土（印比会破格）
 
-        来源：经典命理分析
+        来源：《滴天髓》《子平真诠》假从格论述
         """
         bazi = BaZi.from_chinese("庚申乙酉戊子壬戌")
         strength, favorable, wuxing, result = day_master_analyzer.full_analysis_integrated(bazi)
@@ -551,26 +553,31 @@ class TestRealWorldYongShenCases:
         print(f"姚明八字：身{'强' if strength.is_strong else '弱'}")
         print(f"生耗值：beneficial={strength.beneficial_value:.1f}, harmful={strength.harmful_value:.1f}")
 
-        # 检查格局分析
-        if result.pattern_result:
-            print(f"格局分析：")
-            print(f"  日主强度比例: {result.pattern_result.day_master_strength:.2%}")
-            if result.pattern_result.primary_pattern:
-                print(f"  主要格局: {result.pattern_result.primary_pattern.pattern_type.value}")
-            else:
-                print(f"  主要格局: 无特殊格局（扶抑格）")
-            if result.pattern_result.regular_pattern:
-                print(f"  正格: {result.pattern_result.regular_pattern.pattern_type.value}")
+        # 检查格局分析 - 应该检测到假从儿格
+        assert result.pattern_result is not None, "应该有格局分析结果"
+        print(f"格局分析：")
+        print(f"  日主强度比例: {result.pattern_result.day_master_strength:.2%}")
+
+        pattern = result.pattern_result.primary_pattern
+        assert pattern is not None, "应该检测到特殊格局"
+        print(f"  主要格局: {pattern.pattern_type.value}")
+        print(f"  格局描述: {pattern.description}")
+
+        # 应该是从儿格(假从)
+        assert "从儿格" in pattern.pattern_type.value, "应该是从儿格"
+        assert "假从" in pattern.description, "应该是假从格"
+
+        if result.pattern_result.regular_pattern:
+            print(f"  正格: {result.pattern_result.regular_pattern.pattern_type.value}")
 
         ranked = result.yongshen_ranked
         print(f"姚明八字评分排名：{[e.chinese for e in ranked]}")
 
-        # 身弱戊土，应喜火土（印比）
-        # 注意：因为有根不是从格，所以用扶抑法
+        # 假从儿格，应喜金水（顺势而从）
         top_2 = ranked[:2]
-        helpful = {WuXing.FIRE, WuXing.EARTH}
-        assert all(e in helpful for e in top_2), f"身弱戊土有根，应喜火土，实际：{[e.chinese for e in top_2]}"
-        print(f"前两喜：{[e.chinese for e in top_2]}（正确，身弱喜印比）")
+        following = {WuXing.METAL, WuXing.WATER}
+        assert all(e in following for e in top_2), f"假从儿格应喜金水，实际：{[e.chinese for e in top_2]}"
+        print(f"前两喜：{[e.chinese for e in top_2]}（正确，假从儿格顺势从金水）")
 
     def test_weak_water_likes_metal_water(self, day_master_analyzer):
         """

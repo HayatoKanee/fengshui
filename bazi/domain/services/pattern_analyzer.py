@@ -10,7 +10,8 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 from ..models.pattern_analysis import (
     PatternCategory,
@@ -23,6 +24,7 @@ from ..models.pattern_analysis import (
     REGULAR_PATTERN_SHISHEN_MAP,
 )
 from ..models.elements import WuXing
+from .branch_analyzer import BranchAnalyzer
 
 if TYPE_CHECKING:
     from ..models import BaZi, HeavenlyStem, EarthlyBranch
@@ -55,6 +57,30 @@ SHISHEN_CATEGORIES = {
     'support': ['正印', '偏印'],
     'peer': ['比肩', '劫财'],
 }
+
+# === 从格检测阈值常量 ===
+# 日主强度阈值
+DAY_MASTER_RATIO_ZHEN_CONG = 0.15  # 真从格要求日主比例 < 15%
+DAY_MASTER_RATIO_JIA_CONG = 0.25  # 假从格允许日主比例 < 25%（因吸收的根仍计入）
+
+# 藏干权重阈值
+HIDDEN_STEM_MIN_RATIO = 0.30  # 藏干需达到30%以上才算有效根
+
+# 格局强度基准分
+CONG_GE_BASE_STRENGTH = 0.50  # 从格基础强度
+CONG_GE_DANGLING_BONUS = 0.25  # 当令加分
+CONG_GE_BRANCH_BONUS = 0.15  # 地支多个同元素加分
+CONG_GE_NO_BREAKER_BONUS = 0.10  # 无破格元素加分
+
+# 破格阈值
+CONG_GE_BREAKER_RATIO = 0.10  # 破格元素占比超过10%可能破格
+CONG_GE_BREAKER_STRONG_RATIO = 0.15  # 强破格阈值
+
+# 假从格强度折扣
+JIA_CONG_STRENGTH_MULTIPLIER = 0.90  # 假从格强度为真从格的90%
+
+# 从势格阈值
+CONG_SHI_COMBINED_RATIO = 0.70  # 财官食伤合计占比需超过70%
 
 
 class PatternAnalyzer:
@@ -114,7 +140,9 @@ class PatternAnalyzer:
         detected.extend(zhuan_wang)
 
         # 3. Check for 从格 (Following patterns) - only if day master is weak
-        if day_master_ratio < 0.15:  # Day master very weak
+        # 真从格: day_master_ratio < DAY_MASTER_RATIO_ZHEN_CONG
+        # 假从格: day_master_ratio < DAY_MASTER_RATIO_JIA_CONG (roots absorbed by combinations)
+        if day_master_ratio < DAY_MASTER_RATIO_JIA_CONG:
             cong_patterns = self._detect_cong_ge(bazi, wuxing_values, day_master_ratio)
             detected.extend(cong_patterns)
 
@@ -414,6 +442,11 @@ class PatternAnalyzer:
         2. 天干无比劫印绶帮身
         3. 所从之神当令或成势
 
+        **假从格 (Pseudo-Following):**
+        - 日主有微弱根气，但根气被三会局/三合局吸收
+        - 例：戌中有戊土，但申酉戌三会金局使戌"背土向金"
+        - 假从格与真从格用神相同，顺势而从
+
         **从财格:** 日主无根，财星当令成势，无印绶夺财
         **从官格:** 日主无根，正官当令成势，无伤官克官
         **从杀格:** 日主无根，七杀当令成势，无食神制杀(若有可论从杀)
@@ -432,6 +465,21 @@ class PatternAnalyzer:
         peer_element = day_master_element  # 比劫
         support_element = day_master_element.generated_by  # 印绶
 
+        # First, detect 三会局/三合局 to check for absorbed roots
+        from .branch_analyzer import BranchAnalyzer
+        branch_analyzer = BranchAnalyzer()
+        branch_result = branch_analyzer.analyze(bazi)
+
+        # Find branches absorbed by combinations (三会/三合)
+        absorbed_branches: Set[str] = set()
+        absorbed_element: Optional[WuXing] = None
+
+        for combo in branch_result.san_hui + branch_result.san_he:
+            if combo.element and combo.element != day_master_element:
+                # This combination converts branches to a different element
+                absorbed_branches.update(combo.branches)
+                absorbed_element = combo.element
+
         # Check stems for 比劫/印绶
         stems_helping = []
         for pillar in bazi.pillars:
@@ -442,25 +490,58 @@ class PatternAnalyzer:
                 elif stem_element == support_element:
                     stems_helping.append(f"{pillar.stem.chinese}(印)")
 
-        # Check hidden stems for roots
+        # Check hidden stems for roots (but consider absorbed branches)
         hidden_roots = []
+        absorbed_roots = []  # Roots that are absorbed by combinations
+
         for pillar in bazi.pillars:
+            branch_chinese = pillar.branch.chinese
             for hidden_stem, ratio in pillar.hidden_stems.items():
-                if ratio >= 0.3:  # Only count significant hidden stems (本气或中气)
+                if ratio >= HIDDEN_STEM_MIN_RATIO:  # Only count significant hidden stems (本气或中气)
                     if hidden_stem.wuxing == peer_element:
-                        hidden_roots.append(f"{pillar.branch.chinese}藏{hidden_stem.chinese}(比劫)")
+                        if branch_chinese in absorbed_branches:
+                            # Root is absorbed by combination
+                            absorbed_roots.append(
+                                f"{branch_chinese}藏{hidden_stem.chinese}(比劫)被{absorbed_element.chinese if absorbed_element else ''}局吸收"
+                            )
+                        else:
+                            hidden_roots.append(f"{branch_chinese}藏{hidden_stem.chinese}(比劫)")
                     elif hidden_stem.wuxing == support_element:
-                        hidden_roots.append(f"{pillar.branch.chinese}藏{hidden_stem.chinese}(印)")
+                        if branch_chinese in absorbed_branches:
+                            absorbed_roots.append(
+                                f"{branch_chinese}藏{hidden_stem.chinese}(印)被{absorbed_element.chinese if absorbed_element else ''}局吸收"
+                            )
+                        else:
+                            hidden_roots.append(f"{branch_chinese}藏{hidden_stem.chinese}(印)")
 
         has_stem_help = len(stems_helping) > 0
-        has_branch_root = len(hidden_roots) > 0
+        has_branch_root = len(hidden_roots) > 0  # Only count non-absorbed roots
+        has_absorbed_root = len(absorbed_roots) > 0  # Has roots but they're absorbed
 
-        # If day master has roots, not 从格
+        # Determine if this is 真从格 or 假从格
+        is_jia_cong = False  # 假从格
+
+        # If day master has non-absorbed roots, not 从格
         if has_stem_help or has_branch_root:
             return patterns
 
+        # If roots exist but are absorbed by combinations, this is 假从格
+        if has_absorbed_root:
+            is_jia_cong = True
+            # 假从格 allows higher day_master_ratio since absorbed roots
+            # still contribute to wuxing values
+            if day_master_ratio >= DAY_MASTER_RATIO_JIA_CONG:
+                return patterns
+        else:
+            # 真从格 requires very weak day master
+            if day_master_ratio >= DAY_MASTER_RATIO_ZHEN_CONG:
+                return patterns
+
         # === Step 2: Now check each type of 从格 ===
-        base_conditions = ["日主无根(地支无比劫印绶本气根)"]
+        if is_jia_cong:
+            base_conditions = [f"假从格：{', '.join(absorbed_roots)}"]
+        else:
+            base_conditions = ["日主无根(地支无比劫印绶本气根)"]
 
         # Get month branch element for 当令 check
         month_element = ZHI_MAIN_WUXING.get(month_branch)
@@ -475,30 +556,33 @@ class PatternAnalyzer:
         if wealth_in_command or (wealth_branches >= 2 and wealth_stems >= 1):
             conditions_met = base_conditions.copy()
             conditions_failed = []
-            strength = 0.5
+            strength = CONG_GE_BASE_STRENGTH
 
             if wealth_in_command:
                 conditions_met.append(f"财星{wealth_element.value}当令(月支{month_branch})")
-                strength += 0.25
+                strength += CONG_GE_DANGLING_BONUS
             if wealth_branches >= 2:
                 conditions_met.append(f"地支有{wealth_branches}个财星{wealth_element.value}支")
-                strength += 0.15
+                strength += CONG_GE_BRANCH_BONUS
 
             # Check for 印绶 breaking the pattern
-            if wuxing_values.get(support_element, 0) / total > 0.1 if total > 0 else False:
+            support_ratio = wuxing_values.get(support_element, 0) / total if total > 0 else 0
+            if support_ratio > CONG_GE_BREAKER_RATIO:
                 conditions_failed.append(f"有印星{support_element.value}夺财，恐不纯")
-                strength -= 0.15
+                strength -= CONG_GE_BRANCH_BONUS
             else:
                 conditions_met.append(f"无印星{support_element.value}夺财")
-                strength += 0.10
+                strength += CONG_GE_NO_BREAKER_BONUS
 
             if not conditions_failed:
+                desc = "假从财格，以财为用" if is_jia_cong else "弃命从财，以财为用"
+                strength_multiplier = JIA_CONG_STRENGTH_MULTIPLIER if is_jia_cong else 1.0
                 patterns.append(SpecialPattern(
                     pattern_type=PatternType.CONG_CAI,
                     category=PatternCategory.CONG_GE,
                     element=wealth_element,
-                    strength=min(max(strength, 0.0), 1.0),
-                    description="弃命从财，以财为用",
+                    strength=min(max(strength, 0.0), 1.0) * strength_multiplier,
+                    description=desc,
                     conditions_met=conditions_met,
                     conditions_failed=conditions_failed,
                 ))
@@ -513,14 +597,14 @@ class PatternAnalyzer:
         if authority_in_command or (authority_branches >= 2 and authority_stems >= 1):
             conditions_met = base_conditions.copy()
             conditions_failed = []
-            strength = 0.5
+            strength = CONG_GE_BASE_STRENGTH
 
             if authority_in_command:
                 conditions_met.append(f"官杀{authority_element.value}当令(月支{month_branch})")
-                strength += 0.25
+                strength += CONG_GE_DANGLING_BONUS
             if authority_branches >= 2:
                 conditions_met.append(f"地支有{authority_branches}个官杀{authority_element.value}支")
-                strength += 0.15
+                strength += CONG_GE_BRANCH_BONUS
 
             # Determine 从官 vs 从杀 based on stem yin/yang
             # 正官 = 异性克我, 七杀 = 同性克我
@@ -528,12 +612,12 @@ class PatternAnalyzer:
             output_ratio = wuxing_values.get(output_element, 0) / total if total > 0 else 0
 
             # Check for 食伤 制杀
-            if output_ratio > 0.15:
+            if output_ratio > CONG_GE_BREAKER_STRONG_RATIO:
                 conditions_failed.append(f"有食伤{output_element.value}制杀，难成从格")
                 strength -= 0.2
             else:
                 conditions_met.append(f"无食伤{output_element.value}制克")
-                strength += 0.10
+                strength += CONG_GE_NO_BREAKER_BONUS
 
             if not conditions_failed:
                 # Determine 从官 vs 从杀 by checking stems
@@ -546,23 +630,26 @@ class PatternAnalyzer:
                     for p in bazi.pillars
                 )
 
+                strength_multiplier = JIA_CONG_STRENGTH_MULTIPLIER if is_jia_cong else 1.0
                 if has_qisha and not has_zhenguan:
+                    desc = "假从杀格，以杀为用" if is_jia_cong else "弃命从杀，以杀为用"
                     patterns.append(SpecialPattern(
                         pattern_type=PatternType.CONG_SHA,
                         category=PatternCategory.CONG_GE,
                         element=authority_element,
-                        strength=min(max(strength, 0.0), 1.0),
-                        description="弃命从杀，以杀为用",
+                        strength=min(max(strength, 0.0), 1.0) * strength_multiplier,
+                        description=desc,
                         conditions_met=conditions_met,
                         conditions_failed=conditions_failed,
                     ))
                 else:
+                    desc = "假从官格，以官为用" if is_jia_cong else "弃命从官，以官为用"
                     patterns.append(SpecialPattern(
                         pattern_type=PatternType.CONG_GUAN,
                         category=PatternCategory.CONG_GE,
                         element=authority_element,
-                        strength=min(max(strength, 0.0), 1.0),
-                        description="弃命从官，以官为用",
+                        strength=min(max(strength, 0.0), 1.0) * strength_multiplier,
+                        description=desc,
                         conditions_met=conditions_met,
                         conditions_failed=conditions_failed,
                     ))
@@ -577,31 +664,33 @@ class PatternAnalyzer:
         if output_in_command or (output_branches >= 2 and output_stems >= 1):
             conditions_met = base_conditions.copy()
             conditions_failed = []
-            strength = 0.5
+            strength = CONG_GE_BASE_STRENGTH
 
             if output_in_command:
                 conditions_met.append(f"食伤{output_element.value}当令(月支{month_branch})")
-                strength += 0.25
+                strength += CONG_GE_DANGLING_BONUS
             if output_branches >= 2:
                 conditions_met.append(f"地支有{output_branches}个食伤{output_element.value}支")
-                strength += 0.15
+                strength += CONG_GE_BRANCH_BONUS
 
             # Check for 枭印 夺食
             support_ratio = wuxing_values.get(support_element, 0) / total if total > 0 else 0
-            if support_ratio > 0.1:
+            if support_ratio > CONG_GE_BREAKER_RATIO:
                 conditions_failed.append(f"有枭印{support_element.value}夺食，破格")
                 strength -= 0.2
             else:
                 conditions_met.append(f"无枭印{support_element.value}夺食")
-                strength += 0.10
+                strength += CONG_GE_NO_BREAKER_BONUS
 
             if not conditions_failed:
+                desc = "假从儿格，以食伤为用" if is_jia_cong else "从儿格，以食伤为用"
+                strength_multiplier = JIA_CONG_STRENGTH_MULTIPLIER if is_jia_cong else 1.0
                 patterns.append(SpecialPattern(
                     pattern_type=PatternType.CONG_ER,
                     category=PatternCategory.CONG_GE,
                     element=output_element,
-                    strength=min(max(strength, 0.0), 1.0),
-                    description="从儿格，以食伤为用",
+                    strength=min(max(strength, 0.0), 1.0) * strength_multiplier,
+                    description=desc,
                     conditions_met=conditions_met,
                     conditions_failed=conditions_failed,
                 ))
@@ -615,19 +704,22 @@ class PatternAnalyzer:
 
             combined_ratio = (wealth_v + authority_v + output_v) / total if total > 0 else 0
 
-            # 从势格: 财官食伤混杂但势强 (占比超过70%)
-            if combined_ratio >= 0.7:
+            # 从势格: 财官食伤混杂但势强
+            if combined_ratio >= CONG_SHI_COMBINED_RATIO:
                 dominant = max(
                     [(wealth_element, wealth_v), (authority_element, authority_v), (output_element, output_v)],
                     key=lambda x: x[1]
                 )[0]
 
+                desc = "假从势格，财官食伤混杂成势" if is_jia_cong else "从势格，财官食伤混杂成势"
+                strength_multiplier = JIA_CONG_STRENGTH_MULTIPLIER if is_jia_cong else 1.0
+                base_strength = CONG_GE_BASE_STRENGTH + (combined_ratio - CONG_SHI_COMBINED_RATIO)
                 patterns.append(SpecialPattern(
                     pattern_type=PatternType.CONG_SHI,
                     category=PatternCategory.CONG_GE,
                     element=dominant,
-                    strength=min(0.5 + (combined_ratio - 0.7), 1.0),
-                    description="从势格，财官食伤混杂成势",
+                    strength=min(base_strength, 1.0) * strength_multiplier,
+                    description=desc,
                     conditions_met=base_conditions + [f"财官食伤合占{combined_ratio:.0%}，势强"],
                     conditions_failed=[],
                 ))
