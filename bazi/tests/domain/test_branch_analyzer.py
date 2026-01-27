@@ -249,8 +249,8 @@ class TestBranchAnalyzerProperties:
         analyzer = BranchAnalyzer()
         result = analyzer.analyze(bazi)
 
-        # 子丑合 + 寅亥合 = 2
-        assert result.harmony_count == 2
+        # 子丑合 + 寅亥合 + 丑亥子三会水局 = 3
+        assert result.harmony_count == 3
 
     def test_conflict_count(self):
         """conflict_count should sum all conflicts."""
