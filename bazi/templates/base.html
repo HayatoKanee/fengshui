@@ -15,6 +15,9 @@
     <!-- FOUC Prevention: Hide body until CSS loads -->
     <style>body { visibility: hidden; opacity: 0; }</style>
 
+    <!-- Critical CSS: Alpine.js x-cloak (MUST be inline, before Alpine loads) -->
+    <style>[x-cloak] { display: none !important; }</style>
+
     <!-- Vite Assets (Tailwind CSS + HTMX + Alpine.js + React Islands) -->
     {% vite_hmr_client %}
     {% vite_asset 'src/styles.css' %}

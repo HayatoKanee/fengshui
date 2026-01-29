@@ -413,3 +413,5 @@ static/dist/css/
 static/dist/assets/
 static/dist/manifest.json
 !static/dist/.gitkeep
+
+references/

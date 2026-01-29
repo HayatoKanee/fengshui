@@ -192,6 +192,7 @@ Alpine.data('dropdown', () => ({
 Alpine.data('baziSaveComponent', () => ({
   saved: false,
   saving: false,
+  saveName: '',  // Name input for saving profile
   birthData: null as {
     name: string;
     birth_year: number;
@@ -265,27 +266,29 @@ function getCookie(name: string): string | null {
 
 // Start Alpine when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
-  // Register profile store BEFORE Alpine.start()
+  // Register profile store with INSTANT localStorage cache
+  // Data is available synchronously - no waiting!
   registerProfileStore();
 
   // Initialize theme
   const themeStore = Alpine.store('theme') as { init: () => void };
   themeStore.init();
 
-  // Start Alpine FIRST (critical for page functionality)
+  // Start Alpine IMMEDIATELY - localStorage cache provides instant data
   Alpine.start();
-  console.log('Alpine.js initialized');
+  console.log('Alpine.js initialized with cached profiles');
 
-  // Initialize profile store (runs silent migration if authenticated)
+  // Background: Sync with IndexedDB (source of truth) and run migration
+  // This happens AFTER Alpine has already rendered with cached data
   try {
     const profileStore = getProfileStore();
     await profileStore.init();
-    console.log('Profile store initialized');
+    console.log('Profile store synced with IndexedDB');
   } catch (error) {
-    console.warn('Profile store initialization failed:', error);
+    console.warn('Profile store sync failed:', error);
   }
 
-  // Register React Island components (non-blocking, loaded after Alpine)
+  // Register React Island components (non-blocking)
   try {
     const { registerAllIslands } = await import('./islands/registry');
     registerAllIslands();
@@ -295,7 +298,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   console.log('FengShui Frontend initialized');
-  console.log('Stack: Vite + TypeScript + HTMX + Alpine.js + React Islands');
 });
 
 // Export for potential module usage

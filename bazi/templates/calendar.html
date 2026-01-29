@@ -28,7 +28,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
-                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64 max-h-60 overflow-y-auto">
+                <ul tabindex="0" class="dropdown-content z-[100] menu p-2 shadow bg-base-100 rounded-box w-64 max-h-60 overflow-y-auto">
                     <template x-if="profiles.length === 0">
                         <li class="menu-title text-base-content/50">
                             <a href="{% url 'profiles' %}">暂无资料，点击添加</a>
@@ -286,20 +286,31 @@ function calendarApp() {
         },
 
         async loadProfiles() {
-            // Get profiles from Alpine store
-            const store = Alpine.store('profiles');
-            if (store) {
-                // Wait for store to initialize if needed
-                if (store.loading) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-                this.profiles = store.profiles || [];
+            // Read directly from localStorage cache (same source as profile store)
+            // This is synchronous and doesn't depend on Alpine store timing
+            const CACHE_KEY = 'profiles_cache';
+            let cachedProfiles = [];
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                cachedProfiles = cached ? JSON.parse(cached) : [];
+            } catch (e) {
+                console.warn('Failed to read profiles cache:', e);
+            }
 
-                // Select default profile
-                const defaultProfile = this.profiles.find(p => p.is_default) || this.profiles[0];
-                if (defaultProfile) {
-                    this.selectProfile(defaultProfile);
+            // Fallback: try Alpine store if localStorage is empty
+            if (cachedProfiles.length === 0) {
+                const store = Alpine.store('profiles');
+                if (store && store.profiles) {
+                    cachedProfiles = store.profiles;
                 }
+            }
+
+            this.profiles = cachedProfiles;
+
+            // Select default profile (handle both boolean and 0/1 formats)
+            const defaultProfile = this.profiles.find(p => p.is_default === true || p.is_default === 1) || this.profiles[0];
+            if (defaultProfile) {
+                this.selectProfile(defaultProfile);
             }
         },
 
@@ -363,7 +374,10 @@ function calendarApp() {
                 formData.append('birth_day', this.selectedProfile.birth_day);
                 formData.append('birth_hour', this.selectedProfile.birth_hour);
                 formData.append('birth_minute', this.selectedProfile.birth_minute || 0);
-                formData.append('is_male', this.selectedProfile.is_male);
+                // Convert is_male to proper boolean string (handles 0/1, true/false, or boolean)
+                const isMaleValue = this.selectedProfile.is_male;
+                const isMaleStr = (isMaleValue === true || isMaleValue === 1 || isMaleValue === '1' || isMaleValue === 'true') ? 'true' : 'false';
+                formData.append('is_male', isMaleStr);
 
                 try {
                     const response = await fetch('/calendar/data/', {
@@ -604,7 +618,7 @@ function calendarApp() {
             }
 
             html += '<div class="mt-6">' +
-                   '<button class="btn btn-primary" onclick="Alpine.store(\'calendar\').loadDetailedBazi(' + year + ', ' + month + ', ' + day + ', 12, \'' + profileId + '\')">' +
+                   '<button class="btn btn-primary" onclick="Alpine.store(\'calendar\').loadDetailedBazi(' + year + ', ' + month + ', ' + day + ', 12, \'' + this.selectedProfileId + '\')">' +
                    '查看八字详情</button></div></div>';
 
             this.modalTitle = '日期详情';

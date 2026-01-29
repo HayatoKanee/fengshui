@@ -1,9 +1,43 @@
 /**
  * Local Profile Repository
  * Handles all IndexedDB operations for anonymous users
+ *
+ * Uses localStorage as a synchronous cache for instant page loads.
+ * IndexedDB is the source of truth, localStorage mirrors it.
  */
 import { db } from './database';
 import type { LocalProfile, ProfileFormData } from '@/types/profile';
+
+const CACHE_KEY = 'profiles_cache';
+
+/**
+ * localStorage cache for instant synchronous reads.
+ * This is the KEY to eliminating the "pop" effect.
+ */
+export const profileCache = {
+  /**
+   * Get profiles from localStorage (SYNC - instant!)
+   */
+  get(): LocalProfile[] {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * Save profiles to localStorage
+   */
+  set(profiles: LocalProfile[]): void {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(profiles));
+    } catch {
+      // localStorage full or unavailable, ignore
+    }
+  },
+};
 
 /**
  * Generate a UUID for local profile tracking
@@ -18,9 +52,12 @@ function generateLocalId(): string {
 export const localProfileRepo = {
   /**
    * Get all profiles from local storage (sorted by creation date, newest first)
+   * Also syncs the localStorage cache.
    */
   async getAll(): Promise<LocalProfile[]> {
-    return db.profiles.orderBy('created_at').reverse().toArray();
+    const profiles = await db.profiles.orderBy('created_at').reverse().toArray();
+    profileCache.set(profiles); // Keep cache in sync
+    return profiles;
   },
 
   /**
@@ -59,12 +96,17 @@ export const localProfileRepo = {
 
     // If this is the first profile, make it default
     const count = await db.profiles.count();
+    let result: LocalProfile;
     if (count === 1) {
       await db.profiles.update(id, { is_default: true });
-      return { ...profile, id, is_default: true } as LocalProfile;
+      result = { ...profile, id, is_default: true } as LocalProfile;
+    } else {
+      result = { ...profile, id } as LocalProfile;
     }
 
-    return { ...profile, id } as LocalProfile;
+    // Sync localStorage cache
+    await this.getAll();
+    return result;
   },
 
   /**
@@ -72,7 +114,9 @@ export const localProfileRepo = {
    */
   async update(id: number, data: Partial<ProfileFormData>): Promise<LocalProfile | undefined> {
     await db.profiles.update(id, data);
-    return db.profiles.get(id);
+    const result = await db.profiles.get(id);
+    await this.getAll(); // Sync cache
+    return result;
   },
 
   /**
@@ -91,6 +135,8 @@ export const localProfileRepo = {
         await db.profiles.update(firstProfile.id, { is_default: true });
       }
     }
+
+    await this.getAll(); // Sync cache
   },
 
   /**
@@ -102,6 +148,8 @@ export const localProfileRepo = {
 
     // Set new default
     await db.profiles.update(id, { is_default: true });
+
+    await this.getAll(); // Sync cache
   },
 
   /**

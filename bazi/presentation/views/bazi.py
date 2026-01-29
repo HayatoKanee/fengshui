@@ -172,7 +172,57 @@ class BaziAnalysisView(ProfileMixin, TemplateView):
         return context
 
     def get(self, request, *args, **kwargs):
-        """Handle GET request - display empty form."""
+        """Handle GET request - display form or calculate BaZi if params provided."""
+        # Check for query parameters (for direct URL navigation)
+        year = request.GET.get('year')
+        month = request.GET.get('month')
+        day = request.GET.get('day')
+        hour = request.GET.get('hour')
+
+        if all([year, month, day, hour]):
+            # All required params present - calculate BaZi directly
+            try:
+                year = int(year)
+                month = int(month)
+                day = int(day)
+                hour = int(hour)
+                minute = int(request.GET.get('minute', 0))
+                is_male = request.GET.get('gender', 'male') == 'male'
+
+                # Validate ranges
+                if not (1 <= month <= 12 and 1 <= day <= 31 and 0 <= hour <= 23):
+                    return super().get(request, *args, **kwargs)
+
+                # Create form with the data
+                form = BirthTimeForm(initial={
+                    'year': year,
+                    'month': month,
+                    'day': day,
+                    'hour': hour,
+                    'minute': minute,
+                    'gender': 'male' if is_male else 'female',
+                })
+
+                # Calculate BaZi
+                lunar, bazi = self.container.lunar_adapter.get_raw_lunar_and_bazi(
+                    year, month, day, hour, minute
+                )
+
+                # Build context
+                builder = BaziContextBuilder()
+                context = builder.build(
+                    form=form,
+                    bazi=bazi,
+                    lunar=lunar,
+                    is_male=is_male,
+                    liunian_year=date.today().year,
+                )
+
+                return render(request, self.template_name, context)
+            except (ValueError, TypeError):
+                # Invalid params - show empty form
+                pass
+
         # Local-first: profiles loaded from IndexedDB via Alpine store
         return super().get(request, *args, **kwargs)
 

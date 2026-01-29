@@ -3,10 +3,14 @@
  *
  * Reactive store for managing user profiles.
  * Works with both local (IndexedDB) and server storage transparently.
+ *
+ * KEY FEATURE: Uses localStorage cache for INSTANT initial load.
+ * No "pop" effect because data is available synchronously.
  */
 import Alpine from 'alpinejs';
 import { profileStorage, isAuthenticated } from '@/storage/profileStorage';
 import { migrationService } from '@/storage/migrationService';
+import { profileCache } from '@/storage/localProfileRepo';
 import type { Profile, ProfileFormData } from '@/types/profile';
 
 /**
@@ -32,17 +36,25 @@ export interface ProfileStoreState {
 
 /**
  * Create and register the profile Alpine store
+ *
+ * INSTANT LOAD: Reads from localStorage cache (sync) immediately.
+ * No loading state, no skeleton, no pop - data is there from the start.
  */
 export function registerProfileStore(): void {
+  // Read cached profiles SYNCHRONOUSLY - this is instant!
+  const cachedProfiles = profileCache.get() as Profile[];
+  const defaultProfile = cachedProfiles.find((p) => p.is_default);
+
   Alpine.store('profiles', {
-    profiles: [] as Profile[],
-    currentProfile: null as Profile | null,
-    loading: false,
+    // Pre-populate with cached data - NO LOADING STATE!
+    profiles: cachedProfiles,
+    currentProfile: defaultProfile || cachedProfiles[0] || null,
+    loading: false,  // Data already loaded from cache
     error: null as string | null,
     isAuthenticated: false,
 
     /**
-     * Initialize store - load profiles and run migration if needed
+     * Initialize store - verify cache and run migration if needed
      */
     async init() {
       this.isAuthenticated = isAuthenticated();
@@ -52,19 +64,22 @@ export function registerProfileStore(): void {
         await migrationService.checkAndMigrate();
       }
 
-      // Load profiles
+      // Refresh from IndexedDB (source of truth) in background
+      // This also syncs the localStorage cache
       await this.loadProfiles();
     },
 
     /**
-     * Load all profiles from storage
+     * Load all profiles from storage (IndexedDB).
+     * Silent refresh - doesn't show loading state since we have cached data.
      */
     async loadProfiles() {
-      this.loading = true;
+      // Don't set loading=true - we already have cached data showing
       this.error = null;
 
       try {
-        this.profiles = await profileStorage.getAll();
+        const freshProfiles = await profileStorage.getAll();
+        this.profiles = freshProfiles;
 
         // Set current profile to default or first available
         const defaultProfile = this.profiles.find((p) => p.is_default);
@@ -72,9 +87,8 @@ export function registerProfileStore(): void {
       } catch (err) {
         this.error = err instanceof Error ? err.message : 'Failed to load profiles';
         console.error('[ProfileStore] Load error:', err);
-      } finally {
-        this.loading = false;
       }
+      // Don't set loading=false - it's already false
     },
 
     /**
