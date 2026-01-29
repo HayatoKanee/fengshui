@@ -3,11 +3,13 @@
 {% block content %}
 <div class="container mx-auto px-4 py-6"
      x-data="{
-         showInputForm: {% if request.GET.profile_id %}false{% else %}true{% endif %},
-         showSaveModal: false,
-         showAddModal: false,
-         showDeleteModal: false,
-         profileToDelete: { id: null, name: '' },
+         formExpanded: {% if bazi %}false{% else %}true{% endif %},
+         showSaveInput: false,
+         saveName: '',
+         currentProfile: null,
+         saving: false,
+         saved: false,
+         profileSheetOpen: false,
          formData: {
              year: '{{ form.year.value|default:"" }}',
              month: '{{ form.month.value|default:"" }}',
@@ -15,65 +17,292 @@
              hour: '{{ form.hour.value|default:"" }}',
              minute: '{{ form.minute.value|default:"0" }}',
              gender: '{{ form.gender.value|default:"male" }}'
+         },
+         get hasResults() { return {% if bazi %}true{% else %}false{% endif %}; },
+         get hourName() {
+             const hours = ['子', '丑', '丑', '寅', '寅', '卯', '卯', '辰', '辰', '巳', '巳', '午', '午', '未', '未', '申', '申', '酉', '酉', '戌', '戌', '亥', '亥', '子'];
+             const h = parseInt(this.formData.hour) || 0;
+             return hours[h] + '时';
+         },
+         init() {
+             // Restore currentProfile from sessionStorage after page reload
+             const savedProfileId = sessionStorage.getItem('currentBaziProfileId');
+             if (savedProfileId && this.hasResults) {
+                 const store = Alpine.store('profiles');
+                 if (store && store.profiles) {
+                     const profile = store.profiles.find(p => String(p.id) === savedProfileId || String(p.localId) === savedProfileId);
+                     if (profile) {
+                         this.currentProfile = profile;
+                         this.saved = true;
+                     }
+                 }
+             }
+         },
+         loadProfile(profile) {
+             this.formData.year = String(profile.birth_year);
+             this.formData.month = String(profile.birth_month);
+             this.formData.day = String(profile.birth_day);
+             this.formData.hour = String(profile.birth_hour);
+             this.formData.minute = String(profile.birth_minute || 0);
+             this.formData.gender = (profile.is_male === true || profile.is_male === 1) ? 'male' : 'female';
+             this.currentProfile = profile;
+             this.saved = true;
+             // Persist to sessionStorage so it survives page reload
+             sessionStorage.setItem('currentBaziProfileId', String(profile.id || profile.localId));
+             this.formExpanded = false;
+             this.$nextTick(() => { this.$refs.baziForm.submit(); });
+         },
+         clearCurrentProfile(clearForm = false) {
+             this.currentProfile = null;
+             this.saved = false;
+             sessionStorage.removeItem('currentBaziProfileId');
+             if (clearForm) {
+                 this.formData = { year: '', month: '', day: '', hour: '', minute: '0', gender: 'male' };
+             }
+         },
+         async saveProfile() {
+             if (this.saving || !this.saveName.trim()) return;
+             this.saving = true;
+             try {
+                 const profileData = {
+                     name: this.saveName.trim(),
+                     birth_year: parseInt(this.formData.year),
+                     birth_month: parseInt(this.formData.month),
+                     birth_day: parseInt(this.formData.day),
+                     birth_hour: parseInt(this.formData.hour),
+                     birth_minute: parseInt(this.formData.minute) || 0,
+                     is_male: this.formData.gender === 'male'
+                 };
+                 const store = Alpine.store('profiles');
+                 const newProfile = await store.createProfile(profileData);
+                 this.currentProfile = newProfile;
+                 this.saved = true;
+                 this.showSaveInput = false;
+                 this.saveName = '';
+                 sessionStorage.setItem('currentBaziProfileId', String(newProfile.id || newProfile.localId));
+                 Alpine.store('toast')?.show('success', '已保存');
+             } catch (e) {
+                 console.error('Save failed:', e);
+                 Alpine.store('toast')?.show('error', '保存失败');
+             } finally {
+                 this.saving = false;
+             }
+         },
+         async updateAndSubmit() {
+             if (this.saving || !this.currentProfile) return;
+             this.saving = true;
+             try {
+                 const profileData = {
+                     birth_year: parseInt(this.formData.year),
+                     birth_month: parseInt(this.formData.month),
+                     birth_day: parseInt(this.formData.day),
+                     birth_hour: parseInt(this.formData.hour),
+                     birth_minute: parseInt(this.formData.minute) || 0,
+                     is_male: this.formData.gender === 'male'
+                 };
+                 const store = Alpine.store('profiles');
+                 await store.updateProfile(this.currentProfile.id, profileData);
+                 // Refresh currentProfile with updated data
+                 this.currentProfile = { ...this.currentProfile, ...profileData };
+                 // Now submit the form to show results
+                 this.$refs.baziForm.submit();
+             } catch (e) {
+                 console.error('Update failed:', e);
+                 Alpine.store('toast')?.show('error', '更新失败');
+                 this.saving = false;
+             }
+         },
+         deleteProfile(profile) {
+             if (!profile) return;
+             if (confirm('确定要删除「' + (profile.name || '未命名') + '」吗？')) {
+                 Alpine.store('profiles').deleteProfile(profile.id);
+                 // If deleted profile was current, clear it
+                 if (this.currentProfile && this.currentProfile.id === profile.id) {
+                     this.clearCurrentProfile(false);  // Keep form data so user can save as new
+                 }
+             }
          }
      }">
 
-    <!-- Saved Profiles Section -->
-    {% if user.is_authenticated and profiles %}
-    <div class="card bg-base-100 shadow-xl mb-6">
-        <div class="card-body">
-            <h3 class="card-title text-xl">选择已保存的资料</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {% for profile in profiles %}
-                    <div class="relative group">
-                        <a href="{% url 'bazi' %}?profile_id={{ profile.id }}"
-                           class="btn {% if request.GET.profile_id|add:'0' == profile.id %}btn-primary{% else %}btn-outline btn-primary{% endif %} w-full justify-start">
-                            {{ profile.name }} ({{ profile.birth_data.year }}年{{ profile.birth_data.month }}月{{ profile.birth_data.day }}日)
-                        </a>
-                        <button type="button"
-                                @click.prevent="profileToDelete = { id: {{ profile.id }}, name: '{{ profile.name }}' }; showDeleteModal = true"
-                                class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-base-300/80 text-base-content/50 hover:bg-error hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center text-xs font-light leading-none"
-                                title="删除">×</button>
-                    </div>
-                {% endfor %}
-                <button @click="showAddModal = true"
-                        class="btn btn-outline btn-success w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    添加新资料
-                </button>
+    {% if bazi %}
+    <!-- COLLAPSED STATE: Summary bar when results are shown -->
+    <!-- Pre-rendered with Django for instant display, no FOUC -->
+    <div x-show="!formExpanded" x-transition class="card bg-base-100 shadow-xl mb-6">
+        <div class="card-body py-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <!-- Left: Profile info - Pre-rendered from Django -->
+                <div class="flex items-center gap-2">
+                    <!-- Profile name (only shows after Alpine loads) -->
+                    <span x-show="currentProfile" x-cloak class="text-lg font-medium" x-text="currentProfile?.name"></span>
+                    <span x-show="currentProfile" x-cloak class="text-base-content/60">·</span>
+                    <!-- Date info - Pre-rendered from Django (instant, no flash) -->
+                    <span class="text-base-content/60">{{ form.year.value }}.{{ form.month.value }}.{{ form.day.value }} {{ bazi.getTimeZhi }}时</span>
+                    <span class="text-base-content/60">{% if form.gender.value == 'male' %}男{% else %}女{% endif %}</span>
+                </div>
+
+                <!-- Right: Actions -->
+                <div class="flex items-center gap-2">
+                    <!-- Profile switcher (if has saved profiles) -->
+                    <template x-if="$store.profiles && $store.profiles.profiles && $store.profiles.profiles.length > 0">
+                        <div>
+                            <!-- Mobile: Button to open bottom sheet -->
+                            <button type="button" @click="profileSheetOpen = true" class="btn btn-sm btn-ghost gap-1 md:hidden">
+                                切换
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <!-- Desktop: Traditional dropdown -->
+                            <details class="dropdown dropdown-end hidden md:block">
+                                <summary class="btn btn-sm btn-ghost gap-1">
+                                    切换
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </summary>
+                                <ul class="dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box w-72 max-h-64 overflow-y-auto border border-base-300">
+                                    <template x-for="profile in $store.profiles.profiles" :key="profile.id || profile.localId">
+                                        <li>
+                                            <div class="relative w-full" :class="{ 'active': currentProfile && currentProfile.id === profile.id }">
+                                                <button type="button" @click="loadProfile(profile); $el.closest('details').removeAttribute('open');"
+                                                        class="flex flex-col items-start gap-0.5 w-full text-left pr-6">
+                                                    <span class="font-medium" x-text="profile.name || '未命名'"></span>
+                                                    <span class="text-xs opacity-50" x-text="profile.birth_year + '年' + profile.birth_month + '月' + profile.birth_day + '日'"></span>
+                                                </button>
+                                                <button type="button" @click.stop="deleteProfile(profile)"
+                                                        class="absolute top-1 right-1 p-0.5 rounded opacity-40 hover:opacity-100 hover:text-error transition-all">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                    <li class="border-t border-base-200 mt-1 pt-1">
+                                        <a href="{% url 'bazi' %}" @click="clearCurrentProfile(true)" class="text-primary">
+                                            + 新排盘
+                                        </a>
+                                    </li>
+                                </ul>
+                            </details>
+                        </div>
+                    </template>
+
+                    <!-- Save button (only if unsaved) -->
+                    <template x-if="!currentProfile && !showSaveInput">
+                        <button type="button" @click="showSaveInput = true; saveName = ''" class="btn btn-sm btn-primary">
+                            保存
+                        </button>
+                    </template>
+
+                    <!-- Inline save input -->
+                    <template x-if="showSaveInput">
+                        <div class="flex items-center gap-2">
+                            <input type="text" x-model="saveName" placeholder="输入名称"
+                                   class="input input-sm input-bordered w-32"
+                                   @keydown.enter.prevent="saveProfile()"
+                                   @keydown.escape="showSaveInput = false">
+                            <button type="button" @click="saveProfile()" :disabled="saving || !saveName.trim()" class="btn btn-sm btn-primary">
+                                <span x-show="saving" class="loading loading-spinner loading-xs"></span>
+                                <span x-show="!saving">确定</span>
+                            </button>
+                            <button type="button" @click="showSaveInput = false" class="btn btn-sm btn-ghost">取消</button>
+                        </div>
+                    </template>
+
+                    <!-- Edit button -->
+                    <button type="button" @click="formExpanded = true" class="btn btn-sm btn-ghost">
+                        修改
+                    </button>
+                </div>
             </div>
         </div>
     </div>
     {% endif %}
 
-    <!-- Toggle Button for New Input Form when viewing profile -->
-    {% if request.GET.profile_id %}
-    <div class="mb-4">
-        <button @click="showInputForm = !showInputForm"
-                class="btn btn-outline btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            输入新八字
-        </button>
-    </div>
-    {% endif %}
-
-    <!-- New Birth Form -->
-    <div x-show="showInputForm" x-transition class="card bg-base-100 shadow-xl mb-6">
+    <!-- EXPANDED STATE: Full form -->
+    <!-- When bazi exists: hidden by default (x-cloak), shown when user clicks "修改" -->
+    <!-- When no bazi: shown immediately (no x-cloak) -->
+    <div {% if bazi %}x-cloak{% endif %} x-show="formExpanded || !hasResults" x-transition class="card bg-base-100 shadow-xl mb-6">
         <div class="card-body">
-            <h3 class="card-title text-xl">
-                {% if user.is_authenticated %}
-                    输入新的八字资料
-                {% else %}
-                    输入八字资料
-                    <span class="text-sm font-normal text-base-content/60">(注册账号可保存资料)</span>
-                {% endif %}
-            </h3>
+            <div class="flex justify-between items-center mb-2">
+                <div class="flex flex-col gap-1">
+                    <h3 class="card-title text-xl">输入八字资料</h3>
+                    <!-- Editing indicator when modifying a saved profile -->
+                    <template x-if="currentProfile">
+                        <div class="flex items-center gap-2 text-sm text-base-content/70">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>正在编辑: <span class="font-medium text-primary" x-text="currentProfile.name"></span></span>
+                        </div>
+                    </template>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- Saved profiles dropdown (appears when profiles exist) -->
+                    <template x-if="$store.profiles && $store.profiles.profiles && $store.profiles.profiles.length > 0">
+                        <div>
+                            <!-- Mobile: Button to open bottom sheet -->
+                            <button type="button" @click="profileSheetOpen = true" class="btn btn-sm btn-outline btn-primary gap-1 md:hidden">
+                                <template x-if="currentProfile">
+                                    <span x-text="currentProfile.name || '未命名'"></span>
+                                </template>
+                                <template x-if="!currentProfile">
+                                    <span>已保存 <span class="badge badge-primary badge-sm" x-text="$store.profiles.profiles.length"></span></span>
+                                </template>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <!-- Desktop: Traditional dropdown -->
+                            <details class="dropdown dropdown-end hidden md:block">
+                                <summary class="btn btn-sm btn-outline btn-primary gap-1">
+                                    <template x-if="currentProfile">
+                                        <span x-text="currentProfile.name || '未命名'"></span>
+                                    </template>
+                                    <template x-if="!currentProfile">
+                                        <span>已保存 <span class="badge badge-primary badge-sm" x-text="$store.profiles.profiles.length"></span></span>
+                                    </template>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </summary>
+                                <ul class="dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box w-72 max-h-64 overflow-y-auto border border-base-300">
+                                    <template x-for="profile in $store.profiles.profiles" :key="profile.id || profile.localId">
+                                        <li>
+                                            <div class="relative w-full" :class="{ 'active': currentProfile && currentProfile.id === profile.id }">
+                                                <button type="button" @click="loadProfile(profile); $el.closest('details').removeAttribute('open');"
+                                                        class="flex flex-col items-start gap-0.5 w-full text-left pr-6">
+                                                    <span class="font-medium" x-text="profile.name || '未命名'"></span>
+                                                    <span class="text-xs opacity-50" x-text="profile.birth_year + '年' + profile.birth_month + '月' + profile.birth_day + '日'"></span>
+                                                </button>
+                                                <button type="button" @click.stop="deleteProfile(profile)"
+                                                        class="absolute top-1 right-1 p-0.5 rounded opacity-40 hover:opacity-100 hover:text-error transition-all">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                    <li class="border-t border-base-200 mt-1 pt-1">
+                                        <a href="{% url 'bazi' %}" @click="clearCurrentProfile(true)" class="text-primary">
+                                            + 新建八字
+                                        </a>
+                                    </li>
+                                </ul>
+                            </details>
+                        </div>
+                    </template>
+                    {% if bazi %}
+                    <button type="button" @click="formExpanded = false" class="btn btn-sm btn-ghost" x-show="hasResults">
+                        收起
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
 
-            <form action="{% url 'bazi' %}" method="post" class="space-y-4">
+            <form x-ref="baziForm" action="{% url 'bazi' %}" method="post" class="space-y-4">
                 {% csrf_token %}
 
                 <!-- Birth Date Row -->
@@ -162,22 +391,18 @@
 
                 <!-- Submit Button -->
                 <div class="flex flex-col gap-2">
-                    <button type="submit" class="btn btn-primary w-full">
-                        查看八字
-                    </button>
-                    {% if user.is_authenticated %}
-                        <button type="button"
-                                @click="showSaveModal = true"
-                                class="btn btn-outline btn-secondary btn-sm">
-                            保存此资料
+                    <!-- When editing: show update+view button, when new: show just view -->
+                    <template x-if="currentProfile">
+                        <button type="button" @click="updateAndSubmit()" :disabled="saving" class="btn btn-primary w-full gap-2">
+                            <span x-show="saving" class="loading loading-spinner loading-xs"></span>
+                            更新及查看
                         </button>
-                    {% else %}
-                        <div class="text-center text-sm text-base-content/60">
-                            <a href="{% url 'login' %}?next={% url 'bazi' %}" class="link link-primary">登录</a> 或
-                            <a href="{% url 'register' %}?next={% url 'bazi' %}" class="link link-primary">注册</a>
-                            以保存八字资料
-                        </div>
-                    {% endif %}
+                    </template>
+                    <template x-if="!currentProfile">
+                        <button type="submit" class="btn btn-primary w-full">
+                            查看八字
+                        </button>
+                    </template>
                 </div>
             </form>
         </div>
@@ -425,119 +650,94 @@
     </div>
     {% endif %}
 
-    <!-- Save Profile Modal -->
-    {% if user.is_authenticated %}
-    <div class="modal" :class="{ 'modal-open': showSaveModal }">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">保存八字资料</h3>
-            <form action="{% url 'add_profile' %}" method="post">
-                {% csrf_token %}
-                <div class="form-control mb-4">
-                    <label class="label" for="profile_name">
-                        <span class="label-text">姓名</span>
-                    </label>
-                    <input type="text" id="profile_name" name="name"
-                           class="input input-bordered w-full" required>
-                </div>
-                <input type="hidden" name="birth_year" :value="formData.year">
-                <input type="hidden" name="birth_month" :value="formData.month">
-                <input type="hidden" name="birth_day" :value="formData.day">
-                <input type="hidden" name="birth_hour" :value="formData.hour">
-                <input type="hidden" name="birth_minute" :value="formData.minute">
-                <input type="hidden" name="is_male" :value="formData.gender === 'male' ? 'True' : 'False'">
-                <input type="hidden" name="redirect_to_bazi" value="1">
+    <!-- Mobile Bottom Sheet for Profile Selection -->
+    <div x-cloak x-show="profileSheetOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[200] md:hidden"
+         @click.self="profileSheetOpen = false">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/50"></div>
 
-                <div class="modal-action">
-                    <button type="button" @click="showSaveModal = false" class="btn btn-ghost">取消</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
+        <!-- Bottom Sheet -->
+        <div x-show="profileSheetOpen"
+             x-transition:enter="transition ease-out duration-300 transform-gpu"
+             x-transition:enter-start="translate-y-full"
+             x-transition:enter-end="translate-y-0"
+             x-transition:leave="transition ease-in duration-200 transform-gpu"
+             x-transition:leave-start="translate-y-0"
+             x-transition:leave-end="translate-y-full"
+             class="absolute bottom-0 left-0 right-0 bg-base-100 rounded-t-2xl shadow-2xl max-h-[70vh] flex flex-col will-change-transform">
+
+            <!-- Handle bar -->
+            <div class="flex justify-center pt-3 pb-2">
+                <div class="w-10 h-1 bg-base-300 rounded-full"></div>
+            </div>
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-4 pb-3 border-b border-base-200">
+                <h3 class="text-lg font-semibold">已保存的八字</h3>
+                <button type="button" @click="profileSheetOpen = false" class="btn btn-sm btn-ghost btn-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Profile List -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-2">
+                <template x-if="$store.profiles && $store.profiles.profiles">
+                    <template x-for="profile in $store.profiles.profiles" :key="profile.id || profile.localId">
+                        <div class="relative">
+                            <button type="button"
+                                    @click="
+                                        profileSheetOpen = false;
+                                        sessionStorage.setItem('currentBaziProfileId', String(profile.id || profile.localId));
+                                        const gender = (profile.is_male === true || profile.is_male === 1) ? 'male' : 'female';
+                                        window.location.href = '/bazi?year=' + profile.birth_year + '&month=' + profile.birth_month + '&day=' + profile.birth_day + '&hour=' + profile.birth_hour + '&minute=' + (profile.birth_minute || 0) + '&gender=' + gender;
+                                    "
+                                    class="w-full text-left p-4 rounded-xl border-2 transition-all"
+                                    :class="currentProfile && currentProfile.id === profile.id ? 'border-primary bg-primary/5' : 'border-base-200 hover:border-base-300 active:bg-base-200'">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-base" x-text="profile.name || '未命名'"></div>
+                                        <div class="text-sm text-base-content/60 mt-0.5" x-text="profile.birth_year + '年' + profile.birth_month + '月' + profile.birth_day + '日'"></div>
+                                    </div>
+                                    <template x-if="currentProfile && currentProfile.id === profile.id">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </template>
+                                </div>
+                            </button>
+                            <!-- Delete button -->
+                            <button type="button" @click.stop="deleteProfile(profile)"
+                                    class="absolute top-2 right-2 p-1.5 rounded-lg opacity-40 hover:opacity-100 hover:text-error hover:bg-error/10 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+                </template>
+            </div>
+
+            <!-- Footer action -->
+            <div class="p-4 border-t border-base-200">
+                <a href="{% url 'bazi' %}" @click="clearCurrentProfile(true); profileSheetOpen = false;"
+                   class="btn btn-primary btn-block gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    新建八字
+                </a>
+            </div>
         </div>
-        <div class="modal-backdrop" @click="showSaveModal = false"></div>
     </div>
 
-    <!-- Add New Profile Modal -->
-    <div class="modal" :class="{ 'modal-open': showAddModal }">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">添加新八字资料</h3>
-            <form action="{% url 'add_profile' %}" method="post">
-                {% csrf_token %}
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text">姓名</span>
-                    </label>
-                    <input type="text" name="name" class="input input-bordered w-full" required>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3 mb-4">
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生年</span></label>
-                        <input type="number" name="birth_year" class="input input-bordered w-full" min="0" required>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生月</span></label>
-                        <input type="number" name="birth_month" class="input input-bordered w-full" min="1" max="12" required>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生日</span></label>
-                        <input type="number" name="birth_day" class="input input-bordered w-full" min="1" max="31" required>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生时</span></label>
-                        <input type="number" name="birth_hour" class="input input-bordered w-full" min="0" max="23" required>
-                    </div>
-                    <div class="form-control">
-                        <label class="label"><span class="label-text">出生分</span></label>
-                        <input type="number" name="birth_minute" class="input input-bordered w-full" min="0" max="59" value="0">
-                    </div>
-                </div>
-
-                <div class="form-control mb-4">
-                    <label class="label"><span class="label-text">性别</span></label>
-                    <div class="flex gap-6">
-                        <label class="label cursor-pointer gap-2">
-                            <input type="radio" name="is_male" value="True" class="radio radio-primary" checked>
-                            <span class="label-text">男</span>
-                        </label>
-                        <label class="label cursor-pointer gap-2">
-                            <input type="radio" name="is_male" value="False" class="radio radio-primary">
-                            <span class="label-text">女</span>
-                        </label>
-                    </div>
-                </div>
-
-                <input type="hidden" name="redirect_to_bazi" value="1">
-
-                <div class="modal-action">
-                    <button type="button" @click="showAddModal = false" class="btn btn-ghost">取消</button>
-                    <button type="submit" class="btn btn-primary">保存并查看八字</button>
-                </div>
-            </form>
-        </div>
-        <div class="modal-backdrop" @click="showAddModal = false"></div>
-    </div>
-
-    <!-- Delete Profile Confirmation Modal -->
-    <div class="modal" :class="{ 'modal-open': showDeleteModal }">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4 text-error">确认删除</h3>
-            <p class="py-4">
-                确定要删除 <span class="font-bold" x-text="profileToDelete.name"></span> 的八字资料吗？
-            </p>
-            <p class="text-sm text-base-content/60">此操作不可撤销。</p>
-            <form :action="'/profiles/delete/' + profileToDelete.id + '/'" method="post">
-                {% csrf_token %}
-                <div class="modal-action">
-                    <button type="button" @click="showDeleteModal = false; profileToDelete = { id: null, name: '' }" class="btn btn-ghost">取消</button>
-                    <button type="submit" class="btn btn-error">删除</button>
-                </div>
-            </form>
-        </div>
-        <div class="modal-backdrop" @click="showDeleteModal = false"></div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

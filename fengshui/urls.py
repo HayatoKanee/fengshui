@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from django.conf.urls.i18n import i18n_patterns
+from django.views.generic import RedirectView
 
 # Import from new presentation layer (Clean Architecture)
 from bazi.presentation import (
@@ -46,16 +47,23 @@ from bazi.presentation import (
     feixing_view,
     calendar_view,
     calendar_data,
+    # API views
+    profile_api,
+    profile_batch_api,
+    profile_detail_api,
+    profile_default_api,
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home_view, name='home'),
     
-    # Authentication URLs
+    # Seamless login/signup (auto-creates account if user doesn't exist)
     path('login/', user_login, name='login'),
     path('logout/', user_logout, name='logout'),
-    path('register/', user_login, name='register'),  # Point to login view for compatibility
+
+    # django-allauth for password reset, email verification, social auth
+    path('accounts/', include('allauth.urls')),
     
     # Profile management URLs
     path('profiles/', profile_list, name='profiles'),
@@ -79,6 +87,12 @@ urlpatterns = [
     path('feixing',feixing_view,name='feixing'),
     path('calendar', calendar_view, name='calendar'),
     path('calendar/data/', calendar_data, name='calendar_data'),
+
+    # Profile REST API (for frontend storage sync)
+    path('api/profiles/', profile_api, name='api_profiles'),
+    path('api/profiles/batch/', profile_batch_api, name='api_profiles_batch'),
+    path('api/profiles/<int:profile_id>/', profile_detail_api, name='api_profile_detail'),
+    path('api/profiles/<int:profile_id>/default/', profile_default_api, name='api_profile_default'),
 ]
 
 # i18n URL for language switching

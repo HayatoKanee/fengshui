@@ -44,6 +44,11 @@ from .views import (
     # Lookup views
     bazi_lookup_view,
     zeri_view,
+    # API views
+    profile_api,
+    profile_batch_api,
+    profile_detail_api,
+    profile_default_api,
 )
 
 __all__ = [
@@ -76,4 +81,9 @@ __all__ = [
     # Lookup
     "bazi_lookup_view",
     "zeri_view",
+    # API
+    "profile_api",
+    "profile_batch_api",
+    "profile_detail_api",
+    "profile_default_api",
 ]

@@ -1,0 +1,140 @@
+{% extends 'base_content.html' %}
+{% load i18n %}
+
+{% block content %}
+<div class="hero min-h-[60vh]">
+    <div class="hero-content flex-col w-full max-w-md">
+        <div class="card w-full bg-base-100 shadow-xl"
+             x-data="{ activeTab: '{{ request.resolver_match.url_name }}' == 'account_signup' ? 'signup' : 'login' }">
+            <div class="card-body">
+                <!-- Tabs -->
+                <div class="tabs tabs-boxed justify-center mb-4">
+                    <button @click="activeTab = 'login'"
+                            :class="{ 'tab-active': activeTab === 'login' }"
+                            class="tab tab-lg">{% trans "登录" %}</button>
+                    <button @click="activeTab = 'signup'"
+                            :class="{ 'tab-active': activeTab === 'signup' }"
+                            class="tab tab-lg">{% trans "注册" %}</button>
+                </div>
+
+                <!-- Login Form -->
+                <div x-show="activeTab === 'login'" x-transition>
+                    {% if form.errors and request.resolver_match.url_name == 'account_login' %}
+                    <div class="alert alert-error mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{% trans "用户名或密码错误" %}</span>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'account_login' %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="form-control">
+                            <label class="label" for="id_login">
+                                <span class="label-text">{% trans "用户名或邮箱" %}</span>
+                            </label>
+                            <input type="text" name="login" id="id_login"
+                                   class="input input-bordered w-full"
+                                   placeholder="{% trans '请输入用户名或邮箱' %}"
+                                   required autofocus>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label" for="id_password">
+                                <span class="label-text">{% trans "密码" %}</span>
+                            </label>
+                            <input type="password" name="password" id="id_password"
+                                   class="input input-bordered w-full"
+                                   placeholder="{% trans '请输入密码' %}"
+                                   required>
+                            <label class="label">
+                                <a href="{% url 'account_reset_password' %}" class="label-text-alt link link-hover">
+                                    {% trans "忘记密码？" %}
+                                </a>
+                            </label>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-2">
+                                <input type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary">
+                                <span class="label-text">{% trans "记住我" %}</span>
+                            </label>
+                        </div>
+
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                        {% endif %}
+
+                        <div class="form-control mt-6">
+                            <button type="submit" class="btn btn-primary w-full">{% trans "登录" %}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Signup Form -->
+                <div x-show="activeTab === 'signup'" x-transition x-cloak>
+                    {% if form.errors and request.resolver_match.url_name == 'account_signup' %}
+                    <div class="alert alert-error mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{% for error in form.non_field_errors %}{{ error }}{% endfor %}</span>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'account_signup' %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="form-control">
+                            <label class="label" for="id_username">
+                                <span class="label-text">{% trans "用户名" %}</span>
+                            </label>
+                            <input type="text" name="username" id="id_username"
+                                   class="input input-bordered w-full"
+                                   placeholder="{% trans '请输入用户名' %}"
+                                   required>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label" for="id_email">
+                                <span class="label-text">{% trans "邮箱" %} <span class="text-base-content/50">({% trans "可选" %})</span></span>
+                            </label>
+                            <input type="email" name="email" id="id_email"
+                                   class="input input-bordered w-full"
+                                   placeholder="{% trans '请输入邮箱' %}">
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label" for="id_password1">
+                                <span class="label-text">{% trans "密码" %}</span>
+                            </label>
+                            <input type="password" name="password1" id="id_password1"
+                                   class="input input-bordered w-full"
+                                   placeholder="{% trans '请输入密码' %}"
+                                   required>
+                        </div>
+
+                        <div class="form-control">
+                            <label class="label" for="id_password2">
+                                <span class="label-text">{% trans "确认密码" %}</span>
+                            </label>
+                            <input type="password" name="password2" id="id_password2"
+                                   class="input input-bordered w-full"
+                                   placeholder="{% trans '再次输入密码' %}"
+                                   required>
+                        </div>
+
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                        {% endif %}
+
+                        <div class="form-control mt-6">
+                            <button type="submit" class="btn btn-primary w-full">{% trans "注册" %}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

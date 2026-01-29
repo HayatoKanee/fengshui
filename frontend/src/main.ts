@@ -18,6 +18,9 @@ import Alpine from 'alpinejs';
 // Import styles
 import './styles.css';
 
+// Import profile store registration
+import { registerProfileStore, getProfileStore } from './stores/profileStore';
+
 // Import React Islands system (lazy loaded to prevent blocking Alpine.js)
 import { mountIslands, registerIsland, islandRegistry } from './islands';
 // Note: registerAllIslands is loaded dynamically to prevent React errors from blocking Alpine
@@ -185,6 +188,62 @@ Alpine.data('dropdown', () => ({
   }
 }));
 
+// BaZi save component - handles async save with proper reactivity
+Alpine.data('baziSaveComponent', () => ({
+  saved: false,
+  saving: false,
+  saveName: '',  // Name input for saving profile
+  birthData: null as {
+    name: string;
+    birth_year: number;
+    birth_month: number;
+    birth_day: number;
+    birth_hour: number;
+    birth_minute: number;
+    is_male: boolean;
+  } | null,
+
+  initBirthData(year: number, month: number, day: number, hour: number, minute: number, isMale: boolean) {
+    this.birthData = {
+      name: '我的八字',
+      birth_year: year,
+      birth_month: month,
+      birth_day: day,
+      birth_hour: hour,
+      birth_minute: minute,
+      is_male: isMale
+    };
+  },
+
+  async saveProfile() {
+    return this.saveProfileWithName('我的八字');
+  },
+
+  async saveProfileWithName(name: string) {
+    if (this.saving || this.saved || !this.birthData) {
+      return;
+    }
+
+    this.saving = true;
+
+    try {
+      const profileData = { ...this.birthData, name };
+      const store = Alpine.store('profiles') as { createProfile: (data: typeof profileData) => Promise<unknown> };
+      await store.createProfile(profileData);
+      this.saved = true;
+
+      const toast = Alpine.store('toast') as { show: (type: string, msg: string) => void };
+      toast.show('success', '已保存八字资料');
+    } catch (e) {
+      console.error('Profile save failed:', e);
+      const toast = Alpine.store('toast') as { show: (type: string, msg: string) => void };
+      toast.show('error', '保存失败');
+    } finally {
+      this.saving = false;
+    }
+  }
+}));
+
 // ============================================================================
 // Utility Functions
 // ============================================================================
@@ -207,15 +266,29 @@ function getCookie(name: string): string | null {
 
 // Start Alpine when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
+  // Register profile store with INSTANT localStorage cache
+  // Data is available synchronously - no waiting!
+  registerProfileStore();
+
   // Initialize theme
   const themeStore = Alpine.store('theme') as { init: () => void };
   themeStore.init();
 
-  // Start Alpine FIRST (critical for page functionality)
+  // Start Alpine IMMEDIATELY - localStorage cache provides instant data
   Alpine.start();
-  console.log('Alpine.js initialized');
+  console.log('Alpine.js initialized with cached profiles');
 
-  // Register React Island components (non-blocking, loaded after Alpine)
+  // Background: Sync with IndexedDB (source of truth) and run migration
+  // This happens AFTER Alpine has already rendered with cached data
+  try {
+    const profileStore = getProfileStore();
+    await profileStore.init();
+    console.log('Profile store synced with IndexedDB');
+  } catch (error) {
+    console.warn('Profile store sync failed:', error);
+  }
+
+  // Register React Island components (non-blocking)
   try {
     const { registerAllIslands } = await import('./islands/registry');
     registerAllIslands();
@@ -225,8 +298,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   console.log('FengShui Frontend initialized');
-  console.log('Stack: Vite + TypeScript + HTMX + Alpine.js + React Islands');
 });
 
 // Export for potential module usage
 export { Alpine, htmx, registerIsland, mountIslands, islandRegistry };
+export { registerProfileStore, getProfileStore } from './stores/profileStore';
+export { profileStorage, isAuthenticated } from './storage/profileStorage';
