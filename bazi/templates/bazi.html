@@ -302,7 +302,8 @@
                 </div>
             </div>
 
-            <form x-ref="baziForm" action="{% url 'bazi' %}" method="post" class="space-y-4">
+            <form x-ref="baziForm" action="{% url 'bazi' %}" method="post" class="space-y-4"
+                  @submit="if (!currentProfile) sessionStorage.removeItem('currentBaziProfileId')">
                 {% csrf_token %}
 
                 <!-- Birth Date Row -->
