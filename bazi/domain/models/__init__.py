@@ -41,6 +41,14 @@ from .analysis import (
     FavorableElements,
     BaZiAnalysis,
 )
+from .pattern import (
+    PatternCategory,
+    PatternType,
+    PatternYongShen,
+    SpecialPattern,
+    ZHUAN_WANG_YONG_SHEN,
+    HUA_QI_YONG_SHEN,
+)
 
 __all__ = [
     # Elements (五行)
@@ -78,4 +86,11 @@ __all__ = [
     "DayMasterStrength",
     "FavorableElements",
     "BaZiAnalysis",
+    # Pattern (特殊格局)
+    "PatternCategory",
+    "PatternType",
+    "PatternYongShen",
+    "SpecialPattern",
+    "ZHUAN_WANG_YONG_SHEN",
+    "HUA_QI_YONG_SHEN",
 ]

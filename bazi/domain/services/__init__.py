@@ -9,6 +9,7 @@ from .shishen_calculator import ShiShenCalculator
 from .day_master_analyzer import DayMasterAnalyzer, calculate_shenghao
 from .shensha_calculator import ShenShaCalculator
 from .sexagenary_calculator import SexagenaryCycleCalculator
+from .pattern_detector import PatternDetector
 
 __all__ = [
     "WuXingCalculator",
@@ -17,4 +18,5 @@ __all__ = [
     "calculate_shenghao",
     "ShenShaCalculator",
     "SexagenaryCycleCalculator",
+    "PatternDetector",
 ]
