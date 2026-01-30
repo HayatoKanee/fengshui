@@ -21,6 +21,9 @@ import './styles.css';
 // Import profile store registration
 import { registerProfileStore, getProfileStore } from './stores/profileStore';
 
+// Import Alpine components
+import { calendarApp } from './components';
+
 // Import React Islands system (lazy loaded to prevent blocking Alpine.js)
 import { mountIslands, registerIsland, islandRegistry } from './islands';
 // Note: registerAllIslands is loaded dynamically to prevent React errors from blocking Alpine
@@ -93,6 +96,10 @@ if ('startViewTransition' in document) {
 
 // Make Alpine globally available before starting
 window.Alpine = Alpine;
+
+// Make Alpine components globally available for templates
+// These are factory functions that accept config from Django templates
+window.calendarApp = calendarApp;
 
 // Global Alpine stores
 Alpine.store('theme', {

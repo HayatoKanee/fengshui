@@ -7,8 +7,9 @@
  */
 import { db } from './database';
 import type { LocalProfile, ProfileFormData } from '@/types/profile';
+import { STORAGE_KEYS } from '@/constants';
 
-const CACHE_KEY = 'profiles_cache';
+const CACHE_KEY = STORAGE_KEYS.PROFILES_CACHE;
 
 /**
  * localStorage cache for instant synchronous reads.

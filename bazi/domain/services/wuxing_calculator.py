@@ -5,11 +5,10 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 from ..models import (
     WuXing,
-    WuXingRelation,
     WangXiang,
     Pillar,
     BaZi,
@@ -139,59 +138,31 @@ class WuXingCalculator:
         phase = wang_xiang.get(element, WangXiang.XIU)
         return phase.multiplier
 
-    def calculate_pillar_strength(
-        self,
-        pillar: Pillar,
-        wang_xiang: Dict[WuXing, WangXiang]
-    ) -> Tuple[float, List[float]]:
-        """
-        Calculate the strength values for a pillar.
-
-        Returns:
-            Tuple of (stem_strength, [hidden_stem_strengths])
-        """
-        # Base relationship values
-        stem_value, branch_value = self.get_pillar_values(pillar)
-
-        # Apply wang_xiang multiplier to stem
-        stem_multiplier = self.calculate_wang_xiang_multiplier(pillar.stem_wuxing, wang_xiang)
-        stem_strength = stem_value * stem_multiplier
-
-        # Calculate hidden stem strengths
-        hidden_strengths = []
-        for hidden_stem, ratio in pillar.hidden_stems.items():
-            hidden_element = hidden_stem.wuxing
-            hidden_multiplier = self.calculate_wang_xiang_multiplier(hidden_element, wang_xiang)
-            hidden_strength = branch_value * ratio * hidden_multiplier
-            hidden_strengths.append(hidden_strength)
-
-        return (stem_strength, hidden_strengths)
-
-    def accumulate_wuxing_values(
+    def _accumulate_pillar_values(
         self,
         bazi: BaZi,
-        wang_xiang: Dict[WuXing, WangXiang]
+        wang_xiang: Dict[WuXing, WangXiang],
     ) -> Dict[WuXing, float]:
         """
-        Calculate the accumulated WuXing values for an entire BaZi chart.
+        Accumulate WuXing values from all pillars with seasonal adjustment.
 
         Args:
             bazi: The BaZi chart
-            wang_xiang: The seasonal WangXiang mapping
+            wang_xiang: Seasonal strength mapping
 
         Returns:
-            Dictionary mapping each WuXing to its accumulated strength value.
+            Dictionary mapping each WuXing to its accumulated value.
         """
         result: Dict[WuXing, float] = {element: 0.0 for element in WuXing}
 
         for pillar in bazi.pillars:
-            # Add stem value
-            stem_value, _ = self.get_pillar_values(pillar)
+            stem_value, branch_value = self.get_pillar_values(pillar)
+
+            # Stem contribution
             stem_multiplier = self.calculate_wang_xiang_multiplier(pillar.stem_wuxing, wang_xiang)
             result[pillar.stem_wuxing] += stem_value * stem_multiplier
 
-            # Add hidden stem values
-            _, branch_value = self.get_pillar_values(pillar)
+            # Hidden stems contribution
             for hidden_stem, ratio in pillar.hidden_stems.items():
                 hidden_element = hidden_stem.wuxing
                 hidden_multiplier = self.calculate_wang_xiang_multiplier(hidden_element, wang_xiang)
@@ -214,19 +185,13 @@ class WuXingCalculator:
         Returns:
             WuXingStrength with raw and adjusted values
         """
-        # Get wang_xiang based on month branch
         wang_xiang_map = self.get_wang_xiang(bazi.month_pillar.branch, is_earth_dominant)
 
-        # Calculate raw values (without seasonal adjustment)
-        raw_values: Dict[WuXing, float] = {element: 0.0 for element in WuXing}
-        for pillar in bazi.pillars:
-            stem_value, branch_value = self.get_pillar_values(pillar)
-            raw_values[pillar.stem_wuxing] += stem_value
-            for hidden_stem, ratio in pillar.hidden_stems.items():
-                raw_values[hidden_stem.wuxing] += branch_value * ratio
+        # Neutral wang_xiang for raw values (all XIU = 1.0 multiplier)
+        neutral_wang_xiang: Dict[WuXing, WangXiang] = {e: WangXiang.XIU for e in WuXing}
 
-        # Calculate adjusted values (with seasonal adjustment)
-        adjusted_values = self.accumulate_wuxing_values(bazi, wang_xiang_map)
+        raw_values = self._accumulate_pillar_values(bazi, neutral_wang_xiang)
+        adjusted_values = self._accumulate_pillar_values(bazi, wang_xiang_map)
 
         return WuXingStrength(
             raw_values=raw_values,

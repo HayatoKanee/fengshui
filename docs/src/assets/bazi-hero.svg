@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#312e81;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bgGrad)" rx="20"/>
+
+  <!-- Yin Yang Symbol -->
+  <g transform="translate(200, 150)">
+    <!-- Outer circle -->
+    <circle cx="0" cy="0" r="80" fill="#f5f5f4" stroke="#a3a3a3" stroke-width="2"/>
+
+    <!-- Black half -->
+    <path d="M 0 -80 A 80 80 0 0 1 0 80 A 40 40 0 0 1 0 0 A 40 40 0 0 0 0 -80" fill="#1c1917"/>
+
+    <!-- Small circles -->
+    <circle cx="0" cy="-40" r="12" fill="#1c1917"/>
+    <circle cx="0" cy="40" r="12" fill="#f5f5f4"/>
+  </g>
+
+  <!-- Five Elements -->
+  <g font-family="system-ui, sans-serif" font-size="14" font-weight="bold">
+    <text x="80" y="80" fill="#22c55e" text-anchor="middle">木</text>
+    <text x="320" y="80" fill="#ef4444" text-anchor="middle">火</text>
+    <text x="200" y="260" fill="#eab308" text-anchor="middle">土</text>
+    <text x="60" y="200" fill="#d4d4d4" text-anchor="middle">金</text>
+    <text x="340" y="200" fill="#3b82f6" text-anchor="middle">水</text>
+  </g>
+
+  <!-- Chinese characters for BaZi -->
+  <text x="200" y="155" font-family="system-ui, sans-serif" font-size="28" fill="#fbbf24" text-anchor="middle" font-weight="bold">八字</text>
+</svg>

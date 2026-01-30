@@ -5,7 +5,7 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..models import (
     BaZi,
@@ -94,28 +94,34 @@ class ShiShenCalculator:
     def get_detailed_shishen(
         self,
         bazi: BaZi
-    ) -> List[Tuple[ShiShen, Dict[ShiShen, float]]]:
+    ) -> List[Tuple[Optional[ShiShen], Dict[ShiShen, float]]]:
         """
+        获取每柱的详细十神信息，包括所有藏干。
         Get detailed ShiShen for each pillar including all hidden stems.
 
+        日柱天干即日主本身，故 stem_shishen 为 None。
+        Day pillar stem IS the Day Master, so stem_shishen is None.
+
         Returns:
-            List of (stem_shishen, {hidden_shishen: ratio}) for each pillar
+            List of (stem_shishen, {hidden_shishen: ratio}) for each pillar.
+            Order: [year, month, day, hour]
         """
         day_master = bazi.day_master
-        result = []
+        result: List[Tuple[Optional[ShiShen], Dict[ShiShen, float]]] = []
 
-        for i, pillar in enumerate(bazi.pillars):
-            if i == 2:  # Day pillar - stem is self
-                # For day pillar, stem is 日主 (self), only calculate hidden
-                hidden_ss: Dict[ShiShen, float] = {}
-                for hidden_stem, ratio in pillar.hidden_stems.items():
-                    ss = self.calculate(day_master, hidden_stem)
-                    hidden_ss[ss] = hidden_ss.get(ss, 0) + ratio
-                result.append((None, hidden_ss))  # type: ignore
+        for pillar in bazi.pillars:
+            # 藏干十神计算对所有柱相同
+            # Hidden stem ShiShen calculation is the same for all pillars
+            _, hidden_ss = self.calculate_for_pillar(
+                day_master, pillar.stem, pillar.hidden_stems
+            )
+
+            # 日柱天干即日主，无需计算十神
+            # Day pillar stem is the Day Master itself - no ShiShen to calculate
+            if pillar is bazi.day_pillar:
+                result.append((None, hidden_ss))
             else:
-                stem_ss, hidden_ss = self.calculate_for_pillar(
-                    day_master, pillar.stem, pillar.hidden_stems
-                )
+                stem_ss = self.calculate(day_master, pillar.stem)
                 result.append((stem_ss, hidden_ss))
 
         return result

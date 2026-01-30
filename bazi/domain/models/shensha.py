@@ -11,10 +11,41 @@ from typing import FrozenSet, List, Optional, Tuple
 
 
 # ============================================================
-# Shared Constants
+# 四柱位置 (Pillar Positions)
 # ============================================================
 
-PILLAR_POSITIONS: Tuple[str, ...] = ("year", "month", "day", "hour")
+class PillarPosition(Enum):
+    """
+    四柱位置枚举。
+    Pillar positions in a BaZi chart.
+
+    使用枚举避免魔法字符串，提供类型安全。
+    Use enum to avoid magic strings and provide type safety.
+    """
+    YEAR = "year"
+    MONTH = "month"
+    DAY = "day"
+    HOUR = "hour"
+
+    @property
+    def pillar_attr(self) -> str:
+        """
+        获取 BaZi 对象属性名。
+        Get BaZi attribute name (e.g., 'year_pillar').
+        """
+        return f"{self.value}_pillar"
+
+    def stem_position(self) -> str:
+        """Get position string for stem (e.g., 'year_stem')."""
+        return f"{self.value}_stem"
+
+    def branch_position(self) -> str:
+        """Get position string for branch (e.g., 'year_branch')."""
+        return f"{self.value}_branch"
+
+
+# Backward compatibility - tuple of position strings for iteration
+PILLAR_POSITIONS: Tuple[str, ...] = tuple(p.value for p in PillarPosition)
 """Standard pillar position names used throughout the system."""
 
 

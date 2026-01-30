@@ -1,0 +1,72 @@
+/* Custom styles for 八字 docs */
+
+:root {
+  /* Five Elements colors */
+  --sl-color-wood: #22c55e;
+  --sl-color-fire: #ef4444;
+  --sl-color-earth: #eab308;
+  --sl-color-metal: #d4d4d4;
+  --sl-color-water: #3b82f6;
+}
+
+/* Element badges */
+.badge-wood {
+  background-color: var(--sl-color-wood);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.badge-fire {
+  background-color: var(--sl-color-fire);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.badge-earth {
+  background-color: var(--sl-color-earth);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.badge-metal {
+  background-color: var(--sl-color-metal);
+  color: black;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.badge-water {
+  background-color: var(--sl-color-water);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* Card styles for element grids */
+.element-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.element-card {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  color: white;
+}
+
+.element-card.wood { background-color: var(--sl-color-wood); }
+.element-card.fire { background-color: var(--sl-color-fire); }
+.element-card.earth { background-color: var(--sl-color-earth); }
+.element-card.metal { background-color: var(--sl-color-metal); color: black; }
+.element-card.water { background-color: var(--sl-color-water); }

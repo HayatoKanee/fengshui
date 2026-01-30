@@ -159,20 +159,32 @@ def get_wuxing_relation(self_element: WuXing, other_element: WuXing) -> WuXingRe
 # =============================================================================
 # WUXING RELATIONSHIP WEIGHTS (五行关系权重)
 # =============================================================================
-# Weights determine how strongly elements interact based on their relationship.
-# Returns (self_value, other_value) tuple.
+# 干支关系权重 - 用于计算生耗值 (ShenghaoZhi)
 #
-# Based on traditional BaZi theory:
-# - Same element (比和): Equal strength, high mutual support
-# - Generation (生): Producer gives energy, receiver is empowered
-# - Control (克): Controller expends energy, controlled is weakened
+# 这些权重反映干支之间的能量交换关系：
+# - 比和 (SAME): 同元素形成通根，相互支持最强
+# - 我生 (I_GENERATE): 天干生地支，天干耗气
+# - 我克 (I_OVERCOME): 天干克地支，天干耗气更多
+# - 克我 (OVERCOMES_ME): 地支克天干，天干被削弱
+# - 生我 (GENERATES_ME): 地支生天干，天干得力
+#
+# 通根 (TongGen) Concept:
+# When stem and branch share the same WuXing element, the stem is "rooted"
+# in the branch. This provides maximum mutual support (10, 10).
+#
+# Example: 甲 (Wood stem) in 寅 (Wood branch) = 通根
+# - stem_value = 10 (strong root)
+# - branch_value = 10 (strong support)
+# - Hidden stems (甲0.6, 丙0.3, 戊0.1) contribute: 10 * ratio per element
+#
+# Returns (stem_value, branch_value) tuple for pillar calculations.
 
 RELATIONSHIP_WEIGHTS: Dict[WuXingRelation, Tuple[int, int]] = {
-    WuXingRelation.SAME: (10, 10),         # 比和 - equal mutual support
-    WuXingRelation.I_GENERATE: (6, 8),     # 我生 - I give (6), other receives (8)
-    WuXingRelation.I_OVERCOME: (4, 2),     # 我克 - I expend (4), other weakened (2)
-    WuXingRelation.OVERCOMES_ME: (2, 4),   # 克我 - I weakened (2), other expends (4)
-    WuXingRelation.GENERATES_ME: (8, 6),   # 生我 - I receive (8), other gives (6)
+    WuXingRelation.SAME: (10, 10),         # 比和/通根 - maximum mutual support
+    WuXingRelation.I_GENERATE: (6, 8),     # 我生 - stem depleted (6), branch empowered (8)
+    WuXingRelation.I_OVERCOME: (4, 2),     # 我克 - stem expends (4), branch weakened (2)
+    WuXingRelation.OVERCOMES_ME: (2, 4),   # 克我 - stem weakened (2), branch dominant (4)
+    WuXingRelation.GENERATES_ME: (8, 6),   # 生我 - stem empowered (8), branch depleted (6)
 }
 
 

@@ -1,5 +1,9 @@
 """
-Heavenly Stems (天干) and Earthly Branches (地支) domain models.
+天干地支 (TianGan DiZhi) - Heavenly Stems and Earthly Branches
+
+干支是中国古代纪年法的基础，也是八字命理的核心元素。
+- 天干 (TianGan): 甲乙丙丁戊己庚辛壬癸
+- 地支 (DiZhi): 子丑寅卯辰巳午未申酉戌亥
 
 Pure Python - NO Django dependencies.
 """
@@ -12,215 +16,274 @@ from typing import Dict, FrozenSet, Tuple
 from .elements import WuXing, YinYang
 
 
-class HeavenlyStem(Enum):
-    """Ten Heavenly Stems (天干)."""
-    JIA = "甲"    # Wood Yang
-    YI = "乙"     # Wood Yin
-    BING = "丙"   # Fire Yang
-    DING = "丁"   # Fire Yin
-    WU = "戊"     # Earth Yang
-    JI = "己"     # Earth Yin
-    GENG = "庚"   # Metal Yang
-    XIN = "辛"    # Metal Yin
-    REN = "壬"    # Water Yang
-    GUI = "癸"    # Water Yin
+class TianGan(Enum):
+    """
+    天干 (Heavenly Stems)
+
+    十天干代表天的能量，与五行阴阳对应：
+    - 甲乙 → 木 (Wood)
+    - 丙丁 → 火 (Fire)
+    - 戊己 → 土 (Earth)
+    - 庚辛 → 金 (Metal)
+    - 壬癸 → 水 (Water)
+
+    奇数位为阳，偶数位为阴。
+    """
+    JIA = "甲"    # 甲木 阳
+    YI = "乙"     # 乙木 阴
+    BING = "丙"   # 丙火 阳
+    DING = "丁"   # 丁火 阴
+    WU = "戊"     # 戊土 阳
+    JI = "己"     # 己土 阴
+    GENG = "庚"   # 庚金 阳
+    XIN = "辛"    # 辛金 阴
+    REN = "壬"    # 壬水 阳
+    GUI = "癸"    # 癸水 阴
 
     @property
     def chinese(self) -> str:
+        """返回中文字符"""
         return self.value
 
     @property
     def wuxing(self) -> WuXing:
-        """The Five Element of this stem."""
+        """获取天干对应的五行"""
         return _STEM_WUXING[self]
 
     @property
     def yinyang(self) -> YinYang:
-        """The Yin-Yang polarity of this stem."""
+        """获取天干的阴阳属性"""
         return _STEM_YINYANG[self]
 
     @classmethod
-    def from_chinese(cls, char: str) -> HeavenlyStem:
-        """Create HeavenlyStem from Chinese character."""
+    def from_chinese(cls, char: str) -> TianGan:
+        """从中文字符创建天干"""
         for stem in cls:
             if stem.value == char:
                 return stem
-        raise ValueError(f"Unknown stem: {char}")
+        raise ValueError(f"未知天干: {char}")
 
     @classmethod
-    def all_ordered(cls) -> Tuple[HeavenlyStem, ...]:
-        """Return all stems in traditional order."""
+    def all_ordered(cls) -> Tuple[TianGan, ...]:
+        """按传统顺序返回所有天干"""
         return tuple(cls)
 
 
-class EarthlyBranch(Enum):
-    """Twelve Earthly Branches (地支)."""
-    ZI = "子"     # Rat / Water
-    CHOU = "丑"   # Ox / Earth
-    YIN = "寅"    # Tiger / Wood
-    MAO = "卯"    # Rabbit / Wood
-    CHEN = "辰"   # Dragon / Earth
-    SI = "巳"     # Snake / Fire
-    WU = "午"     # Horse / Fire
-    WEI = "未"    # Goat / Earth
-    SHEN = "申"   # Monkey / Metal
-    YOU = "酉"    # Rooster / Metal
-    XU = "戌"     # Dog / Earth
-    HAI = "亥"    # Pig / Water
+class DiZhi(Enum):
+    """
+    地支 (Earthly Branches)
+
+    十二地支代表地的能量，与五行、生肖对应：
+    - 子(鼠)亥(猪) → 水
+    - 寅(虎)卯(兔) → 木
+    - 巳(蛇)午(马) → 火
+    - 申(猴)酉(鸡) → 金
+    - 丑(牛)辰(龙)未(羊)戌(狗) → 土
+
+    每个地支含有藏干（本气、中气、余气）。
+    """
+    ZI = "子"     # 子 鼠 水
+    CHOU = "丑"   # 丑 牛 土
+    YIN = "寅"    # 寅 虎 木
+    MAO = "卯"    # 卯 兔 木
+    CHEN = "辰"   # 辰 龙 土
+    SI = "巳"     # 巳 蛇 火
+    WU = "午"     # 午 马 火
+    WEI = "未"    # 未 羊 土
+    SHEN = "申"   # 申 猴 金
+    YOU = "酉"    # 酉 鸡 金
+    XU = "戌"     # 戌 狗 土
+    HAI = "亥"    # 亥 猪 水
 
     @property
     def chinese(self) -> str:
+        """返回中文字符"""
         return self.value
 
     @property
     def wuxing(self) -> WuXing:
-        """The Five Element of this branch."""
+        """获取地支对应的五行"""
         return _BRANCH_WUXING[self]
 
     @property
-    def hidden_stems(self) -> Dict[HeavenlyStem, float]:
-        """Hidden stems within this branch with their ratios."""
+    def hidden_stems(self) -> Dict[TianGan, float]:
+        """
+        获取地支藏干及其比例
+
+        藏干分为：
+        - 本气：主要藏干，比例最大 (≥0.5)
+        - 中气：次要藏干
+        - 余气：最弱藏干
+        """
         return dict(_HIDDEN_STEMS[self])
 
     @classmethod
-    def from_chinese(cls, char: str) -> EarthlyBranch:
-        """Create EarthlyBranch from Chinese character."""
+    def from_chinese(cls, char: str) -> DiZhi:
+        """从中文字符创建地支"""
         for branch in cls:
             if branch.value == char:
                 return branch
-        raise ValueError(f"Unknown branch: {char}")
+        raise ValueError(f"未知地支: {char}")
 
     @classmethod
-    def all_ordered(cls) -> Tuple[EarthlyBranch, ...]:
-        """Return all branches in traditional order."""
+    def all_ordered(cls) -> Tuple[DiZhi, ...]:
+        """按传统顺序返回所有地支"""
         return tuple(cls)
 
 
-# Stem → WuXing mapping
-_STEM_WUXING: Dict[HeavenlyStem, WuXing] = {
-    HeavenlyStem.JIA: WuXing.WOOD,
-    HeavenlyStem.YI: WuXing.WOOD,
-    HeavenlyStem.BING: WuXing.FIRE,
-    HeavenlyStem.DING: WuXing.FIRE,
-    HeavenlyStem.WU: WuXing.EARTH,
-    HeavenlyStem.JI: WuXing.EARTH,
-    HeavenlyStem.GENG: WuXing.METAL,
-    HeavenlyStem.XIN: WuXing.METAL,
-    HeavenlyStem.REN: WuXing.WATER,
-    HeavenlyStem.GUI: WuXing.WATER,
+# =============================================================================
+# 天干五行对应 (Stem → WuXing)
+# =============================================================================
+_STEM_WUXING: Dict[TianGan, WuXing] = {
+    TianGan.JIA: WuXing.WOOD,   # 甲木
+    TianGan.YI: WuXing.WOOD,    # 乙木
+    TianGan.BING: WuXing.FIRE,  # 丙火
+    TianGan.DING: WuXing.FIRE,  # 丁火
+    TianGan.WU: WuXing.EARTH,   # 戊土
+    TianGan.JI: WuXing.EARTH,   # 己土
+    TianGan.GENG: WuXing.METAL, # 庚金
+    TianGan.XIN: WuXing.METAL,  # 辛金
+    TianGan.REN: WuXing.WATER,  # 壬水
+    TianGan.GUI: WuXing.WATER,  # 癸水
 }
 
-# Stem → YinYang mapping
-_STEM_YINYANG: Dict[HeavenlyStem, YinYang] = {
-    HeavenlyStem.JIA: YinYang.YANG,
-    HeavenlyStem.YI: YinYang.YIN,
-    HeavenlyStem.BING: YinYang.YANG,
-    HeavenlyStem.DING: YinYang.YIN,
-    HeavenlyStem.WU: YinYang.YANG,
-    HeavenlyStem.JI: YinYang.YIN,
-    HeavenlyStem.GENG: YinYang.YANG,
-    HeavenlyStem.XIN: YinYang.YIN,
-    HeavenlyStem.REN: YinYang.YANG,
-    HeavenlyStem.GUI: YinYang.YIN,
+# =============================================================================
+# 天干阴阳对应 (Stem → YinYang)
+# =============================================================================
+_STEM_YINYANG: Dict[TianGan, YinYang] = {
+    TianGan.JIA: YinYang.YANG,  # 甲 阳
+    TianGan.YI: YinYang.YIN,    # 乙 阴
+    TianGan.BING: YinYang.YANG, # 丙 阳
+    TianGan.DING: YinYang.YIN,  # 丁 阴
+    TianGan.WU: YinYang.YANG,   # 戊 阳
+    TianGan.JI: YinYang.YIN,    # 己 阴
+    TianGan.GENG: YinYang.YANG, # 庚 阳
+    TianGan.XIN: YinYang.YIN,   # 辛 阴
+    TianGan.REN: YinYang.YANG,  # 壬 阳
+    TianGan.GUI: YinYang.YIN,   # 癸 阴
 }
 
-# Branch → WuXing mapping
-_BRANCH_WUXING: Dict[EarthlyBranch, WuXing] = {
-    EarthlyBranch.ZI: WuXing.WATER,
-    EarthlyBranch.CHOU: WuXing.EARTH,
-    EarthlyBranch.YIN: WuXing.WOOD,
-    EarthlyBranch.MAO: WuXing.WOOD,
-    EarthlyBranch.CHEN: WuXing.EARTH,
-    EarthlyBranch.SI: WuXing.FIRE,
-    EarthlyBranch.WU: WuXing.FIRE,
-    EarthlyBranch.WEI: WuXing.EARTH,
-    EarthlyBranch.SHEN: WuXing.METAL,
-    EarthlyBranch.YOU: WuXing.METAL,
-    EarthlyBranch.XU: WuXing.EARTH,
-    EarthlyBranch.HAI: WuXing.WATER,
+# =============================================================================
+# 地支五行对应 (Branch → WuXing)
+# =============================================================================
+_BRANCH_WUXING: Dict[DiZhi, WuXing] = {
+    DiZhi.ZI: WuXing.WATER,    # 子 水
+    DiZhi.CHOU: WuXing.EARTH,  # 丑 土
+    DiZhi.YIN: WuXing.WOOD,    # 寅 木
+    DiZhi.MAO: WuXing.WOOD,    # 卯 木
+    DiZhi.CHEN: WuXing.EARTH,  # 辰 土
+    DiZhi.SI: WuXing.FIRE,     # 巳 火
+    DiZhi.WU: WuXing.FIRE,     # 午 火
+    DiZhi.WEI: WuXing.EARTH,   # 未 土
+    DiZhi.SHEN: WuXing.METAL,  # 申 金
+    DiZhi.YOU: WuXing.METAL,   # 酉 金
+    DiZhi.XU: WuXing.EARTH,    # 戌 土
+    DiZhi.HAI: WuXing.WATER,   # 亥 水
 }
 
-# Hidden stems within each branch (地支藏干)
-_HIDDEN_STEMS: Dict[EarthlyBranch, Dict[HeavenlyStem, float]] = {
-    EarthlyBranch.ZI: {HeavenlyStem.GUI: 1.0},
-    EarthlyBranch.CHOU: {HeavenlyStem.JI: 0.5, HeavenlyStem.GUI: 0.3, HeavenlyStem.XIN: 0.2},
-    EarthlyBranch.YIN: {HeavenlyStem.JIA: 0.6, HeavenlyStem.BING: 0.3, HeavenlyStem.WU: 0.1},
-    EarthlyBranch.MAO: {HeavenlyStem.YI: 1.0},
-    EarthlyBranch.CHEN: {HeavenlyStem.WU: 0.5, HeavenlyStem.YI: 0.3, HeavenlyStem.GUI: 0.2},
-    EarthlyBranch.SI: {HeavenlyStem.BING: 0.6, HeavenlyStem.WU: 0.3, HeavenlyStem.GENG: 0.1},
-    EarthlyBranch.WU: {HeavenlyStem.DING: 0.5, HeavenlyStem.JI: 0.5},
-    EarthlyBranch.WEI: {HeavenlyStem.YI: 0.2, HeavenlyStem.JI: 0.5, HeavenlyStem.DING: 0.3},
-    EarthlyBranch.SHEN: {HeavenlyStem.GENG: 0.6, HeavenlyStem.REN: 0.3, HeavenlyStem.WU: 0.1},
-    EarthlyBranch.YOU: {HeavenlyStem.XIN: 1.0},
-    EarthlyBranch.XU: {HeavenlyStem.WU: 0.5, HeavenlyStem.XIN: 0.3, HeavenlyStem.DING: 0.2},
-    EarthlyBranch.HAI: {HeavenlyStem.REN: 0.7, HeavenlyStem.JIA: 0.3},
+# =============================================================================
+# 地支藏干 (Hidden Stems / CangGan)
+# 本气、中气、余气的比例分配
+# =============================================================================
+_HIDDEN_STEMS: Dict[DiZhi, Dict[TianGan, float]] = {
+    DiZhi.ZI: {TianGan.GUI: 1.0},                                          # 子藏癸
+    DiZhi.CHOU: {TianGan.JI: 0.5, TianGan.GUI: 0.3, TianGan.XIN: 0.2},    # 丑藏己癸辛
+    DiZhi.YIN: {TianGan.JIA: 0.6, TianGan.BING: 0.3, TianGan.WU: 0.1},    # 寅藏甲丙戊
+    DiZhi.MAO: {TianGan.YI: 1.0},                                          # 卯藏乙
+    DiZhi.CHEN: {TianGan.WU: 0.5, TianGan.YI: 0.3, TianGan.GUI: 0.2},     # 辰藏戊乙癸
+    DiZhi.SI: {TianGan.BING: 0.6, TianGan.WU: 0.3, TianGan.GENG: 0.1},    # 巳藏丙戊庚
+    DiZhi.WU: {TianGan.DING: 0.5, TianGan.JI: 0.5},                        # 午藏丁己
+    DiZhi.WEI: {TianGan.YI: 0.2, TianGan.JI: 0.5, TianGan.DING: 0.3},     # 未藏乙己丁
+    DiZhi.SHEN: {TianGan.GENG: 0.6, TianGan.REN: 0.3, TianGan.WU: 0.1},   # 申藏庚壬戊
+    DiZhi.YOU: {TianGan.XIN: 1.0},                                         # 酉藏辛
+    DiZhi.XU: {TianGan.WU: 0.5, TianGan.XIN: 0.3, TianGan.DING: 0.2},     # 戌藏戊辛丁
+    DiZhi.HAI: {TianGan.REN: 0.7, TianGan.JIA: 0.3},                       # 亥藏壬甲
 }
 
+
+# =============================================================================
+# 干支关系 (GanZhi Relations)
+# =============================================================================
 
 @dataclass(frozen=True)
-class StemBranchRelations:
-    """Relationship constants between stems and branches."""
+class GanZhiRelations:
+    """
+    干支关系常量
 
-    # Six Harmonies (六合) - branch pairs that combine
-    LIU_HE: FrozenSet[Tuple[EarthlyBranch, EarthlyBranch]] = frozenset({
-        (EarthlyBranch.ZI, EarthlyBranch.CHOU),
-        (EarthlyBranch.YIN, EarthlyBranch.HAI),
-        (EarthlyBranch.MAO, EarthlyBranch.XU),
-        (EarthlyBranch.CHEN, EarthlyBranch.YOU),
-        (EarthlyBranch.SI, EarthlyBranch.SHEN),
-        (EarthlyBranch.WU, EarthlyBranch.WEI),
+    包含：
+    - 六合 (LiuHe): 地支相合
+    - 五合 (WuHe): 天干相合
+    - 天干相冲 (GanChong)
+    - 地支相冲 (ZhiChong)
+    """
+
+    # 六合 - 地支相合
+    # 子丑合、寅亥合、卯戌合、辰酉合、巳申合、午未合
+    LIU_HE: FrozenSet[Tuple[DiZhi, DiZhi]] = frozenset({
+        (DiZhi.ZI, DiZhi.CHOU),    # 子丑合
+        (DiZhi.YIN, DiZhi.HAI),    # 寅亥合
+        (DiZhi.MAO, DiZhi.XU),     # 卯戌合
+        (DiZhi.CHEN, DiZhi.YOU),   # 辰酉合
+        (DiZhi.SI, DiZhi.SHEN),    # 巳申合
+        (DiZhi.WU, DiZhi.WEI),     # 午未合
     })
 
-    # Five Combinations (五合) - stem pairs that combine
-    WU_HE: FrozenSet[Tuple[HeavenlyStem, HeavenlyStem]] = frozenset({
-        (HeavenlyStem.JIA, HeavenlyStem.JI),
-        (HeavenlyStem.YI, HeavenlyStem.GENG),
-        (HeavenlyStem.BING, HeavenlyStem.XIN),
-        (HeavenlyStem.DING, HeavenlyStem.REN),
-        (HeavenlyStem.WU, HeavenlyStem.GUI),
+    # 五合 - 天干相合
+    # 甲己合、乙庚合、丙辛合、丁壬合、戊癸合
+    WU_HE: FrozenSet[Tuple[TianGan, TianGan]] = frozenset({
+        (TianGan.JIA, TianGan.JI),   # 甲己合
+        (TianGan.YI, TianGan.GENG),  # 乙庚合
+        (TianGan.BING, TianGan.XIN), # 丙辛合
+        (TianGan.DING, TianGan.REN), # 丁壬合
+        (TianGan.WU, TianGan.GUI),   # 戊癸合
     })
 
-    # Stem clashes (天干相冲)
-    GAN_CHONG: FrozenSet[Tuple[HeavenlyStem, HeavenlyStem]] = frozenset({
-        (HeavenlyStem.JIA, HeavenlyStem.GENG),
-        (HeavenlyStem.YI, HeavenlyStem.XIN),
-        (HeavenlyStem.BING, HeavenlyStem.REN),
-        (HeavenlyStem.DING, HeavenlyStem.GUI),
+    # 天干相冲
+    # 甲庚冲、乙辛冲、丙壬冲、丁癸冲
+    GAN_CHONG: FrozenSet[Tuple[TianGan, TianGan]] = frozenset({
+        (TianGan.JIA, TianGan.GENG),  # 甲庚冲
+        (TianGan.YI, TianGan.XIN),    # 乙辛冲
+        (TianGan.BING, TianGan.REN),  # 丙壬冲
+        (TianGan.DING, TianGan.GUI),  # 丁癸冲
     })
 
-    # Branch clashes (地支相冲)
-    ZHI_CHONG: FrozenSet[Tuple[EarthlyBranch, EarthlyBranch]] = frozenset({
-        (EarthlyBranch.ZI, EarthlyBranch.WU),
-        (EarthlyBranch.CHOU, EarthlyBranch.WEI),
-        (EarthlyBranch.YIN, EarthlyBranch.SHEN),
-        (EarthlyBranch.MAO, EarthlyBranch.YOU),
-        (EarthlyBranch.CHEN, EarthlyBranch.XU),
-        (EarthlyBranch.SI, EarthlyBranch.HAI),
+    # 地支相冲
+    # 子午冲、丑未冲、寅申冲、卯酉冲、辰戌冲、巳亥冲
+    ZHI_CHONG: FrozenSet[Tuple[DiZhi, DiZhi]] = frozenset({
+        (DiZhi.ZI, DiZhi.WU),     # 子午冲
+        (DiZhi.CHOU, DiZhi.WEI),  # 丑未冲
+        (DiZhi.YIN, DiZhi.SHEN),  # 寅申冲
+        (DiZhi.MAO, DiZhi.YOU),   # 卯酉冲
+        (DiZhi.CHEN, DiZhi.XU),   # 辰戌冲
+        (DiZhi.SI, DiZhi.HAI),    # 巳亥冲
     })
 
 
-# Singleton for relations
-RELATIONS = StemBranchRelations()
+# 关系单例
+RELATIONS = GanZhiRelations()
 
+
+# =============================================================================
+# 辅助函数 (Helper Functions)
+# =============================================================================
 
 def check_he_by_chinese(char1: str, char2: str) -> bool:
     """
-    Check if two characters form a harmony (合) relationship.
+    检查两个字符是否形成合的关系
 
-    Handles both stem-stem (五合) and branch-branch (六合) combinations.
-    Also checks reversed order for convenience.
+    支持六合（地支）和五合（天干）
 
     Args:
-        char1: First Chinese character (stem or branch)
-        char2: Second Chinese character (stem or branch)
+        char1: 第一个中文字符
+        char2: 第二个中文字符
 
     Returns:
-        True if the pair forms a harmony combination
+        如果形成合的关系返回 True
     """
-    # Try as branches first (六合)
+    # 先尝试作为地支（六合）
     try:
-        branch1 = EarthlyBranch.from_chinese(char1)
-        branch2 = EarthlyBranch.from_chinese(char2)
+        branch1 = DiZhi.from_chinese(char1)
+        branch2 = DiZhi.from_chinese(char2)
         pair = (branch1, branch2)
         reverse = (branch2, branch1)
         if pair in RELATIONS.LIU_HE or reverse in RELATIONS.LIU_HE:
@@ -228,10 +291,10 @@ def check_he_by_chinese(char1: str, char2: str) -> bool:
     except ValueError:
         pass
 
-    # Try as stems (五合)
+    # 再尝试作为天干（五合）
     try:
-        stem1 = HeavenlyStem.from_chinese(char1)
-        stem2 = HeavenlyStem.from_chinese(char2)
+        stem1 = TianGan.from_chinese(char1)
+        stem2 = TianGan.from_chinese(char2)
         pair = (stem1, stem2)
         reverse = (stem2, stem1)
         if pair in RELATIONS.WU_HE or reverse in RELATIONS.WU_HE:
@@ -243,23 +306,29 @@ def check_he_by_chinese(char1: str, char2: str) -> bool:
 
 
 def check_he(
-    elem1: HeavenlyStem | EarthlyBranch | str,
-    elem2: HeavenlyStem | EarthlyBranch | str,
+    elem1: TianGan | DiZhi | str,
+    elem2: TianGan | DiZhi | str,
 ) -> bool:
     """
-    Check if two elements form a harmony (合) relationship.
+    检查两个元素是否形成合的关系
 
-    Supports both domain types (HeavenlyStem, EarthlyBranch) and Chinese strings.
+    支持天干、地支枚举和中文字符串
 
     Args:
-        elem1: First element (stem, branch, or Chinese character)
-        elem2: Second element (stem, branch, or Chinese character)
+        elem1: 第一个元素（天干、地支或中文字符）
+        elem2: 第二个元素（天干、地支或中文字符）
 
     Returns:
-        True if the pair forms a harmony combination
+        如果形成合的关系返回 True
     """
-    # Convert to Chinese characters if needed
     char1 = elem1.chinese if hasattr(elem1, 'chinese') else str(elem1)
     char2 = elem2.chinese if hasattr(elem2, 'chinese') else str(elem2)
-
     return check_he_by_chinese(char1, char2)
+
+
+# =============================================================================
+# 向后兼容别名 (Backward Compatibility Aliases)
+# =============================================================================
+HeavenlyStem = TianGan
+EarthlyBranch = DiZhi
+StemBranchRelations = GanZhiRelations

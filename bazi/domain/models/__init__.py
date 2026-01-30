@@ -12,11 +12,16 @@ from .elements import (
     RELATIONSHIP_WEIGHTS,
 )
 from .stems_branches import (
+    # Primary names (干支 pinyin)
+    TianGan,
+    DiZhi,
+    GanZhiRelations,
+    RELATIONS,
+    check_he,
+    # Backward compatibility aliases
     HeavenlyStem,
     EarthlyBranch,
     StemBranchRelations,
-    RELATIONS,
-    check_he,
 )
 from .pillar import Pillar
 from .bazi import BaZi, BirthData
@@ -38,19 +43,23 @@ from .analysis import (
 )
 
 __all__ = [
-    # Elements
+    # Elements (五行)
     "WuXing",
     "WuXingRelation",
     "YinYang",
     "WangXiang",
     "get_wuxing_relation",
     "RELATIONSHIP_WEIGHTS",
-    # Stems and Branches
+    # Stems and Branches (干支) - Primary names
+    "TianGan",
+    "DiZhi",
+    "GanZhiRelations",
+    "RELATIONS",
+    "check_he",
+    # Backward compatibility aliases
     "HeavenlyStem",
     "EarthlyBranch",
     "StemBranchRelations",
-    "RELATIONS",
-    "check_he",
     # Pillar
     "Pillar",
     # BaZi

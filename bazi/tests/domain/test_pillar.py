@@ -41,12 +41,12 @@ class TestPillarCreation:
 
     def test_from_chinese_invalid_stem(self):
         """from_chinese raises ValueError for invalid stem."""
-        with pytest.raises(ValueError, match="Unknown stem"):
+        with pytest.raises(ValueError, match="未知天干"):
             Pillar.from_chinese("X子")
 
     def test_from_chinese_invalid_branch(self):
         """from_chinese raises ValueError for invalid branch."""
-        with pytest.raises(ValueError, match="Unknown branch"):
+        with pytest.raises(ValueError, match="未知地支"):
             Pillar.from_chinese("甲X")
 
 

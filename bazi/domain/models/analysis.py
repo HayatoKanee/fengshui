@@ -80,18 +80,11 @@ class DayMasterStrength:
 
     @property
     def strength_level(self) -> str:
-        """Qualitative strength level."""
-        pct = self.beneficial_percentage
-        if pct >= 70:
-            return "极强"
-        elif pct >= 55:
-            return "偏强"
-        elif pct >= 45:
-            return "中和"
-        elif pct >= 30:
-            return "偏弱"
-        else:
-            return "极弱"
+        """
+        日主强弱判断。
+        Qualitative strength level based on 50% threshold.
+        """
+        return "身强" if self.is_strong else "身弱"
 
 
 @dataclass(frozen=True)

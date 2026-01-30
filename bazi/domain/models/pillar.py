@@ -77,3 +77,11 @@ class Pillar:
         """
         relation = get_wuxing_relation(self.stem_wuxing, self.branch_wuxing)
         return RELATIONSHIP_WEIGHTS[relation]
+
+    @property
+    def is_tonggen(self) -> bool:
+        """
+        检查是否通根 - 干支五行相同。
+        Check if 通根 (rooted) - gan and zhi share same WuXing.
+        """
+        return self.stem_wuxing == self.branch_wuxing

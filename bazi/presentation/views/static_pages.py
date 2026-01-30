@@ -72,3 +72,33 @@ def introbazi_view(request):
     including how they are calculated and interpreted.
     """
     return render(request, "introbazi.html")
+
+
+def wangxiang_view(request):
+    """
+    旺相休囚死 (Seasonal Strength) educational page.
+
+    Explains the five phases of element strength based on season:
+    Wang (旺), Xiang (相), Xiu (休), Qiu (囚), Si (死).
+    """
+    return render(request, "wangxiang.html")
+
+
+def shishen_view(request):
+    """
+    十神 (Ten Gods) educational page.
+
+    Explains the ten relationships between elements and day master,
+    used for personality and fortune analysis.
+    """
+    return render(request, "shishen.html")
+
+
+def shenghao_view(request):
+    """
+    生耗值 (Beneficial/Harmful Value) educational page.
+
+    Explains the calculation of Day Master strength through
+    beneficial (生扶) and harmful (耗泄克) element values.
+    """
+    return render(request, "shenghao.html")

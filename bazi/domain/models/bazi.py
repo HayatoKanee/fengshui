@@ -30,15 +30,22 @@ class BirthData:
     name: Optional[str] = None
 
     def __post_init__(self):
-        """Validate birth data."""
-        if not (1 <= self.month <= 12):
-            raise ValueError(f"Month must be 1-12, got: {self.month}")
-        if not (1 <= self.day <= 31):
-            raise ValueError(f"Day must be 1-31, got: {self.day}")
+        """
+        验证出生数据。
+        Validate birth data with comprehensive checks.
+        """
+        # 基础范围检查
         if not (0 <= self.hour <= 23):
             raise ValueError(f"Hour must be 0-23, got: {self.hour}")
         if not (0 <= self.minute <= 59):
             raise ValueError(f"Minute must be 0-59, got: {self.minute}")
+
+        # 使用 datetime 验证日期有效性（处理闰年、月份天数等）
+        # Use datetime to validate date (handles leap years, days per month, etc.)
+        try:
+            datetime(self.year, self.month, self.day)
+        except ValueError as e:
+            raise ValueError(f"无效日期 Invalid date {self.year}-{self.month}-{self.day}: {e}")
 
     @classmethod
     def from_datetime(cls, dt: datetime, is_male: bool = True, name: Optional[str] = None) -> BirthData:
@@ -127,6 +134,7 @@ class BaZi:
     @classmethod
     def from_chinese(cls, bazi_str: str) -> BaZi:
         """
+        从中文字符串创建八字。
         Create BaZi from Chinese string.
 
         Args:
@@ -134,18 +142,23 @@ class BaZi:
 
         Returns:
             BaZi instance
+
+        Raises:
+            ValueError: If string is not valid 8-character BaZi
         """
-        # Remove spaces and split into pillars
         chars = bazi_str.replace(" ", "")
         if len(chars) != 8:
-            raise ValueError(f"BaZi must have 8 characters, got: {len(chars)}")
+            raise ValueError(f"八字必须8个字符 BaZi requires 8 characters, got: {len(chars)}")
 
-        return cls(
-            year_pillar=Pillar.from_chinese(chars[0:2]),
-            month_pillar=Pillar.from_chinese(chars[2:4]),
-            day_pillar=Pillar.from_chinese(chars[4:6]),
-            hour_pillar=Pillar.from_chinese(chars[6:8]),
-        )
+        try:
+            return cls(
+                year_pillar=Pillar.from_chinese(chars[0:2]),
+                month_pillar=Pillar.from_chinese(chars[2:4]),
+                day_pillar=Pillar.from_chinese(chars[4:6]),
+                hour_pillar=Pillar.from_chinese(chars[6:8]),
+            )
+        except ValueError as e:
+            raise ValueError(f"无效八字 Invalid BaZi '{bazi_str}': {e}") from e
 
     @classmethod
     def from_pillars(cls, year: str, month: str, day: str, hour: str) -> BaZi:

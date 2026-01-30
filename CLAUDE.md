@@ -52,27 +52,31 @@ bazi/
 
 ## Key Domain Concepts
 
-### BaZi (八字) Terminology
+### Naming Convention (命名规范)
 
-| Term | Chinese | Description |
-|------|---------|-------------|
-| **WuXing** | 五行 | Five Elements: Wood, Fire, Earth, Metal, Water |
+**All domain concepts use Chinese pinyin names** for consistency. This avoids awkward English translations and aligns with industry practice.
+
+| Code Name | 中文 | Description |
+|-----------|------|-------------|
+| **WuXing** | 五行 | Five Elements: 木火土金水 (Wood, Fire, Earth, Metal, Water) |
 | **YinYang** | 阴阳 | Yin and Yang polarity |
-| **HeavenlyStem** | 天干 | 10 stems: 甲乙丙丁戊己庚辛壬癸 |
-| **EarthlyBranch** | 地支 | 12 branches: 子丑寅卯辰巳午未申酉戌亥 |
-| **Pillar** | 柱 | One stem + one branch (e.g., 甲子) |
+| **TianGan** | 天干 | 10 Heavenly Stems: 甲乙丙丁戊己庚辛壬癸 |
+| **DiZhi** | 地支 | 12 Earthly Branches: 子丑寅卯辰巳午未申酉戌亥 |
+| **GanZhi** | 干支 | Stem-Branch pair (e.g., 甲子) |
 | **BaZi** | 八字 | Four Pillars: Year, Month, Day, Hour |
 | **ShiShen** | 十神 | Ten Gods relationships |
 | **ShenSha** | 神煞 | Auxiliary stars |
 | **WangXiang** | 旺相休囚死 | Seasonal element strength phases |
-| **DayMaster** | 日主 | The day stem, represents the self |
+| **RiZhu** | 日主 | Day Master - the day stem, represents the self |
 | **LiuNian** | 流年 | Yearly fortune analysis |
 | **FeiXing** | 飞星 | Flying Star feng shui |
+
+> **Note**: Legacy aliases `HeavenlyStem`, `EarthlyBranch` exist for backward compatibility but prefer `TianGan`, `DiZhi` in new code.
 
 ### Domain Models Location
 
 - **Elements**: `bazi/domain/models/elements.py` (WuXing, YinYang, WangXiang)
-- **Stems/Branches**: `bazi/domain/models/stems_branches.py`
+- **Stems/Branches**: `bazi/domain/models/stems_branches.py` (TianGan, DiZhi, GanZhiRelations)
 - **Pillar**: `bazi/domain/models/pillar.py`
 - **BaZi**: `bazi/domain/models/bazi.py`
 - **ShiShen**: `bazi/domain/models/shishen.py`

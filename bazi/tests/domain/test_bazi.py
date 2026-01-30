@@ -56,22 +56,22 @@ class TestBirthDataCreation:
 
     def test_invalid_month_too_low(self):
         """Month below 1 raises ValueError."""
-        with pytest.raises(ValueError, match="Month must be 1-12"):
+        with pytest.raises(ValueError, match="Invalid date"):
             BirthData(year=1990, month=0, day=15, hour=12)
 
     def test_invalid_month_too_high(self):
         """Month above 12 raises ValueError."""
-        with pytest.raises(ValueError, match="Month must be 1-12"):
+        with pytest.raises(ValueError, match="Invalid date"):
             BirthData(year=1990, month=13, day=15, hour=12)
 
     def test_invalid_day_too_low(self):
         """Day below 1 raises ValueError."""
-        with pytest.raises(ValueError, match="Day must be 1-31"):
+        with pytest.raises(ValueError, match="Invalid date"):
             BirthData(year=1990, month=6, day=0, hour=12)
 
     def test_invalid_day_too_high(self):
         """Day above 31 raises ValueError."""
-        with pytest.raises(ValueError, match="Day must be 1-31"):
+        with pytest.raises(ValueError, match="Invalid date"):
             BirthData(year=1990, month=6, day=32, hour=12)
 
     def test_invalid_hour_negative(self):
@@ -93,6 +93,21 @@ class TestBirthDataCreation:
         """Minute above 59 raises ValueError."""
         with pytest.raises(ValueError, match="Minute must be 0-59"):
             BirthData(year=1990, month=6, day=15, hour=12, minute=60)
+
+    def test_invalid_february_30(self):
+        """Feb 30 raises ValueError (impossible date)."""
+        with pytest.raises(ValueError, match="Invalid date"):
+            BirthData(year=1990, month=2, day=30, hour=12)
+
+    def test_invalid_leap_year_feb_29(self):
+        """Feb 29 on non-leap year raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid date"):
+            BirthData(year=1990, month=2, day=29, hour=12)  # 1990 is not a leap year
+
+    def test_valid_leap_year_feb_29(self):
+        """Feb 29 on leap year is valid."""
+        birth = BirthData(year=2000, month=2, day=29, hour=12)  # 2000 is a leap year
+        assert birth.day == 29
 
     def test_birth_data_is_frozen(self):
         """BirthData is immutable."""
@@ -127,7 +142,7 @@ class TestBaZiCreation:
 
     def test_from_chinese_invalid_length(self):
         """from_chinese raises ValueError for wrong length."""
-        with pytest.raises(ValueError, match="must have 8 characters"):
+        with pytest.raises(ValueError, match="requires 8 characters"):
             BaZi.from_chinese("甲子乙丑丙")
 
     def test_from_pillars_strings(self):

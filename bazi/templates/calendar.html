@@ -1,8 +1,16 @@
 {% extends 'base_content.html' %}
 
 {% block content %}
-<div x-data="calendarApp()" x-init="initCalendar()">
-    <!-- Alpine.js Modal for Day Details -->
+{# Calendar container with config passed via data attributes - NO inline JS! #}
+<div x-data="calendarApp()"
+     x-init="init()"
+     data-calendar-config
+     data-csrf-token="{{ csrf_token }}"
+     data-initial-year="{{ year }}"
+     data-initial-month="{{ month }}"
+     data-bazi-detail-url="{% url 'bazi_detail' %}">
+
+    {# Modal for Day Details #}
     <div class="modal" :class="{ 'modal-open': showModal }">
         <div class="modal-box max-w-2xl">
             <h3 class="font-bold text-lg" x-text="modalTitle">日期详情</h3>
@@ -15,9 +23,9 @@
     </div>
 
     <div class="container mx-auto px-4 py-6">
-        <!-- Top bar: Profile selector + Legend -->
+        {# Top bar: Profile selector + Legend #}
         <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <!-- Profile Selector Dropdown -->
+            {# Profile Selector Dropdown #}
             <div class="dropdown">
                 <div tabindex="0" role="button" class="btn btn-outline gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,7 +62,7 @@
                 </ul>
             </div>
 
-            <!-- Calendar Legend -->
+            {# Calendar Legend #}
             <div class="flex flex-wrap gap-3">
                 <div class="badge badge-lg gap-2">
                     <span class="w-3 h-3 rounded-full bg-error"></span>
@@ -71,13 +79,13 @@
             </div>
         </div>
 
-        <!-- Loading Indicator -->
+        {# Loading Indicator #}
         <div x-show="isLoading" class="flex justify-center items-center py-4">
             <span class="loading loading-spinner loading-lg text-primary"></span>
             <span class="ml-2">加载中...</span>
         </div>
 
-        <!-- Alert Messages -->
+        {# Alert Messages #}
         <template x-if="alertMessage">
             <div class="alert mb-4" :class="alertType === 'warning' ? 'alert-warning' : 'alert-error'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
@@ -88,18 +96,20 @@
             </div>
         </template>
 
-        <!-- FullCalendar Container -->
+        {# FullCalendar Container #}
         <div id="calendar" class="bg-base-100 rounded-lg shadow-lg p-4"></div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<!-- FullCalendar v6.1.19 (latest, CSS auto-injected) -->
+{# FullCalendar loaded via CDN (external library) #}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+{% endblock %}
 
+{% block extra_styles %}
 <style>
-    /* Custom FullCalendar Day Cell Formatting */
+    /* Calendar day cell styling */
     .day-content {
         padding: 5px;
         display: flex;
@@ -121,14 +131,12 @@
         border-radius: 50%;
         display: inline-block;
         margin-right: 4px;
-        /* Default to neutral appearance when no specific class is applied */
         background-color: transparent;
         border: 2px solid oklch(var(--bc) / 0.3);
     }
 
-    /* Dot colors */
     .good-dot {
-        background-color: oklch(var(--er)); /* DaisyUI error color (red) for good luck */
+        background-color: oklch(var(--er));
         box-shadow: 0 0 3px oklch(var(--er) / 0.7);
         border: none;
     }
@@ -139,7 +147,7 @@
     }
 
     .bad-dot {
-        background-color: oklch(var(--n)); /* DaisyUI neutral color (dark) for bad luck */
+        background-color: oklch(var(--n));
         box-shadow: 0 0 3px oklch(var(--n) / 0.7);
         border: none;
     }
@@ -148,7 +156,7 @@
         background-color: oklch(var(--wa) / 0.2) !important;
     }
 
-    /* Make calendar responsive */
+    /* Responsive calendar */
     .fc {
         font-size: 14px;
     }
@@ -163,499 +171,4 @@
         }
     }
 </style>
-
-<script>
-function calendarApp() {
-    return {
-        showModal: false,
-        modalTitle: '日期详情',
-        modalContent: '',
-        isLoading: false,
-        alertMessage: '',
-        alertType: 'warning',
-        calendar: null,
-        calendarData: {},
-        dayReasons: {},
-        dayScores: {},
-        dayHours: {},
-        dayLunarDates: {},
-        isInitializing: true,
-        csrfToken: '{{ csrf_token }}',
-        _dayCellContentLogged: false,
-        _cellsLogged: 0,
-        _classVerified: false,
-
-        // Profile state (loaded from Alpine store)
-        profiles: [],
-        selectedProfileId: null,
-        selectedProfileName: null,
-        selectedProfile: null,
-
-        async initCalendar() {
-            const self = this;
-
-            // Wait for profile store to be ready
-            await this.loadProfiles();
-
-            const calendarEl = document.getElementById('calendar');
-
-            this.calendar = new FullCalendar.Calendar(calendarEl, {
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                },
-                initialView: 'dayGridMonth',
-                locale: 'zh-cn',
-                initialDate: '{{ year }}-{{ month|stringformat:"02d" }}-01',
-                selectable: true,
-                navLinks: true,
-                dayMaxEvents: true,
-                height: 'auto',
-
-                dateClick: function(info) {
-                    self.showDayDetails(info.dateStr);
-                },
-
-                datesSet: function(info) {
-                    if (self.isInitializing) {
-                        self.isInitializing = false;
-                        return;
-                    }
-                    const currentDate = self.calendar.getDate();
-                    const displayedYear = currentDate.getFullYear();
-                    const displayedMonth = currentDate.getMonth() + 1;
-                    self.loadMonthData(displayedYear, displayedMonth);
-                },
-
-                dayCellContent: function(args) {
-                    if (!self._dayCellContentLogged) {
-                        console.log('dayCellContent callback is being called');
-                        self._dayCellContentLogged = true;
-                    }
-
-                    const dateNum = args.dayNumberText;
-                    const dateStr = args.date.getFullYear() + '-' +
-                                   String(args.date.getMonth() + 1).padStart(2, '0') + '-' +
-                                   String(args.date.getDate()).padStart(2, '0');
-
-                    const dayEl = document.createElement('div');
-                    dayEl.classList.add('day-content');
-
-                    const dotEl = document.createElement('span');
-                    dotEl.classList.add('quality-dot');
-
-                    const score = self.dayScores[dateStr];
-                    const quality = self.calendarData[dateStr] || 'neutral';
-
-                    if (score !== undefined && score !== null) {
-                        if (score > 2) {
-                            dotEl.classList.add('good-dot');
-                        } else if (score >= -1) {
-                            dotEl.classList.add('neutral-dot');
-                        } else {
-                            dotEl.classList.add('bad-dot');
-                        }
-                    } else if (self.calendarData[dateStr]) {
-                        if (quality === 'good') {
-                            dotEl.classList.add('good-dot');
-                        } else if (quality === 'neutral') {
-                            dotEl.classList.add('neutral-dot');
-                        } else {
-                            dotEl.classList.add('bad-dot');
-                        }
-                    }
-
-                    dayEl.appendChild(dotEl);
-
-                    const dateNumEl = document.createElement('span');
-                    dateNumEl.classList.add('date-number');
-                    dateNumEl.innerText = dateNum;
-                    dayEl.appendChild(dateNumEl);
-
-                    return { domNodes: [dayEl] };
-                }
-            });
-
-            this.calendar.render();
-
-            const initialYear = Number('{{ year }}');
-            const initialMonth = Number('{{ month }}');
-            this.isInitializing = false;
-            this.loadMonthData(initialYear, initialMonth);
-        },
-
-        async loadProfiles() {
-            // Read directly from localStorage cache (same source as profile store)
-            // This is synchronous and doesn't depend on Alpine store timing
-            const CACHE_KEY = 'profiles_cache';
-            let cachedProfiles = [];
-            try {
-                const cached = localStorage.getItem(CACHE_KEY);
-                cachedProfiles = cached ? JSON.parse(cached) : [];
-            } catch (e) {
-                console.warn('Failed to read profiles cache:', e);
-            }
-
-            // Fallback: try Alpine store if localStorage is empty
-            if (cachedProfiles.length === 0) {
-                const store = Alpine.store('profiles');
-                if (store && store.profiles) {
-                    cachedProfiles = store.profiles;
-                }
-            }
-
-            this.profiles = cachedProfiles;
-
-            // Select default profile (handle both boolean and 0/1 formats)
-            const defaultProfile = this.profiles.find(p => p.is_default === true || p.is_default === 1) || this.profiles[0];
-            if (defaultProfile) {
-                this.selectProfile(defaultProfile);
-            }
-        },
-
-        selectProfile(profile) {
-            this.selectedProfileId = profile.id;
-            this.selectedProfileName = profile.name;
-            this.selectedProfile = profile;
-
-            // Close dropdown
-            document.activeElement?.blur();
-
-            // Reload calendar data with new profile
-            if (this.calendar) {
-                const currentDate = this.calendar.getDate();
-                this.loadMonthData(currentDate.getFullYear(), currentDate.getMonth() + 1);
-            }
-        },
-
-        updateCalendar() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth() + 1;
-            this.calendar.gotoDate(year + '-' + String(month).padStart(2, '0') + '-01');
-            this.loadMonthData(year, month);
-        },
-
-        async loadMonthData(year, month) {
-            const self = this;
-            this.isLoading = true;
-            this.alertMessage = '';
-
-            // Calculate adjacent months
-            let prevYear = year, prevMonth = month - 1;
-            if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-
-            let nextYear = year, nextMonth = month + 1;
-            if (nextMonth > 12) { nextMonth = 1; nextYear++; }
-
-            // Clear caches
-            this.calendarData = {};
-            this.dayReasons = {};
-            this.dayScores = {};
-
-            // Check if we have a selected profile
-            if (!this.selectedProfile) {
-                this.alertMessage = '请先选择一个八字资料才能查看择日信息';
-                this.alertType = 'warning';
-                this.isLoading = false;
-                return;
-            }
-
-            const loadSingleMonth = async (yr, mnth) => {
-                const formData = new FormData();
-                formData.append('year', yr);
-                formData.append('month', mnth);
-                formData.append('csrfmiddlewaretoken', this.csrfToken);
-
-                // Always send birth data directly (local-first: profiles always from IndexedDB)
-                formData.append('birth_year', this.selectedProfile.birth_year);
-                formData.append('birth_month', this.selectedProfile.birth_month);
-                formData.append('birth_day', this.selectedProfile.birth_day);
-                formData.append('birth_hour', this.selectedProfile.birth_hour);
-                formData.append('birth_minute', this.selectedProfile.birth_minute || 0);
-                // Convert is_male to proper boolean string (handles 0/1, true/false, or boolean)
-                const isMaleValue = this.selectedProfile.is_male;
-                const isMaleStr = (isMaleValue === true || isMaleValue === 1 || isMaleValue === '1' || isMaleValue === 'true') ? 'true' : 'false';
-                formData.append('is_male', isMaleStr);
-
-                try {
-                    const response = await fetch('/calendar/data/', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        if (errorData.error === 'no_profile') {
-                            throw { type: 'no_profile', message: errorData.message };
-                        }
-                        throw new Error('Network error');
-                    }
-
-                    const data = await response.json();
-                    data.days.forEach(function(day) {
-                        const dateStr = yr + '-' + String(mnth).padStart(2, '0') + '-' + String(day.day).padStart(2, '0');
-                        self.calendarData[dateStr] = day.overall_quality || 'neutral';
-                        if (day.score !== undefined) {
-                            self.dayScores[dateStr] = day.score;
-                        }
-                        if (day.reasons) {
-                            self.dayReasons[dateStr] = day.reasons;
-                        }
-                    });
-                } catch (error) {
-                    if (error.type === 'no_profile') throw error;
-                    console.error('Error loading data for ' + yr + '-' + mnth);
-                }
-            };
-
-            try {
-                await Promise.all([
-                    loadSingleMonth(prevYear, prevMonth),
-                    loadSingleMonth(year, month),
-                    loadSingleMonth(nextYear, nextMonth)
-                ]);
-
-                this.updateCalendarCells();
-            } catch (error) {
-                if (error.type === 'no_profile') {
-                    this.alertMessage = error.message;
-                    this.alertType = 'warning';
-                } else {
-                    this.alertMessage = '加载失败，请稍后再试。';
-                    this.alertType = 'error';
-                }
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        updateCalendarCells() {
-            const self = this;
-            const cells = document.querySelectorAll('.fc-daygrid-day');
-
-            console.log('updateCalendarCells called, found', cells.length, 'cells');
-            console.log('dayScores:', Object.keys(self.dayScores).length, 'entries');
-            console.log('calendarData:', Object.keys(self.calendarData).length, 'entries');
-            // Log sample data keys
-            console.log('Sample dayScores keys:', Object.keys(self.dayScores).slice(0, 3));
-
-            // Reset logging counters
-            self._cellsLogged = 0;
-            self._classVerified = false;
-            let firstCellLogged = false;
-            cells.forEach(function(cell) {
-                const date = cell.getAttribute('data-date');
-                if (date) {
-                    const quality = self.calendarData[date] || 'neutral';
-                    const score = self.dayScores[date];
-                    cell.setAttribute('data-quality', quality);
-
-                    // Log first cell structure for debugging
-                    if (!firstCellLogged) {
-                        console.log('First cell innerHTML:', cell.innerHTML);
-                        firstCellLogged = true;
-                    }
-
-                    let dotContainer = cell.querySelector('.day-content');
-
-                    // If no .day-content exists, try to find the day-top container and create our structure
-                    if (!dotContainer) {
-                        const dayTop = cell.querySelector('.fc-daygrid-day-top');
-                        if (dayTop) {
-                            // Create our dot structure inside fc-daygrid-day-top
-                            const dotEl = document.createElement('span');
-                            dotEl.classList.add('quality-dot');
-                            dotEl.style.marginRight = '4px';
-                            dayTop.insertBefore(dotEl, dayTop.firstChild);
-
-                            // Apply class based on score
-                            if (score !== undefined && score !== null) {
-                                if (score > 2) {
-                                    dotEl.classList.add('good-dot');
-                                } else if (score >= -1) {
-                                    dotEl.classList.add('neutral-dot');
-                                } else {
-                                    dotEl.classList.add('bad-dot');
-                                }
-                            } else if (quality === 'good') {
-                                dotEl.classList.add('good-dot');
-                            } else if (quality === 'neutral') {
-                                dotEl.classList.add('neutral-dot');
-                            } else if (quality === 'bad') {
-                                dotEl.classList.add('bad-dot');
-                            }
-                        }
-                        return; // Skip rest of loop for this cell
-                    }
-
-                    if (dotContainer) {
-                        let dotElement = dotContainer.querySelector('.quality-dot');
-                        if (!dotElement) {
-                            dotElement = document.createElement('span');
-                            dotElement.classList.add('quality-dot');
-                            dotContainer.insertBefore(dotElement, dotContainer.firstChild);
-                        }
-
-                        // Log first few cells' data for debugging
-                        if (!self._cellsLogged) self._cellsLogged = 0;
-                        if (self._cellsLogged < 3) {
-                            console.log('Processing cell:', date, 'score:', score, 'quality:', quality);
-                            self._cellsLogged++;
-                        }
-
-                        // Reset and apply appropriate class
-                        dotElement.className = 'quality-dot';
-
-                        if (score !== undefined && score !== null) {
-                            cell.setAttribute('data-score', score);
-                            if (score > 2) {
-                                dotElement.classList.add('good-dot');
-                                dotElement.style.backgroundColor = '#f87171'; // red fallback
-                            } else if (score >= -1) {
-                                dotElement.classList.add('neutral-dot');
-                                dotElement.style.border = '2px solid #888'; // gray border fallback
-                            } else {
-                                dotElement.classList.add('bad-dot');
-                                dotElement.style.backgroundColor = '#374151'; // dark fallback
-                            }
-                        } else if (quality === 'good') {
-                            dotElement.classList.add('good-dot');
-                            dotElement.style.backgroundColor = '#f87171';
-                        } else if (quality === 'bad') {
-                            dotElement.classList.add('bad-dot');
-                            dotElement.style.backgroundColor = '#374151';
-                        } else {
-                            // Default to neutral if no score and quality isn't explicitly good/bad
-                            dotElement.classList.add('neutral-dot');
-                            dotElement.style.border = '2px solid #888';
-                        }
-
-                        // Verify class was added
-                        if (!self._classVerified) {
-                            console.log('Dot classes after update:', dotElement.className);
-                            self._classVerified = true;
-                        }
-                    }
-                }
-            });
-        },
-
-        showDayDetails(dateStr) {
-            const dateParts = dateStr.split('-');
-            const year = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]);
-            const day = parseInt(dateParts[2]);
-
-            if (!this.selectedProfile) {
-                this.alertMessage = '请先选择一个八字资料';
-                this.alertType = 'warning';
-                return;
-            }
-
-            const score = this.dayScores[dateStr];
-            const quality = this.calendarData[dateStr] || 'neutral';
-
-            let qualityText = '', qualityClass = '';
-
-            if (score !== undefined) {
-                if (score > 2) {
-                    qualityText = '吉日';
-                    qualityClass = 'text-error font-bold';
-                } else if (score >= -1) {
-                    qualityText = '平日';
-                    qualityClass = 'text-base-content/70';
-                } else {
-                    qualityText = '黑日';
-                    qualityClass = 'text-neutral font-bold';
-                }
-            } else {
-                if (quality === 'good') {
-                    qualityText = '吉日';
-                    qualityClass = 'text-error font-bold';
-                } else if (quality === 'neutral') {
-                    qualityText = '平日';
-                    qualityClass = 'text-base-content/70';
-                } else {
-                    qualityText = '黑日';
-                    qualityClass = 'text-neutral font-bold';
-                }
-            }
-
-            let html = '<div class="text-center">' +
-                       '<h3 class="text-2xl font-bold">' + year + '年' + month + '月' + day + '日</h3>';
-
-            if (score !== undefined) {
-                html += '<h4 class="text-xl ' + qualityClass + ' mt-2">' + qualityText + ' (评分: ' + score.toFixed(1) + ')</h4>';
-            } else {
-                html += '<h4 class="text-xl ' + qualityClass + ' mt-2">' + qualityText + '</h4>';
-            }
-
-            const reasons = this.dayReasons[dateStr];
-            if (reasons && reasons.length > 0) {
-                html += '<div class="mt-4 text-left">';
-                html += '<h5 class="font-semibold mb-2">吉凶因素:</h5>';
-                html += '<ul class="space-y-1">';
-
-                const badReasons = reasons.filter(r => r.type === 'bad');
-                const goodReasons = reasons.filter(r => r.type === 'good');
-                const neutralReasons = reasons.filter(r => r.type === 'neutral');
-
-                badReasons.forEach(reason => {
-                    html += '<li class="alert alert-error py-2 text-sm">' + reason.text + '</li>';
-                });
-
-                goodReasons.forEach(reason => {
-                    html += '<li class="alert alert-success py-2 text-sm">' + reason.text + '</li>';
-                });
-
-                neutralReasons.forEach(reason => {
-                    html += '<li class="alert py-2 text-sm">' + reason.text + '</li>';
-                });
-
-                html += '</ul></div>';
-            }
-
-            html += '<div class="mt-6">' +
-                   '<button class="btn btn-primary" onclick="Alpine.store(\'calendar\').loadDetailedBazi(' + year + ', ' + month + ', ' + day + ', 12, \'' + this.selectedProfileId + '\')">' +
-                   '查看八字详情</button></div></div>';
-
-            this.modalTitle = '日期详情';
-            this.modalContent = html;
-            this.showModal = true;
-
-            // Store reference for modal button
-            Alpine.store('calendar', this);
-        },
-
-        async loadDetailedBazi(year, month, day, hour, profileId) {
-            this.modalContent = '<div class="flex justify-center items-center py-8"><span class="loading loading-spinner loading-lg"></span><span class="ml-2">加载中...</span></div>';
-
-            const formData = new FormData();
-            formData.append('year', year);
-            formData.append('month', month);
-            formData.append('day', day);
-            formData.append('hour', hour);
-            formData.append('profile_id', profileId);
-            formData.append('csrfmiddlewaretoken', this.csrfToken);
-
-            try {
-                const response = await fetch("{% url 'bazi_detail' %}", {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    this.modalContent = await response.text();
-                } else {
-                    throw new Error('Network error');
-                }
-            } catch (error) {
-                this.modalContent = '<div class="alert alert-error">加载失败，请稍后再试。</div>';
-            }
-        }
-    };
-}
-</script>
 {% endblock %}

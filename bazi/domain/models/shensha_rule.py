@@ -172,15 +172,51 @@ class TableLookupRule:
         return ShenShaType[self.type_name]
 
     def find_matches(self, bazi: "BaZi") -> List["ShenSha"]:
-        """Find all matches using table lookup."""
+        """
+        Find all matches using table lookup.
+
+        使用表查找匹配神煞：
+        1. 主参照值（如日干）匹配所有指定柱位
+        2. 若 also_use_day_branch=True，日支也作为参照值二次匹配
+        """
+        ref_value = self.ref_extractor(bazi)
+        results = self._find_matches_with_ref(bazi, ref_value, self.exclude_ref_position)
+
+        # 部分神煞（桃花、劫煞等）需同时以年支和日支为参照
+        # Some ShenSha (TaoHua, JieSha) use both year branch and day branch as refs
+        if self.also_use_day_branch:
+            day_ref = bazi.day_pillar.branch.chinese
+            day_matches = self._find_matches_with_ref(bazi, day_ref, exclude_position="day")
+            # 去重：避免同一位置重复添加
+            for match in day_matches:
+                if match not in results:
+                    results.append(match)
+
+        return results
+
+    def _find_matches_with_ref(
+        self,
+        bazi: "BaZi",
+        ref_value: str,
+        exclude_position: str | None = None,
+    ) -> List["ShenSha"]:
+        """
+        以指定参照值查找匹配的神煞。
+        Find matches using a specific reference value.
+
+        Args:
+            bazi: The BaZi chart
+            ref_value: Reference value to look up (e.g., day stem Chinese char)
+            exclude_position: Position to skip (e.g., "day" when ref is day branch)
+
+        Returns:
+            List of matching ShenSha
+        """
         from .shensha import ShenSha
 
         results: List[ShenSha] = []
-        ref_value = self.ref_extractor(bazi)
-
-        # Check each position
         for pos_name in self.positions:
-            if pos_name == self.exclude_ref_position:
+            if pos_name == exclude_position:
                 continue
 
             pillar = self._get_pillar(bazi, pos_name)
@@ -193,27 +229,6 @@ class TableLookupRule:
                         position=f"{pos_name}_{position_suffix}",
                         triggered_by=ref_value,
                     ))
-
-        # Secondary check with day branch (for rules like 桃花, 劫煞)
-        if self.also_use_day_branch:
-            day_ref = bazi.day_pillar.branch.chinese
-            for pos_name in self.positions:
-                if pos_name == "day":  # Skip day pillar when using day branch as ref
-                    continue
-
-                pillar = self._get_pillar(bazi, pos_name)
-                targets = self.target_extractor(pillar)
-
-                for target_value, position_suffix in targets:
-                    if (day_ref, target_value) in self.lookup_table:
-                        new_shensha = ShenSha(
-                            type=self.shensha_type,
-                            position=f"{pos_name}_{position_suffix}",
-                            triggered_by=day_ref,
-                        )
-                        # Avoid duplicates
-                        if new_shensha not in results:
-                            results.append(new_shensha)
 
         return results
 

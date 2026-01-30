@@ -6,7 +6,7 @@ These services contain the core business logic for BaZi analysis.
 """
 from .wuxing_calculator import WuXingCalculator
 from .shishen_calculator import ShiShenCalculator
-from .day_master_analyzer import DayMasterAnalyzer
+from .day_master_analyzer import DayMasterAnalyzer, calculate_shenghao
 from .shensha_calculator import ShenShaCalculator
 from .sexagenary_calculator import SexagenaryCycleCalculator
 
@@ -14,6 +14,7 @@ __all__ = [
     "WuXingCalculator",
     "ShiShenCalculator",
     "DayMasterAnalyzer",
+    "calculate_shenghao",
     "ShenShaCalculator",
     "SexagenaryCycleCalculator",
 ]

@@ -17,6 +17,37 @@ from ..models import (
 from .wuxing_calculator import WuXingCalculator
 
 
+def calculate_shenghao(
+    wuxing_values: Dict[WuXing, float],
+    day_master_element: WuXing,
+) -> tuple[float, float]:
+    """
+    计算生耗值 - Calculate beneficial (生扶) and harmful (耗泄克) values.
+
+    Pure function that splits WuXing values into beneficial and harmful
+    based on the day master's element.
+
+    Args:
+        wuxing_values: Accumulated WuXing values from the chart
+        day_master_element: The Day Master's WuXing element
+
+    Returns:
+        Tuple of (beneficial_value, harmful_value)
+
+    有利 (beneficial): 同类 + 生我 (比劫 + 印星)
+    不利 (harmful): 我生 + 我克 + 克我 (食伤 + 财星 + 官杀)
+    """
+    beneficial_value = sum(
+        wuxing_values.get(element, 0)
+        for element in day_master_element.beneficial
+    )
+    harmful_value = sum(
+        wuxing_values.get(element, 0)
+        for element in day_master_element.harmful
+    )
+    return (beneficial_value, harmful_value)
+
+
 class DayMasterAnalyzer:
     """
     Analyzer for Day Master strength and favorable elements.
@@ -27,33 +58,6 @@ class DayMasterAnalyzer:
 
     def __init__(self, wuxing_calculator: WuXingCalculator | None = None):
         self._wuxing_calc = wuxing_calculator or WuXingCalculator()
-
-    def calculate_shenghao(
-        self,
-        wuxing_values: Dict[WuXing, float],
-        day_master_element: WuXing,
-    ) -> tuple[float, float]:
-        """
-        Calculate beneficial (生扶) and harmful (耗泄克) values.
-
-        Args:
-            wuxing_values: Accumulated WuXing values from the chart
-            day_master_element: The Day Master's WuXing element
-
-        Returns:
-            Tuple of (beneficial_value, harmful_value)
-        """
-        beneficial = day_master_element.beneficial
-        harmful = day_master_element.harmful
-
-        beneficial_value = sum(
-            wuxing_values.get(element, 0) for element in beneficial
-        )
-        harmful_value = sum(
-            wuxing_values.get(element, 0) for element in harmful
-        )
-
-        return (beneficial_value, harmful_value)
 
     def analyze_strength(
         self,
@@ -70,11 +74,9 @@ class DayMasterAnalyzer:
         Returns:
             DayMasterStrength with beneficial/harmful analysis
         """
-        # Calculate WuXing strength
         wuxing_strength = self._wuxing_calc.calculate_strength(bazi, is_earth_dominant)
 
-        # Calculate shenghao
-        beneficial, harmful = self.calculate_shenghao(
+        beneficial, harmful = calculate_shenghao(
             wuxing_strength.adjusted_values,
             bazi.day_master_wuxing,
         )
@@ -146,11 +148,10 @@ class DayMasterAnalyzer:
         """
         wuxing_strength = self._wuxing_calc.calculate_strength(bazi, is_earth_dominant)
 
-        beneficial, harmful = self.calculate_shenghao(
+        beneficial, harmful = calculate_shenghao(
             wuxing_strength.adjusted_values,
             bazi.day_master_wuxing,
         )
-
         dm_strength = DayMasterStrength(
             beneficial_value=beneficial,
             harmful_value=harmful,

@@ -195,45 +195,29 @@ class TestDayMasterStrengthModel:
         )
         assert strength.is_strong is False
 
-    def test_strength_level_extreme_strong(self):
-        """strength_level returns 极强 for >= 70%."""
-        strength = DayMasterStrength(
-            beneficial_value=75.0,
-            harmful_value=25.0,
-        )
-        assert strength.strength_level == "极强"
+    def test_strength_level_strong(self):
+        """strength_level returns 身强 for >= 50%."""
+        # 75% beneficial
+        strength = DayMasterStrength(beneficial_value=75.0, harmful_value=25.0)
+        assert strength.strength_level == "身强"
 
-    def test_strength_level_partial_strong(self):
-        """strength_level returns 偏强 for 55-70%."""
-        strength = DayMasterStrength(
-            beneficial_value=60.0,
-            harmful_value=40.0,
-        )
-        assert strength.strength_level == "偏强"
+        # 60% beneficial
+        strength = DayMasterStrength(beneficial_value=60.0, harmful_value=40.0)
+        assert strength.strength_level == "身强"
 
-    def test_strength_level_balanced(self):
-        """strength_level returns 中和 for 45-55%."""
-        strength = DayMasterStrength(
-            beneficial_value=50.0,
-            harmful_value=50.0,
-        )
-        assert strength.strength_level == "中和"
+        # Exactly 50% (threshold)
+        strength = DayMasterStrength(beneficial_value=50.0, harmful_value=50.0)
+        assert strength.strength_level == "身强"
 
-    def test_strength_level_partial_weak(self):
-        """strength_level returns 偏弱 for 30-45%."""
-        strength = DayMasterStrength(
-            beneficial_value=35.0,
-            harmful_value=65.0,
-        )
-        assert strength.strength_level == "偏弱"
+    def test_strength_level_weak(self):
+        """strength_level returns 身弱 for < 50%."""
+        # 35% beneficial
+        strength = DayMasterStrength(beneficial_value=35.0, harmful_value=65.0)
+        assert strength.strength_level == "身弱"
 
-    def test_strength_level_extreme_weak(self):
-        """strength_level returns 极弱 for < 30%."""
-        strength = DayMasterStrength(
-            beneficial_value=20.0,
-            harmful_value=80.0,
-        )
-        assert strength.strength_level == "极弱"
+        # 20% beneficial
+        strength = DayMasterStrength(beneficial_value=20.0, harmful_value=80.0)
+        assert strength.strength_level == "身弱"
 
 
 class TestDetermineFavorableElements:

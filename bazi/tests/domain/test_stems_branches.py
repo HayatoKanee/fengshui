@@ -80,7 +80,7 @@ class TestHeavenlyStem:
 
     def test_from_chinese_invalid(self):
         """from_chinese raises ValueError for unknown character."""
-        with pytest.raises(ValueError, match="Unknown stem"):
+        with pytest.raises(ValueError, match="未知天干"):
             HeavenlyStem.from_chinese("X")
 
     def test_all_ordered(self):
@@ -164,7 +164,7 @@ class TestEarthlyBranch:
 
     def test_from_chinese_invalid(self):
         """from_chinese raises ValueError for unknown character."""
-        with pytest.raises(ValueError, match="Unknown branch"):
+        with pytest.raises(ValueError, match="未知地支"):
             EarthlyBranch.from_chinese("X")
 
     def test_all_ordered(self):
