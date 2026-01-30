@@ -2,14 +2,155 @@
 Tests for WuXingCalculator domain service.
 
 Pure Python tests - NO Django dependencies.
+
+Includes property-based tests that verify BaZi principles:
+- Relationship strength ordering (比和 > 生我 > 我克)
+- Seasonal strength ordering (旺 > 相 > 休 > 囚 > 死)
+- Hidden stems ratios sum to 1.0
 """
 import pytest
 
-from bazi.domain.models.elements import WuXing, WangXiang
+from bazi.domain.models.elements import (
+    WuXing,
+    WangXiang,
+    WuXingRelation,
+    RELATIONSHIP_WEIGHTS,
+)
 from bazi.domain.models.stems_branches import HeavenlyStem, EarthlyBranch
 from bazi.domain.models.pillar import Pillar
 from bazi.domain.models.bazi import BaZi
 from bazi.domain.services.wuxing_calculator import WuXingCalculator
+
+
+# =============================================================================
+# PROPERTY-BASED TESTS - BaZi Principles
+# =============================================================================
+
+class TestBaZiProperties:
+    """
+    Property-based tests that verify fundamental BaZi principles.
+
+    These tests verify RELATIONSHIPS, not specific numbers.
+    The exact weights can change, but these properties must hold.
+    """
+
+    def test_same_element_strongest_support(self):
+        """
+        比和 (same element) provides the strongest support.
+
+        Property: SAME >= all other relationships for self_value
+        """
+        same_self, same_other = RELATIONSHIP_WEIGHTS[WuXingRelation.SAME]
+
+        for relation in WuXingRelation:
+            self_val, other_val = RELATIONSHIP_WEIGHTS[relation]
+            assert same_self >= self_val, f"SAME should be >= {relation} for self_value"
+
+    def test_generates_me_stronger_than_i_generate(self):
+        """
+        生我 (generates me) is stronger support than 我生 (I generate).
+
+        Property: Being generated empowers; generating drains.
+        """
+        gen_me_self, _ = RELATIONSHIP_WEIGHTS[WuXingRelation.GENERATES_ME]
+        i_gen_self, _ = RELATIONSHIP_WEIGHTS[WuXingRelation.I_GENERATE]
+
+        assert gen_me_self > i_gen_self, "生我 should strengthen more than 我生"
+
+    def test_i_overcome_stronger_than_overcomes_me(self):
+        """
+        我克 (I overcome) > 克我 (overcomes me) for self_value.
+
+        Property: Controlling is better than being controlled.
+        """
+        i_overcome_self, _ = RELATIONSHIP_WEIGHTS[WuXingRelation.I_OVERCOME]
+        overcomes_me_self, _ = RELATIONSHIP_WEIGHTS[WuXingRelation.OVERCOMES_ME]
+
+        assert i_overcome_self > overcomes_me_self, "我克 should be > 克我 for self"
+
+    def test_generation_benefits_receiver(self):
+        """
+        In generation relationship, receiver benefits more than giver.
+
+        Property: 我生 - other gets more (8); 生我 - self gets more (8)
+        """
+        i_gen_self, i_gen_other = RELATIONSHIP_WEIGHTS[WuXingRelation.I_GENERATE]
+        gen_me_self, gen_me_other = RELATIONSHIP_WEIGHTS[WuXingRelation.GENERATES_ME]
+
+        # When I generate, other receives more
+        assert i_gen_other > i_gen_self, "我生: receiver (other) should benefit more"
+        # When generated, I receive more
+        assert gen_me_self > gen_me_other, "生我: receiver (self) should benefit more"
+
+    def test_control_weakens_controlled(self):
+        """
+        In control relationship, controller is stronger than controlled.
+
+        Property: 我克 - I expend but other weakens more; 克我 - I weaken more
+        """
+        i_over_self, i_over_other = RELATIONSHIP_WEIGHTS[WuXingRelation.I_OVERCOME]
+        over_me_self, over_me_other = RELATIONSHIP_WEIGHTS[WuXingRelation.OVERCOMES_ME]
+
+        # When I overcome, other is weakened more
+        assert i_over_self > i_over_other, "我克: controlled (other) should be weaker"
+        # When overcome, I am weakened more
+        assert over_me_other > over_me_self, "克我: controlled (self) should be weaker"
+
+    def test_seasonal_strength_ordering(self):
+        """
+        旺 >= 相 >= 休 >= 囚 >= 死 (seasonal strength ordering).
+
+        Property: Prosperous >= Prime >= Rest >= Imprisoned >= Dead
+        """
+        assert WangXiang.WANG.multiplier >= WangXiang.XIANG.multiplier
+        assert WangXiang.XIANG.multiplier >= WangXiang.XIU.multiplier
+        assert WangXiang.XIU.multiplier >= WangXiang.QIU.multiplier
+        assert WangXiang.QIU.multiplier >= WangXiang.SI.multiplier
+
+    def test_hidden_stems_ratios_sum_to_one(self):
+        """
+        藏干比例总和为1 (hidden stem ratios sum to 1.0).
+
+        Property: For each branch, hidden stem ratios must sum to 1.0
+        """
+        for branch in EarthlyBranch:
+            total = sum(branch.hidden_stems.values())
+            assert abs(total - 1.0) < 0.001, f"{branch.chinese} hidden stems sum to {total}, should be 1.0"
+
+    def test_all_branches_have_hidden_stems(self):
+        """
+        每个地支都有藏干 (every branch has hidden stems).
+
+        Property: No branch should have empty hidden stems.
+        """
+        for branch in EarthlyBranch:
+            assert len(branch.hidden_stems) > 0, f"{branch.chinese} has no hidden stems"
+
+    def test_main_qi_is_dominant(self):
+        """
+        本气最强 (main qi is dominant).
+
+        Property: The highest ratio hidden stem should be >= 0.5
+        """
+        for branch in EarthlyBranch:
+            max_ratio = max(branch.hidden_stems.values())
+            assert max_ratio >= 0.5, f"{branch.chinese} main qi ({max_ratio}) should be >= 0.5"
+
+    def test_tonggen_same_element_in_hidden_stems(self):
+        """
+        通根: 天干在地支藏干中找到同元素 (root: stem finds same element in branch).
+
+        Property: 甲 in 寅 (甲藏于寅) should have Wood in hidden stems.
+        """
+        # 甲 (Wood) should find root in 寅 (contains 甲 Wood)
+        yin_hidden = EarthlyBranch.YIN.hidden_stems
+        has_wood_stem = any(stem.wuxing == WuXing.WOOD for stem in yin_hidden)
+        assert has_wood_stem, "寅 should contain Wood stem (甲) for 通根"
+
+        # 丙 (Fire) should find root in 巳 (contains 丙 Fire)
+        si_hidden = EarthlyBranch.SI.hidden_stems
+        has_fire_stem = any(stem.wuxing == WuXing.FIRE for stem in si_hidden)
+        assert has_fire_stem, "巳 should contain Fire stem (丙) for 通根"
 
 
 class TestGetRelationshipValues:

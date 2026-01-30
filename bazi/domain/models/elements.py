@@ -6,7 +6,7 @@ Pure Python - NO Django dependencies.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Dict, Set
+from typing import Dict, Set, Tuple
 
 
 class YinYang(Enum):
@@ -154,6 +154,26 @@ def get_wuxing_relation(self_element: WuXing, other_element: WuXing) -> WuXingRe
         f"No valid WuXing relationship between {self_element} and {other_element}. "
         "This indicates a bug in the WuXing cycle definition."
     )
+
+
+# =============================================================================
+# WUXING RELATIONSHIP WEIGHTS (五行关系权重)
+# =============================================================================
+# Weights determine how strongly elements interact based on their relationship.
+# Returns (self_value, other_value) tuple.
+#
+# Based on traditional BaZi theory:
+# - Same element (比和): Equal strength, high mutual support
+# - Generation (生): Producer gives energy, receiver is empowered
+# - Control (克): Controller expends energy, controlled is weakened
+
+RELATIONSHIP_WEIGHTS: Dict[WuXingRelation, Tuple[int, int]] = {
+    WuXingRelation.SAME: (10, 10),         # 比和 - equal mutual support
+    WuXingRelation.I_GENERATE: (6, 8),     # 我生 - I give (6), other receives (8)
+    WuXingRelation.I_OVERCOME: (4, 2),     # 我克 - I expend (4), other weakened (2)
+    WuXingRelation.OVERCOMES_ME: (2, 4),   # 克我 - I weakened (2), other expends (4)
+    WuXingRelation.GENERATES_ME: (8, 6),   # 生我 - I receive (8), other gives (6)
+}
 
 
 class WangXiang(Enum):

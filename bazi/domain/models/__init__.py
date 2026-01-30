@@ -9,6 +9,7 @@ from .elements import (
     YinYang,
     WangXiang,
     get_wuxing_relation,
+    RELATIONSHIP_WEIGHTS,
 )
 from .stems_branches import (
     HeavenlyStem,
@@ -43,6 +44,7 @@ __all__ = [
     "YinYang",
     "WangXiang",
     "get_wuxing_relation",
+    "RELATIONSHIP_WEIGHTS",
     # Stems and Branches
     "HeavenlyStem",
     "EarthlyBranch",

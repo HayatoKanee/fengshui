@@ -17,6 +17,7 @@ from ..models import (
     EarthlyBranch,
     WuXingStrength,
     get_wuxing_relation,
+    RELATIONSHIP_WEIGHTS,
 )
 
 
@@ -79,25 +80,6 @@ _BRANCH_SEASONS: Dict[EarthlyBranch, str] = {
 # Earth-dominant branches (四库)
 _EARTH_BRANCHES = {EarthlyBranch.CHEN, EarthlyBranch.WEI, EarthlyBranch.XU, EarthlyBranch.CHOU}
 
-
-# =============================================================================
-# WUXING RELATIONSHIP WEIGHTS (五行关系权重)
-# =============================================================================
-# Weights determine how strongly elements interact based on their relationship.
-# Returns (self_value, other_value) tuple.
-#
-# Based on traditional BaZi theory:
-# - Same element (比和): Equal strength, high mutual support
-# - Generation (生): Producer gives energy, receiver is empowered
-# - Control (克): Controller expends energy, controlled is weakened
-
-RELATIONSHIP_WEIGHTS: Dict[WuXingRelation, Tuple[int, int]] = {
-    WuXingRelation.SAME: (10, 10),         # 比和 - equal mutual support
-    WuXingRelation.I_GENERATE: (6, 8),     # 我生 - I give (6), other receives (8)
-    WuXingRelation.I_OVERCOME: (4, 2),     # 我克 - I expend (4), other weakened (2)
-    WuXingRelation.OVERCOMES_ME: (2, 4),   # 克我 - I weakened (2), other expends (4)
-    WuXingRelation.GENERATES_ME: (8, 6),   # 生我 - I receive (8), other gives (6)
-}
 
 
 

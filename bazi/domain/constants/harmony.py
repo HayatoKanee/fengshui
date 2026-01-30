@@ -1,46 +1,64 @@
 """
-Harmony Relationships Domain Constants.
+Harmony Relationships Domain Constants - DERIVED from Enums.
 
-Domain-level constants for stem and branch harmony (合) relationships.
-These are fundamental BaZi concepts used in analysis calculations.
+String-based lookups for presentation layer and external libraries.
+Single source of truth is in `bazi.domain.models.stems_branches`.
 """
-from typing import FrozenSet, Tuple
+from typing import Dict, FrozenSet, Tuple
 
-# 六合 - Six Harmonies (Branch combinations)
-LIU_HE: FrozenSet[Tuple[str, str]] = frozenset([
-    ('子', '丑'), ('丑', '子'),
-    ('寅', '亥'), ('亥', '寅'),
-    ('卯', '戌'), ('戌', '卯'),
-    ('辰', '酉'), ('酉', '辰'),
-    ('巳', '申'), ('申', '巳'),
-    ('午', '未'), ('未', '午'),
-])
+from ..models.stems_branches import (
+    HeavenlyStem,
+    EarthlyBranch,
+    RELATIONS,
+)
 
-# 五合 - Five Harmonies (Stem combinations)
-WU_HE: FrozenSet[Tuple[str, str]] = frozenset([
-    ('甲', '己'), ('己', '甲'),
-    ('乙', '庚'), ('庚', '乙'),
-    ('丙', '辛'), ('辛', '丙'),
-    ('丁', '壬'), ('壬', '丁'),
-    ('戊', '癸'), ('癸', '戊'),
-])
 
-# 地支藏干比例 - Hidden Stems in Branches
-HIDDEN_GAN_RATIOS = {
-    '子': {'癸': 1.0},
-    '丑': {'己': 0.5, '癸': 0.3, '辛': 0.2},
-    '寅': {'甲': 0.6, '丙': 0.3, '戊': 0.1},
-    '卯': {'乙': 1.0},
-    '辰': {'戊': 0.5, '乙': 0.3, '癸': 0.2},
-    '巳': {'丙': 0.6, '戊': 0.3, '庚': 0.1},
-    '午': {'丁': 0.5, '己': 0.5},
-    '未': {'乙': 0.2, '己': 0.5, '丁': 0.3},
-    '申': {'庚': 0.6, '壬': 0.3, '戊': 0.1},
-    '酉': {'辛': 1.0},
-    '戌': {'戊': 0.5, '辛': 0.3, '丁': 0.2},
-    '亥': {'壬': 0.7, '甲': 0.3},
-}
+# =============================================================================
+# DERIVED STRING LOOKUPS - Generated from Enums
+# =============================================================================
 
+def _derive_liu_he() -> FrozenSet[Tuple[str, str]]:
+    """Derive string-based LIU_HE from Enum-based RELATIONS.LIU_HE."""
+    result = set()
+    for b1, b2 in RELATIONS.LIU_HE:
+        result.add((b1.chinese, b2.chinese))
+        result.add((b2.chinese, b1.chinese))  # Both directions
+    return frozenset(result)
+
+
+def _derive_wu_he() -> FrozenSet[Tuple[str, str]]:
+    """Derive string-based WU_HE from Enum-based RELATIONS.WU_HE."""
+    result = set()
+    for s1, s2 in RELATIONS.WU_HE:
+        result.add((s1.chinese, s2.chinese))
+        result.add((s2.chinese, s1.chinese))  # Both directions
+    return frozenset(result)
+
+
+def _derive_hidden_gan_ratios() -> Dict[str, Dict[str, float]]:
+    """Derive string-based hidden stems from EarthlyBranch.hidden_stems."""
+    result = {}
+    for branch in EarthlyBranch:
+        result[branch.chinese] = {
+            stem.chinese: ratio
+            for stem, ratio in branch.hidden_stems.items()
+        }
+    return result
+
+
+# 六合 - Six Harmonies (Branch combinations) - DERIVED
+LIU_HE: FrozenSet[Tuple[str, str]] = _derive_liu_he()
+
+# 五合 - Five Harmonies (Stem combinations) - DERIVED
+WU_HE: FrozenSet[Tuple[str, str]] = _derive_wu_he()
+
+# 地支藏干比例 - Hidden Stems in Branches - DERIVED
+HIDDEN_GAN_RATIOS: Dict[str, Dict[str, float]] = _derive_hidden_gan_ratios()
+
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
 
 def is_harmony(char1: str, char2: str) -> bool:
     """

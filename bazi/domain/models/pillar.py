@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict
 
-from .elements import WuXing
+from .elements import WuXing, get_wuxing_relation, RELATIONSHIP_WEIGHTS
 from .stems_branches import HeavenlyStem, EarthlyBranch
 
 
@@ -75,19 +75,5 @@ class Pillar:
         Returns:
             Tuple of (stem_value, branch_value) based on their relationship.
         """
-        stem_element = self.stem_wuxing
-        branch_element = self.branch_wuxing
-
-        if stem_element == branch_element:
-            return (10, 10)
-        elif stem_element.generates == branch_element:
-            return (6, 8)
-        elif stem_element.overcomes == branch_element:
-            return (4, 2)
-        elif branch_element.overcomes == stem_element:
-            return (2, 4)
-        elif branch_element.generates == stem_element:
-            return (8, 6)
-
-        # Should not reach here if cycles are complete
-        return (5, 5)
+        relation = get_wuxing_relation(self.stem_wuxing, self.branch_wuxing)
+        return RELATIONSHIP_WEIGHTS[relation]
