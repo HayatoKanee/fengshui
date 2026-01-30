@@ -1,29 +1,32 @@
 {% load static django_vite django_htmx i18n %}
 <!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}" data-theme="fengshui-light">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="htmx-config" content='{"historyCacheSize": 0}'>
     <title>{% block title %}MyFate - BaZi{% endblock %}</title>
 
+    <!-- Theme: Set BEFORE render to prevent color flash -->
+    <script>
+        document.documentElement.setAttribute('data-theme',
+            localStorage.getItem('theme') ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'fengshui-dark' : 'fengshui-light')
+        );
+    </script>
+    <style>[x-cloak] { display: none !important; }</style>
+
     <!-- Chinese Web Font - Noto Sans SC -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-    <!-- FOUC Prevention: Hide body until CSS loads -->
-    <style>body { visibility: hidden; opacity: 0; }</style>
-
-    <!-- Critical CSS: Alpine.js x-cloak (MUST be inline, before Alpine loads) -->
-    <style>[x-cloak] { display: none !important; }</style>
-
     <!-- Vite Assets (Tailwind CSS + HTMX + Alpine.js + React Islands) -->
     {% vite_hmr_client %}
-    {% vite_asset 'src/styles.css' %}
     {% vite_asset 'src/main.ts' %}
 
     {% block extra_head %}{% endblock %}
+    {% block extra_styles %}{% endblock %}
 </head>
 <body class="min-h-screen bg-base-200"
       data-user-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
@@ -35,7 +38,7 @@
 
 {% block body %}
 <!-- Navbar -->
-<div class="navbar bg-base-100 shadow-lg">
+<div class="navbar bg-base-100 shadow-sm">
     <div class="navbar-start">
         <div class="dropdown">
             <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
@@ -44,67 +47,60 @@
                 </svg>
             </div>
             <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-52 p-2 shadow">
-                <li><a href="{% url 'home' %}">{% trans "首页" %}</a></li>
-                <li><a href="{% url 'bazi' %}">{% trans "八字排盘" %}</a></li>
-                <li><a href="{% url 'bazi_lookup' %}">{% trans "八字查日" %}</a></li>
-                <li><a href="{% url 'zeri' %}">{% trans "择日" %}</a></li>
-                <li><a href="{% url 'calendar' %}">{% trans "日历" %}</a></li>
+                <li><a href="{% url 'bazi' %}">{% trans "八字" %}</a></li>
+                <li><a href="{% url 'calendar' %}">{% trans "择日" %}</a></li>
                 <li><a href="{% url 'feixing' %}">{% trans "飞星" %}</a></li>
-                <li>
-                    <details>
-                        <summary>{% trans "基础知识" %}</summary>
-                        <ul class="p-2">
-                            <li><a href="{% url 'yinyang' %}">{% trans "阴阳" %}</a></li>
-                            <li><a href="{% url 'wuxing' %}">{% trans "五行" %}</a></li>
-                            <li><a href="{% url 'tiangan' %}">{% trans "天干" %}</a></li>
-                            <li><a href="{% url 'dizhi' %}">{% trans "地支" %}</a></li>
-                            <li><a href="{% url 'ganzhi' %}">{% trans "干支" %}</a></li>
-                            <li><a href="{% url 'introbazi' %}">{% trans "八字介绍" %}</a></li>
-                        </ul>
-                    </details>
-                </li>
             </ul>
         </div>
-        <a href="{% url 'home' %}" class="btn btn-ghost text-xl">MyFate</a>
+        <a href="{% url 'bazi' %}" class="btn btn-ghost text-xl font-semibold">MyFate</a>
     </div>
 
     <div class="navbar-center hidden lg:flex">
-        <ul class="menu menu-horizontal px-1">
-            <li><a href="{% url 'home' %}">{% trans "首页" %}</a></li>
-            <li><a href="{% url 'bazi' %}">{% trans "八字排盘" %}</a></li>
-            <li><a href="{% url 'bazi_lookup' %}">{% trans "八字查日" %}</a></li>
-            <li><a href="{% url 'zeri' %}">{% trans "择日" %}</a></li>
-            <li><a href="{% url 'calendar' %}">{% trans "日历" %}</a></li>
+        <ul class="menu menu-horizontal px-1 gap-1">
+            <li><a href="{% url 'bazi' %}">{% trans "八字" %}</a></li>
+            <li><a href="{% url 'calendar' %}">{% trans "择日" %}</a></li>
             <li><a href="{% url 'feixing' %}">{% trans "飞星" %}</a></li>
-            <li>
-                <details>
-                    <summary>{% trans "基础知识" %}</summary>
-                    <ul class="p-2 bg-base-100 rounded-box z-50 shadow">
-                        <li><a href="{% url 'yinyang' %}">{% trans "阴阳" %}</a></li>
-                        <li><a href="{% url 'wuxing' %}">{% trans "五行" %}</a></li>
-                        <li><a href="{% url 'tiangan' %}">{% trans "天干" %}</a></li>
-                        <li><a href="{% url 'dizhi' %}">{% trans "地支" %}</a></li>
-                        <li><a href="{% url 'ganzhi' %}">{% trans "干支" %}</a></li>
-                        <li><a href="{% url 'introbazi' %}">{% trans "八字介绍" %}</a></li>
-                    </ul>
-                </details>
-            </li>
         </ul>
     </div>
 
-    <div class="navbar-end gap-2">
-        <!-- Language toggle (HTMX-powered) -->
+    <div class="navbar-end gap-1">
+        <!-- Docs icon -->
+        <a href="https://docs.myfate.org" target="_blank" rel="noopener" class="btn btn-ghost btn-circle btn-sm" title="{% trans '文档' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        </a>
+
+        <!-- GitHub icon -->
+        <a href="https://github.com/HayatoKanee/fengshui" target="_blank" rel="noopener" class="btn btn-ghost btn-circle btn-sm" title="GitHub">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+        </a>
+
+        <!-- Theme toggle -->
+        <label class="swap swap-rotate btn btn-ghost btn-circle btn-sm">
+            <input type="checkbox" x-model="darkMode" />
+            <svg class="swap-off h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/>
+            </svg>
+            <svg class="swap-on h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"/>
+            </svg>
+        </label>
+
+        <!-- Language toggle -->
         <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost btn-sm px-2">
-                <span class="text-base font-medium">{% if LANGUAGE_CODE == 'zh-hans' %}中{% else %}EN{% endif %}</span>
+                <span class="text-sm font-medium">{% if LANGUAGE_CODE == 'zh-hans' %}中{% else %}EN{% endif %}</span>
             </div>
-            <ul tabindex="0" class="dropdown-content bg-base-100 rounded-box z-50 p-2 shadow-lg mt-2">
+            <ul tabindex="0" class="dropdown-content bg-base-100 rounded-box z-50 p-2 shadow-lg mt-2 min-w-20">
                 <li>
                     <form action="{% url 'set_language' %}" method="post" hx-post="{% url 'set_language' %}" hx-swap="none" hx-on::after-request="window.location.reload()">
                         {% csrf_token %}
                         <input type="hidden" name="language" value="zh-hans">
                         <input type="hidden" name="next" value="{{ request.path }}">
-                        <button type="submit" class="block w-full text-left px-3 py-1 rounded hover:bg-base-200 cursor-pointer {% if LANGUAGE_CODE == 'zh-hans' %}bg-primary/10{% endif %}">中文</button>
+                        <button type="submit" class="block w-full text-left px-3 py-1 rounded hover:bg-base-200 cursor-pointer text-sm {% if LANGUAGE_CODE == 'zh-hans' %}bg-primary/10{% endif %}">中文</button>
                     </form>
                 </li>
                 <li>
@@ -112,27 +108,14 @@
                         {% csrf_token %}
                         <input type="hidden" name="language" value="en">
                         <input type="hidden" name="next" value="{{ request.path }}">
-                        <button type="submit" class="block w-full text-left px-3 py-1 rounded hover:bg-base-200 cursor-pointer {% if LANGUAGE_CODE == 'en' %}bg-primary/10{% endif %}">English</button>
+                        <button type="submit" class="block w-full text-left px-3 py-1 rounded hover:bg-base-200 cursor-pointer text-sm {% if LANGUAGE_CODE == 'en' %}bg-primary/10{% endif %}">English</button>
                     </form>
                 </li>
             </ul>
         </div>
 
-        <!-- Theme toggle -->
-        <label class="swap swap-rotate btn btn-ghost btn-circle">
-            <input type="checkbox" x-model="darkMode" />
-            <!-- sun icon -->
-            <svg class="swap-off h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/>
-            </svg>
-            <!-- moon icon -->
-            <svg class="swap-on h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"/>
-            </svg>
-        </label>
-
-        <!-- Profile link - same for all users -->
-        <a href="{% url 'profiles' %}" class="btn btn-ghost btn-circle" title="{% trans '个人资料' %}">
+        <!-- Profile -->
+        <a href="{% url 'profiles' %}" class="btn btn-ghost btn-circle btn-sm" title="{% trans '个人资料' %}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -157,22 +140,9 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- Footer - Modern Minimal Design -->
-<footer class="footer footer-center bg-base-200 text-base-content py-8">
-    <aside class="space-y-3">
-        <p class="text-2xl font-light tracking-wide">
-            <span class="font-semibold">MyFate</span>
-            <span class="text-base-content/40 mx-2">|</span>
-            <span class="text-base-content/70">{% trans "命理分析" %}</span>
-        </p>
-        <p class="text-sm text-base-content/50 max-w-md">
-            {% trans "探索命运的奥秘，了解八字的智慧" %}
-        </p>
-        <div class="border-t border-base-content/10 w-24 mx-auto my-4"></div>
-        <p class="text-xs text-base-content/40">
-            © {% now "Y" %} MyFate.org
-        </p>
-    </aside>
+<!-- Footer -->
+<footer class="footer footer-center bg-base-200 text-base-content py-4">
+    <p class="text-xs text-base-content/40">© {% now "Y" %} MyFate.org</p>
 </footer>
 {% endblock %}
 

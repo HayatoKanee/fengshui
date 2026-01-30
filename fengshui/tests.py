@@ -39,10 +39,11 @@ class URLTests(TestCase):
     def setUp(self):
         self.client = Client()
     
-    def test_home_url_resolves(self):
-        """Test that home URL resolves correctly"""
-        resolver = resolve('/')
-        self.assertEqual(resolver.func.__name__, 'home_view')
+    def test_home_url_redirects_to_bazi(self):
+        """Test that home URL redirects to bazi"""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, '/bazi')
     
     def test_bazi_url_resolves(self):
         """Test that bazi URL resolves correctly"""

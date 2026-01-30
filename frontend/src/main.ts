@@ -15,7 +15,7 @@ import htmx from 'htmx.org';
 // Import Alpine.js
 import Alpine from 'alpinejs';
 
-// Import styles
+// Import styles - Vite extracts to separate CSS file in production build
 import './styles.css';
 
 // Import profile store registration

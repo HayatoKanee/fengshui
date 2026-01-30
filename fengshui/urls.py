@@ -17,10 +17,9 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
-from django.conf.urls.i18n import i18n_patterns
 from django.views.generic import RedirectView
 
-# Import from new presentation layer (Clean Architecture)
+# Import from presentation layer (Clean Architecture)
 from bazi.presentation import (
     # Auth views
     user_login,
@@ -32,17 +31,7 @@ from bazi.presentation import (
     delete_profile,
     set_default_profile,
     # Main app views
-    home_view,
     bazi_view,
-    wuxing_view,
-    yinyang_view,
-    tiangan_view,
-    dizhi_view,
-    ganzhi_view,
-    introbazi_view,
-    wangxiang_view,
-    shishen_view,
-    shenghao_view,
     zeri_view,
     bazi_lookup_view,
     get_bazi_detail,
@@ -59,40 +48,42 @@ from bazi.presentation import (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', home_view, name='home'),
-    
+    path('', RedirectView.as_view(pattern_name='bazi', permanent=False), name='home'),
+
     # Seamless login/signup (auto-creates account if user doesn't exist)
     path('login/', user_login, name='login'),
     path('logout/', user_logout, name='logout'),
 
     # django-allauth for password reset, email verification, social auth
     path('accounts/', include('allauth.urls')),
-    
+
     # Profile management URLs
     path('profiles/', profile_list, name='profiles'),
     path('profiles/add/', add_profile, name='add_profile'),
     path('profiles/edit/<int:profile_id>/', edit_profile, name='edit_profile'),
     path('profiles/delete/<int:profile_id>/', delete_profile, name='delete_profile'),
     path('profiles/default/<int:profile_id>/', set_default_profile, name='set_default_profile'),
-    
+
     # Main app URLs
     path('bazi', bazi_view, name='bazi'),
-    path('wuxing', wuxing_view, name='wuxing'),
-    path('yinyang', yinyang_view, name='yinyang'),
-    path('tiangan', tiangan_view, name='tiangan'),
-    path('dizhi', dizhi_view, name='dizhi'),
-    path('ganzhi', ganzhi_view, name='ganzhi'),
-    path('introbazi', introbazi_view, name='introbazi'),
-    path('wangxiang', wangxiang_view, name='wangxiang'),
-    path('shishen', shishen_view, name='shishen'),
-    path('shenghao', shenghao_view, name='shenghao'),
     path('zeri', zeri_view, name='zeri'),
     path('bazi_lookup', bazi_lookup_view, name='bazi_lookup'),
     path('bazi_detail', get_bazi_detail, name='bazi_detail'),
     path('liunian_partial', liunian_partial, name='liunian_partial'),
-    path('feixing',feixing_view,name='feixing'),
+    path('feixing', feixing_view, name='feixing'),
     path('calendar', calendar_view, name='calendar'),
     path('calendar/data/', calendar_data, name='calendar_data'),
+
+    # Redirects: Old educational pages → docs.myfate.org
+    path('yinyang', RedirectView.as_view(url='https://docs.myfate.org/basics/yinyang/', permanent=True)),
+    path('wuxing', RedirectView.as_view(url='https://docs.myfate.org/basics/wuxing/', permanent=True)),
+    path('tiangan', RedirectView.as_view(url='https://docs.myfate.org/basics/tiangan/', permanent=True)),
+    path('dizhi', RedirectView.as_view(url='https://docs.myfate.org/basics/dizhi/', permanent=True)),
+    path('ganzhi', RedirectView.as_view(url='https://docs.myfate.org/basics/ganzhi/', permanent=True)),
+    path('introbazi', RedirectView.as_view(url='https://docs.myfate.org/basics/bazi/', permanent=True)),
+    path('wangxiang', RedirectView.as_view(url='https://docs.myfate.org/advanced/wangxiang/', permanent=True)),
+    path('shishen', RedirectView.as_view(url='https://docs.myfate.org/advanced/shishen/', permanent=True)),
+    path('shenghao', RedirectView.as_view(url='https://docs.myfate.org/advanced/shenghao/', permanent=True)),
 
     # Profile REST API (for frontend storage sync)
     path('api/profiles/', profile_api, name='api_profiles'),

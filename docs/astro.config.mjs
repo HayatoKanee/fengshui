@@ -15,6 +15,7 @@ export default defineConfig({
         },
       },
       social: [
+        { icon: 'external', label: 'App', href: 'https://myfate.org' },
         { icon: 'github', label: 'GitHub', href: 'https://github.com/HayatoKanee/fengshui' },
       ],
       sidebar: [

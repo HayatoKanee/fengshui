@@ -184,9 +184,9 @@ ACCOUNT_ADAPTER = 'bazi.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'bazi.adapters.CustomSocialAccountAdapter'
 
 # Redirects
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
-ACCOUNT_LOGOUT_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'bazi'
+LOGOUT_REDIRECT_URL = 'bazi'
+ACCOUNT_LOGOUT_REDIRECT_URL = 'bazi'
 
 # Social account settings
 SOCIALACCOUNT_AUTO_SIGNUP = True  # Frictionless social signup
@@ -254,18 +254,19 @@ _static_dirs = [
 STATICFILES_DIRS = [d for d in _static_dirs if os.path.exists(d)]
 
 # Django-Vite Configuration
+# Default: Use built static files (no FOUC, instant page loads)
+# Set VITE_DEV=1 ONLY for HMR during active frontend development (causes FOUC)
+VITE_DEV_MODE = os.environ.get('VITE_DEV', '0') == '1'
+
 DJANGO_VITE = {
     "default": {
-        "dev_mode": DEBUG,
+        "dev_mode": VITE_DEV_MODE,
         "dev_server_host": "localhost",
         "dev_server_port": 5173,
         "manifest_path": os.path.join(BASE_DIR, 'static', 'dist', 'manifest.json'),
+        "static_url_prefix": "dist",
     }
 }
-
-# In production, serve from /static/dist/
-if not DEBUG:
-    DJANGO_VITE["default"]["static_url_prefix"] = "dist"
 
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 if not os.path.exists(DATA_DIR):

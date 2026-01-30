@@ -32,14 +32,7 @@ from .views import (
     # Calendar views
     calendar_view,
     calendar_data,
-    # Static pages
-    home_view,
-    tiangan_view,
-    yinyang_view,
-    dizhi_view,
-    ganzhi_view,
-    wuxing_view,
-    introbazi_view,
+    # FeiXing
     feixing_view,
     # Lookup views
     bazi_lookup_view,
@@ -69,14 +62,7 @@ __all__ = [
     # Calendar
     "calendar_view",
     "calendar_data",
-    # Static pages
-    "home_view",
-    "tiangan_view",
-    "yinyang_view",
-    "dizhi_view",
-    "ganzhi_view",
-    "wuxing_view",
-    "introbazi_view",
+    # FeiXing
     "feixing_view",
     # Lookup
     "bazi_lookup_view",

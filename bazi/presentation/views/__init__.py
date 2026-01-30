@@ -26,18 +26,6 @@ from .profile import (
 )
 from .bazi import bazi_view, get_bazi_detail, liunian_partial
 from .calendar import calendar_view, calendar_data
-from .static_pages import (
-    home_view,
-    tiangan_view,
-    yinyang_view,
-    dizhi_view,
-    ganzhi_view,
-    wuxing_view,
-    introbazi_view,
-    wangxiang_view,
-    shishen_view,
-    shenghao_view,
-)
 from .lookup import bazi_lookup_view, zeri_view
 from .feixing import feixing_view
 from .api import (
@@ -65,17 +53,6 @@ __all__ = [
     # Calendar
     "calendar_view",
     "calendar_data",
-    # Static pages
-    "home_view",
-    "tiangan_view",
-    "yinyang_view",
-    "dizhi_view",
-    "ganzhi_view",
-    "wuxing_view",
-    "introbazi_view",
-    "wangxiang_view",
-    "shishen_view",
-    "shenghao_view",
     # Lookup
     "bazi_lookup_view",
     "zeri_view",

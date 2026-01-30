@@ -134,6 +134,10 @@ SCORE_HOUR_GUIREN = 1.0          # 贵人 in hour
 HOUR_QUALITY_GOOD_THRESHOLD = 0.5
 HOUR_QUALITY_BAD_THRESHOLD = -0.5
 
+# Day quality thresholds
+DAY_QUALITY_GOOD_THRESHOLD = 2.0
+DAY_QUALITY_BAD_THRESHOLD = -1.0
+
 
 # =============================================================================
 # Day Quality Service
@@ -363,6 +367,15 @@ class DayQualityService:
             )
             for h in ZODIAC_HOURS
         )
+
+        # Determine final quality based on score (if not already set to bad)
+        if day_quality != "bad":
+            if day_score >= DAY_QUALITY_GOOD_THRESHOLD:
+                day_quality = "good"
+            elif day_score <= DAY_QUALITY_BAD_THRESHOLD:
+                day_quality = "bad"
+            else:
+                day_quality = "neutral"
 
         # Default explanation for neutral days
         if day_quality == "neutral" and not day_reasons:
