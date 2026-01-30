@@ -60,6 +60,15 @@ class ShiShenCalculator:
 
         return (stem_shishen, hidden_shishen)
 
+    def _get_main_hidden_shishen(
+        self,
+        day_master: HeavenlyStem,
+        hidden_stems: Dict[HeavenlyStem, float],
+    ) -> ShiShen:
+        """Get ShiShen for the dominant hidden stem in a branch."""
+        main_hidden = max(hidden_stems.keys(), key=lambda k: hidden_stems[k])
+        return self.calculate(day_master, main_hidden)
+
     def calculate_for_bazi(self, bazi: BaZi) -> ShiShenChart:
         """
         Calculate the complete ShiShen chart for a BaZi.
@@ -70,39 +79,16 @@ class ShiShenCalculator:
         Returns:
             ShiShenChart with all positions' ShiShen values
         """
-        day_master = bazi.day_master
-
-        # Year pillar
-        year_stem_ss = self.calculate(day_master, bazi.year_pillar.stem)
-        year_hidden = bazi.year_pillar.hidden_stems
-        year_main_hidden = max(year_hidden.keys(), key=lambda k: year_hidden[k])
-        year_branch_ss = self.calculate(day_master, year_main_hidden)
-
-        # Month pillar
-        month_stem_ss = self.calculate(day_master, bazi.month_pillar.stem)
-        month_hidden = bazi.month_pillar.hidden_stems
-        month_main_hidden = max(month_hidden.keys(), key=lambda k: month_hidden[k])
-        month_branch_ss = self.calculate(day_master, month_main_hidden)
-
-        # Day pillar (stem is always self/日主)
-        day_hidden = bazi.day_pillar.hidden_stems
-        day_main_hidden = max(day_hidden.keys(), key=lambda k: day_hidden[k])
-        day_branch_ss = self.calculate(day_master, day_main_hidden)
-
-        # Hour pillar
-        hour_stem_ss = self.calculate(day_master, bazi.hour_pillar.stem)
-        hour_hidden = bazi.hour_pillar.hidden_stems
-        hour_main_hidden = max(hour_hidden.keys(), key=lambda k: hour_hidden[k])
-        hour_branch_ss = self.calculate(day_master, hour_main_hidden)
+        dm = bazi.day_master
 
         return ShiShenChart(
-            year_stem=year_stem_ss,
-            year_branch_main=year_branch_ss,
-            month_stem=month_stem_ss,
-            month_branch_main=month_branch_ss,
-            day_branch_main=day_branch_ss,
-            hour_stem=hour_stem_ss,
-            hour_branch_main=hour_branch_ss,
+            year_stem=self.calculate(dm, bazi.year_pillar.stem),
+            year_branch_main=self._get_main_hidden_shishen(dm, bazi.year_pillar.hidden_stems),
+            month_stem=self.calculate(dm, bazi.month_pillar.stem),
+            month_branch_main=self._get_main_hidden_shishen(dm, bazi.month_pillar.hidden_stems),
+            day_branch_main=self._get_main_hidden_shishen(dm, bazi.day_pillar.hidden_stems),
+            hour_stem=self.calculate(dm, bazi.hour_pillar.stem),
+            hour_branch_main=self._get_main_hidden_shishen(dm, bazi.hour_pillar.hidden_stems),
         )
 
     def get_detailed_shishen(

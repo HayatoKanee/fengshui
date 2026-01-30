@@ -17,17 +17,38 @@ GUI_REN: FrozenSet[Tuple[str, str]] = frozenset([
 ])
 
 # 天德 - Heaven Virtue
+# 口诀：寅丁卯申辰壬巳辛，午亥未甲申癸酉寅，戌丙亥乙子巳丑庚
 TIAN_DE: FrozenSet[Tuple[str, str]] = frozenset([
     ('寅', '丁'), ('卯', '申'), ('辰', '壬'), ('巳', '辛'),
     ('午', '亥'), ('未', '甲'), ('申', '癸'), ('酉', '寅'),
     ('戌', '丙'), ('亥', '乙'), ('子', '巳'), ('丑', '庚'),
 ])
 
+# 天德合 - Heaven Virtue Combination (五合/六合 of 天德)
+TIAN_DE_HE: FrozenSet[Tuple[str, str]] = frozenset([
+    # 天干五合对应
+    ('寅', '壬'),  # 丁壬合
+    ('辰', '丁'),  # 壬丁合
+    ('巳', '丙'),  # 辛丙合
+    ('未', '己'),  # 甲己合
+    ('申', '戊'),  # 癸戊合
+    ('戌', '辛'),  # 丙辛合
+    ('亥', '庚'),  # 乙庚合
+    ('丑', '乙'),  # 庚乙合
+    # 地支六合对应
+    ('卯', '巳'),  # 巳申合
+    ('午', '寅'),  # 寅亥合
+    ('酉', '亥'),  # 寅亥合
+    ('子', '申'),  # 巳申合
+])
+
 # 月德 - Month Virtue
+# 口诀：寅午戌月见丙，申子辰月见壬，亥卯未月见甲，巳酉丑月见庚
 YUE_DE: FrozenSet[Tuple[str, str]] = frozenset([
-    ('寅', '丙'), ('卯', '甲'), ('辰', '壬'), ('巳', '庚'),
-    ('午', '丙'), ('未', '申'), ('申', '壬'), ('酉', '庚'),
-    ('戌', '丙'), ('亥', '甲'), ('子', '壬'), ('丑', '庚'),
+    ('寅', '丙'), ('午', '丙'), ('戌', '丙'),  # 寅午戌见丙
+    ('申', '壬'), ('子', '壬'), ('辰', '壬'),  # 申子辰见壬
+    ('亥', '甲'), ('卯', '甲'), ('未', '甲'),  # 亥卯未见甲
+    ('巳', '庚'), ('酉', '庚'), ('丑', '庚'),  # 巳酉丑见庚
 ])
 
 # 文昌 - Literary Star
@@ -157,9 +178,14 @@ def has_gui_ren(day_gan: str, target_zhi: str) -> bool:
     return (day_gan, target_zhi) in GUI_REN
 
 
-def has_tian_de(month_zhi: str, target_gan: str) -> bool:
-    """Check if month branch and target stem form Tian De relationship."""
-    return (month_zhi, target_gan) in TIAN_DE
+def has_tian_de(month_zhi: str, target: str) -> bool:
+    """Check if month branch and target (stem or branch) form Tian De relationship."""
+    return (month_zhi, target) in TIAN_DE
+
+
+def has_tian_de_he(month_zhi: str, target: str) -> bool:
+    """Check if month branch and target (stem or branch) form Tian De He relationship."""
+    return (month_zhi, target) in TIAN_DE_HE
 
 
 def has_yue_de(month_zhi: str, target_gan: str) -> bool:

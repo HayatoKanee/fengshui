@@ -5,8 +5,10 @@ Pure Python domain models - NO Django dependencies.
 """
 from .elements import (
     WuXing,
+    WuXingRelation,
     YinYang,
     WangXiang,
+    get_wuxing_relation,
 )
 from .stems_branches import (
     HeavenlyStem,
@@ -37,8 +39,10 @@ from .analysis import (
 __all__ = [
     # Elements
     "WuXing",
+    "WuXingRelation",
     "YinYang",
     "WangXiang",
+    "get_wuxing_relation",
     # Stems and Branches
     "HeavenlyStem",
     "EarthlyBranch",

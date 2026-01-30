@@ -26,6 +26,10 @@ from .elements import (
     get_hour_time_range,
     get_hour_branch,
     get_hour_display,
+    # Enum conversion helpers
+    stem_from_chinese,
+    branch_from_chinese,
+    wuxing_from_chinese,
 )
 
 from .relationships import (

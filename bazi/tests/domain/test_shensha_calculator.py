@@ -61,9 +61,9 @@ class TestIsTianDe:
         result = calculator.is_tian_de(EarthlyBranch.YIN, HeavenlyStem.JIA)
         assert result is False
 
-    def test_wu_month_jia_is_tian_de(self, calculator):
-        """午月 with 甲 stem is 天德."""
-        result = calculator.is_tian_de(EarthlyBranch.WU, HeavenlyStem.JIA)
+    def test_wei_month_jia_is_tian_de(self, calculator):
+        """未月 with 甲 stem is 天德."""
+        result = calculator.is_tian_de(EarthlyBranch.WEI, HeavenlyStem.JIA)
         assert result is True
 
 

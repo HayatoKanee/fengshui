@@ -97,6 +97,65 @@ _GENERATED_BY: Dict[WuXing, WuXing] = {v: k for k, v in _GENERATES.items()}
 _OVERCOME_BY: Dict[WuXing, WuXing] = {v: k for k, v in _OVERCOMES.items()}
 
 
+# =============================================================================
+# WUXING RELATIONS (五行关系)
+# =============================================================================
+# The 5 fundamental relationships between any two elements.
+# ShiShen (十神) is this + YinYang polarity (5 × 2 = 10).
+
+class WuXingRelation(Enum):
+    """
+    Five fundamental WuXing relationships (五行关系).
+
+    These are the base relationships before YinYang is considered.
+    ShiShen = WuXingRelation + YinYang polarity.
+    """
+    SAME = "比和"           # Same element (比肩/劫财)
+    I_GENERATE = "我生"     # I generate other (食神/伤官)
+    I_OVERCOME = "我克"     # I overcome other (偏财/正财)
+    OVERCOMES_ME = "克我"   # Other overcomes me (七杀/正官)
+    GENERATES_ME = "生我"   # Other generates me (偏印/正印)
+
+    @property
+    def chinese(self) -> str:
+        return self.value
+
+
+def get_wuxing_relation(self_element: WuXing, other_element: WuXing) -> WuXingRelation:
+    """
+    Determine the WuXing relationship between two elements.
+
+    This is the fundamental relationship logic used by both:
+    - ShiShen calculation (adds YinYang on top)
+    - WuXing strength calculation (uses relationship weights)
+
+    Args:
+        self_element: The reference element (e.g., day master's element)
+        other_element: The element to compare against
+
+    Returns:
+        The WuXingRelation between the two elements
+
+    Raises:
+        ValueError: If no valid relationship (indicates a bug in WuXing model)
+    """
+    if self_element == other_element:
+        return WuXingRelation.SAME
+    elif self_element.generates == other_element:
+        return WuXingRelation.I_GENERATE
+    elif self_element.overcomes == other_element:
+        return WuXingRelation.I_OVERCOME
+    elif other_element.overcomes == self_element:
+        return WuXingRelation.OVERCOMES_ME
+    elif other_element.generates == self_element:
+        return WuXingRelation.GENERATES_ME
+
+    raise ValueError(
+        f"No valid WuXing relationship between {self_element} and {other_element}. "
+        "This indicates a bug in the WuXing cycle definition."
+    )
+
+
 class WangXiang(Enum):
     """Seasonal strength phases (旺相休囚死)."""
     WANG = "旺"   # Prosperous (1.2x)

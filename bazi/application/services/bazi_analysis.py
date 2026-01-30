@@ -194,7 +194,7 @@ class BaziAnalysisService:
         )
 
         # Calculate ShiShen relationship between LiuNian and day master
-        year_stem_shishen = self._shishen_calc.calculate_single(
+        year_stem_shishen = self._shishen_calc.calculate(
             base_result.bazi.day_master,
             year_bazi.year_pillar.stem,
         )

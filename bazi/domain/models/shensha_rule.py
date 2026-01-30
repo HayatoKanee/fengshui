@@ -24,6 +24,8 @@ from typing import (
     runtime_checkable,
 )
 
+from .shensha import PILLAR_POSITIONS
+
 if TYPE_CHECKING:
     from .bazi import BaZi
     from .pillar import Pillar
@@ -159,7 +161,7 @@ class TableLookupRule:
     lookup_table: FrozenSet[Tuple[str, str]]
     ref_extractor: RefExtractor
     target_extractor: TargetExtractor
-    positions: Tuple[str, ...] = ("year", "month", "day", "hour")
+    positions: Tuple[str, ...] = PILLAR_POSITIONS
     also_use_day_branch: bool = False
     exclude_ref_position: str | None = None  # e.g., "year" for year-branch based rules
 
@@ -250,14 +252,8 @@ class KongWangRule:
         if not kong_branches:
             return results
 
-        positions = [
-            ("year", bazi.year_pillar),
-            ("month", bazi.month_pillar),
-            ("day", bazi.day_pillar),
-            ("hour", bazi.hour_pillar),
-        ]
-
-        for pos_name, pillar in positions:
+        for pos_name in PILLAR_POSITIONS:
+            pillar = getattr(bazi, f"{pos_name}_pillar")
             if pillar.branch.chinese in kong_branches:
                 results.append(ShenSha(
                     type=self.shensha_type,
@@ -325,41 +321,51 @@ class SanQiRule:
 
 
 # ============================================================
-# Rule Registry
+# Rule Registry (Singleton with proper reset for testing)
 # ============================================================
 
 class ShenShaRuleRegistry:
     """
     Central registry for all ShenSha rules.
 
-    Provides a single point of access to all rule instances.
-    Supports dependency injection by allowing custom rule sets.
-    """
-    _rules: List[ShenShaRule] = []
-    _initialized: bool = False
+    Uses lazy initialization to avoid circular imports.
+    Thread-safe through immutable rule lists after initialization.
 
-    @classmethod
-    def register(cls, rule: ShenShaRule) -> ShenShaRule:
-        """Register a rule instance."""
-        cls._rules.append(rule)
-        return rule
+    For testing, use clear() before tests or inject rules directly
+    into ShenShaCalculator.
+    """
+    _instance: "ShenShaRuleRegistry | None" = None
+    _rules: List[ShenShaRule] | None = None
+
+    def __new__(cls) -> "ShenShaRuleRegistry":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     @classmethod
     def all_rules(cls) -> List[ShenShaRule]:
-        """Get all registered rules."""
-        if not cls._initialized:
-            cls._initialize_default_rules()
-        return cls._rules.copy()
+        """
+        Get all registered rules (lazy initialization).
+
+        Returns a copy to prevent external modification.
+        """
+        instance = cls()
+        if instance._rules is None:
+            instance._initialize_default_rules()
+        return list(instance._rules)  # Return copy
 
     @classmethod
     def clear(cls) -> None:
-        """Clear all rules (for testing)."""
-        cls._rules = []
-        cls._initialized = False
+        """
+        Clear all rules and reset singleton.
 
-    @classmethod
-    def _initialize_default_rules(cls) -> None:
-        """Initialize default rules from constants."""
+        Call this in test fixtures to ensure clean state.
+        """
+        if cls._instance is not None:
+            cls._instance._rules = None
+        cls._instance = None
+
+    def _initialize_default_rules(self) -> None:
+        """Initialize default rules from factory."""
         from ..constants.shensha_rules import create_all_rules
-        cls._rules = create_all_rules()
-        cls._initialized = True
+        self._rules = create_all_rules()

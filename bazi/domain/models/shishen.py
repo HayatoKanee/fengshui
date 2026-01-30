@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict
 
-from .elements import WuXing
+from .elements import WuXing, WuXingRelation, get_wuxing_relation
 from .stems_branches import HeavenlyStem
 
 
@@ -79,9 +79,27 @@ _SHISHEN_CATEGORIES: Dict[ShiShen, str] = {
 }
 
 
+# ShiShen lookup by (WuXingRelation, same_polarity)
+# ShiShen = WuXingRelation + YinYang polarity
+_SHISHEN_LOOKUP: Dict[tuple, ShiShen] = {
+    (WuXingRelation.SAME, True): ShiShen.BI_JIAN,
+    (WuXingRelation.SAME, False): ShiShen.JIE_CAI,
+    (WuXingRelation.I_GENERATE, True): ShiShen.SHI_SHEN,
+    (WuXingRelation.I_GENERATE, False): ShiShen.SHANG_GUAN,
+    (WuXingRelation.I_OVERCOME, True): ShiShen.PIAN_CAI,
+    (WuXingRelation.I_OVERCOME, False): ShiShen.ZHENG_CAI,
+    (WuXingRelation.OVERCOMES_ME, True): ShiShen.QI_SHA,
+    (WuXingRelation.OVERCOMES_ME, False): ShiShen.ZHENG_GUAN,
+    (WuXingRelation.GENERATES_ME, True): ShiShen.PIAN_YIN,
+    (WuXingRelation.GENERATES_ME, False): ShiShen.ZHENG_YIN,
+}
+
+
 def calculate_shishen(day_master: HeavenlyStem, other: HeavenlyStem) -> ShiShen:
     """
     Calculate the ShiShen relationship between Day Master and another stem.
+
+    ShiShen = WuXingRelation + YinYang polarity (5 relations × 2 polarities = 10 gods)
 
     Args:
         day_master: The Day Master (日主) stem
@@ -90,35 +108,9 @@ def calculate_shishen(day_master: HeavenlyStem, other: HeavenlyStem) -> ShiShen:
     Returns:
         The ShiShen relationship
     """
-    dm_wuxing = day_master.wuxing
-    dm_yinyang = day_master.yinyang
-    other_wuxing = other.wuxing
-    other_yinyang = other.yinyang
-
-    same_polarity = dm_yinyang == other_yinyang
-
-    # Same element (比和)
-    if dm_wuxing == other_wuxing:
-        return ShiShen.BI_JIAN if same_polarity else ShiShen.JIE_CAI
-
-    # I generate (我生)
-    if dm_wuxing.generates == other_wuxing:
-        return ShiShen.SHI_SHEN if same_polarity else ShiShen.SHANG_GUAN
-
-    # I overcome (我克)
-    if dm_wuxing.overcomes == other_wuxing:
-        return ShiShen.PIAN_CAI if same_polarity else ShiShen.ZHENG_CAI
-
-    # Overcomes me (克我)
-    if other_wuxing.overcomes == dm_wuxing:
-        return ShiShen.QI_SHA if same_polarity else ShiShen.ZHENG_GUAN
-
-    # Generates me (生我)
-    if other_wuxing.generates == dm_wuxing:
-        return ShiShen.PIAN_YIN if same_polarity else ShiShen.ZHENG_YIN
-
-    # Should not reach here
-    raise ValueError(f"Cannot determine ShiShen for {day_master} and {other}")
+    relation = get_wuxing_relation(day_master.wuxing, other.wuxing)
+    same_polarity = day_master.yinyang == other.yinyang
+    return _SHISHEN_LOOKUP[(relation, same_polarity)]
 
 
 @dataclass(frozen=True)

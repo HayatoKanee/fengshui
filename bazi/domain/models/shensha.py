@@ -7,7 +7,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import FrozenSet, List, Optional, Tuple
+
+
+# ============================================================
+# Shared Constants
+# ============================================================
+
+PILLAR_POSITIONS: Tuple[str, ...] = ("year", "month", "day", "hour")
+"""Standard pillar position names used throughout the system."""
 
 
 class ShenShaType(Enum):
@@ -60,7 +68,7 @@ class ShenShaType(Enum):
     @property
     def category(self) -> str:
         """Category of this ShenSha."""
-        return _SHENSHA_CATEGORIES.get(self, "其他")
+        return SHENSHA_CATEGORIES.get(self, "其他")
 
 
 # Beneficial ShenSha
@@ -76,8 +84,8 @@ _BENEFICIAL_SHENSHA = {
     ShenShaType.SAN_QI,
 }
 
-# ShenSha categories
-_SHENSHA_CATEGORIES = {
+# ShenSha categories - single source of truth for category mapping
+SHENSHA_CATEGORIES: dict[ShenShaType, str] = {
     ShenShaType.TIAN_YI_GUI_REN: "贵人",
     ShenShaType.TIAN_DE: "德星",
     ShenShaType.TIAN_DE_HE: "德星",
@@ -96,6 +104,14 @@ _SHENSHA_CATEGORIES = {
     ShenShaType.WANG_SHEN: "凶煞",
     ShenShaType.KONG_WANG: "空亡",
 }
+
+# Backward compatibility alias
+_SHENSHA_CATEGORIES = SHENSHA_CATEGORIES
+
+
+def get_all_categories() -> FrozenSet[str]:
+    """Get all unique category names from SHENSHA_CATEGORIES."""
+    return frozenset(SHENSHA_CATEGORIES.values()) | {"其他"}
 
 
 @dataclass(frozen=True)

@@ -9,12 +9,14 @@ from typing import Dict, List, Tuple
 
 from ..models import (
     WuXing,
+    WuXingRelation,
     WangXiang,
     Pillar,
     BaZi,
     HeavenlyStem,
     EarthlyBranch,
     WuXingStrength,
+    get_wuxing_relation,
 )
 
 
@@ -78,6 +80,27 @@ _BRANCH_SEASONS: Dict[EarthlyBranch, str] = {
 _EARTH_BRANCHES = {EarthlyBranch.CHEN, EarthlyBranch.WEI, EarthlyBranch.XU, EarthlyBranch.CHOU}
 
 
+# =============================================================================
+# WUXING RELATIONSHIP WEIGHTS (五行关系权重)
+# =============================================================================
+# Weights determine how strongly elements interact based on their relationship.
+# Returns (self_value, other_value) tuple.
+#
+# Based on traditional BaZi theory:
+# - Same element (比和): Equal strength, high mutual support
+# - Generation (生): Producer gives energy, receiver is empowered
+# - Control (克): Controller expends energy, controlled is weakened
+
+RELATIONSHIP_WEIGHTS: Dict[WuXingRelation, Tuple[int, int]] = {
+    WuXingRelation.SAME: (10, 10),         # 比和 - equal mutual support
+    WuXingRelation.I_GENERATE: (6, 8),     # 我生 - I give (6), other receives (8)
+    WuXingRelation.I_OVERCOME: (4, 2),     # 我克 - I expend (4), other weakened (2)
+    WuXingRelation.OVERCOMES_ME: (2, 4),   # 克我 - I weakened (2), other expends (4)
+    WuXingRelation.GENERATES_ME: (8, 6),   # 生我 - I receive (8), other gives (6)
+}
+
+
+
 class WuXingCalculator:
     """
     Calculator for WuXing (Five Elements) relationships and values.
@@ -94,21 +117,8 @@ class WuXingCalculator:
         Returns:
             Tuple of (stem_value, branch_value) based on their WuXing relationship.
         """
-        stem_element = stem.wuxing
-        branch_element = branch.wuxing
-
-        if stem_element == branch_element:
-            return (10, 10)
-        elif stem_element.generates == branch_element:
-            return (6, 8)
-        elif stem_element.overcomes == branch_element:
-            return (4, 2)
-        elif branch_element.overcomes == stem_element:
-            return (2, 4)
-        elif branch_element.generates == stem_element:
-            return (8, 6)
-
-        return (5, 5)  # Default fallback
+        relation = get_wuxing_relation(stem.wuxing, branch.wuxing)
+        return RELATIONSHIP_WEIGHTS[relation]
 
     @staticmethod
     def get_pillar_values(pillar: Pillar) -> Tuple[int, int]:

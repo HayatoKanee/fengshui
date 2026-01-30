@@ -1,57 +1,89 @@
 """
-Five Elements (WuXing) Domain Constants.
+String-based element lookups - DERIVED from domain Enums.
 
-Domain-level constants for WuXing (五行) element mappings.
-These are fundamental BaZi concepts for element calculations.
+This module provides string-to-string conversions for:
+- Presentation layer (templates)
+- External library integration (lunar_python returns strings)
+
+IMPORTANT: These are derived from the authoritative Enum definitions in
+`bazi.domain.models.elements` and `bazi.domain.models.stems_branches`.
+DO NOT add data here - add to the Enum definitions instead.
+
+For domain logic, use Enums directly:
+    from bazi.domain.models import WuXing, HeavenlyStem
+
+For string conversion (presentation/external):
+    from bazi.domain.constants import GAN_WUXING, get_stem_wuxing
 """
 from typing import Dict, FrozenSet, Tuple
 
-# 天干五行 - Heavenly Stems to WuXing
+from ..models.elements import WuXing, YinYang
+from ..models.stems_branches import HeavenlyStem, EarthlyBranch
+
+
+# =============================================================================
+# DERIVED LOOKUPS - Generated from Enums (single source of truth)
+# =============================================================================
+
+# 天干五行 - Heavenly Stems to WuXing (derived from HeavenlyStem enum)
 GAN_WUXING: Dict[str, str] = {
-    '甲': '木', '乙': '木',
-    '丙': '火', '丁': '火',
-    '戊': '土', '己': '土',
-    '庚': '金', '辛': '金',
-    '壬': '水', '癸': '水',
+    stem.chinese: stem.wuxing.chinese for stem in HeavenlyStem
 }
 
-# 地支五行 - Earthly Branches to WuXing
+# 地支五行 - Earthly Branches to WuXing (derived from EarthlyBranch enum)
 ZHI_WUXING: Dict[str, str] = {
-    '子': '水', '丑': '土', '寅': '木', '卯': '木',
-    '辰': '土', '巳': '火', '午': '火', '未': '土',
-    '申': '金', '酉': '金', '戌': '土', '亥': '水',
+    branch.chinese: branch.wuxing.chinese for branch in EarthlyBranch
 }
 
-# 干支五行 - Combined Stems and Branches to WuXing
+# 干支五行 - Combined (derived)
 GANZHI_WUXING: Dict[str, str] = {**GAN_WUXING, **ZHI_WUXING}
 
-# 天干阴阳 - Heavenly Stems Yin/Yang
+# 天干阴阳 - Heavenly Stems Yin/Yang (derived from HeavenlyStem enum)
 GAN_YINYANG: Dict[str, str] = {
-    '甲': '阳', '乙': '阴',
-    '丙': '阳', '丁': '阴',
-    '戊': '阳', '己': '阴',
-    '庚': '阳', '辛': '阴',
-    '壬': '阳', '癸': '阴',
+    stem.chinese: stem.yinyang.chinese for stem in HeavenlyStem
 }
 
-# 五行列表
-WUXING_LIST: FrozenSet[str] = frozenset(['木', '火', '土', '金', '水'])
+# 五行列表 (derived from WuXing enum)
+WUXING_LIST: FrozenSet[str] = frozenset(e.chinese for e in WuXing)
 
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
 
 def get_stem_wuxing(stem: str) -> str:
-    """Get WuXing element for a Heavenly Stem."""
+    """Get WuXing element for a Heavenly Stem (Chinese character)."""
     return GAN_WUXING.get(stem, '')
 
 
 def get_branch_wuxing(branch: str) -> str:
-    """Get WuXing element for an Earthly Branch."""
+    """Get WuXing element for an Earthly Branch (Chinese character)."""
     return ZHI_WUXING.get(branch, '')
 
 
 def get_stem_yinyang(stem: str) -> str:
-    """Get Yin/Yang polarity for a Heavenly Stem."""
+    """Get Yin/Yang polarity for a Heavenly Stem (Chinese character)."""
     return GAN_YINYANG.get(stem, '')
 
+
+def stem_from_chinese(char: str) -> HeavenlyStem:
+    """Convert Chinese character to HeavenlyStem Enum."""
+    return HeavenlyStem.from_chinese(char)
+
+
+def branch_from_chinese(char: str) -> EarthlyBranch:
+    """Convert Chinese character to EarthlyBranch Enum."""
+    return EarthlyBranch.from_chinese(char)
+
+
+def wuxing_from_chinese(char: str) -> WuXing:
+    """Convert Chinese character to WuXing Enum."""
+    return WuXing.from_chinese(char)
+
+
+# =============================================================================
+# HOUR INFORMATION (Static data - no Enum equivalent needed)
+# =============================================================================
 
 # 时辰 - Chinese Hours (Shichen)
 # Mapping from hour number to (name, time_range, earthly_branch)
