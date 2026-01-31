@@ -10,6 +10,14 @@ from .day_master_analyzer import DayMasterAnalyzer, calculate_shenghao
 from .shensha_calculator import ShenShaCalculator
 from .sexagenary_calculator import SexagenaryCycleCalculator
 from .pattern_detector import PatternDetector
+from .ganzhi_interaction import (
+    GanZhiInteractionService,
+    GanZhiInteractions,
+    StemInteraction,
+    BranchInteraction,
+    PositionModifier,
+    PillarPosition,
+)
 
 __all__ = [
     "WuXingCalculator",
@@ -19,4 +27,11 @@ __all__ = [
     "ShenShaCalculator",
     "SexagenaryCycleCalculator",
     "PatternDetector",
+    # GanZhi Interactions
+    "GanZhiInteractionService",
+    "GanZhiInteractions",
+    "StemInteraction",
+    "BranchInteraction",
+    "PositionModifier",
+    "PillarPosition",
 ]

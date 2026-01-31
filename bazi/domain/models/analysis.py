@@ -6,24 +6,28 @@ Pure Python - NO Django dependencies.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .elements import WuXing, WangXiang
 from .bazi import BaZi, BirthData
 from .shishen import ShiShen, ShiShenChart
 from .shensha import ShenSha, ShenShaAnalysis
 
+if TYPE_CHECKING:
+    from ..services.ganzhi_interaction import GanZhiInteractions
 
-@dataclass(frozen=True)
+
+@dataclass
 class WuXingStrength:
     """
     Strength analysis of each WuXing element.
 
-    Contains raw values and seasonal adjustments.
+    Contains raw values, seasonal adjustments, and 合会冲克刑 interactions.
     """
     raw_values: Dict[WuXing, float]
     wang_xiang: Dict[WuXing, WangXiang]
     adjusted_values: Dict[WuXing, float]
+    interactions: Optional[Any] = None  # GanZhiInteractions (避免循环导入)
 
     @property
     def total(self) -> float:
@@ -45,6 +49,23 @@ class WuXingStrength:
     def weakest(self) -> WuXing:
         """The weakest element."""
         return min(self.adjusted_values, key=lambda k: self.adjusted_values[k])
+
+    @property
+    def has_combinations(self) -> bool:
+        """是否有合局"""
+        if self.interactions is None:
+            return False
+        return bool(
+            self.interactions.stem_combinations or
+            self.interactions.branch_combinations
+        )
+
+    @property
+    def has_clashes(self) -> bool:
+        """是否有相冲"""
+        if self.interactions is None:
+            return False
+        return bool(self.interactions.branch_clashes)
 
 
 @dataclass(frozen=True)

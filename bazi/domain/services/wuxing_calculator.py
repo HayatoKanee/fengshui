@@ -5,7 +5,7 @@ Pure Python - NO Django dependencies.
 """
 from __future__ import annotations
 
-from typing import Dict, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 from ..models import (
     WuXing,
@@ -18,6 +18,9 @@ from ..models import (
     get_wuxing_relation,
     RELATIONSHIP_WEIGHTS,
 )
+
+if TYPE_CHECKING:
+    from .ganzhi_interaction import GanZhiInteractionService, GanZhiInteractions
 
 
 # Season to WangXiang mapping for each element
@@ -142,6 +145,7 @@ class WuXingCalculator:
         self,
         bazi: BaZi,
         wang_xiang: Dict[WuXing, WangXiang],
+        interactions: Optional["GanZhiInteractions"] = None,
     ) -> Dict[WuXing, float]:
         """
         Accumulate WuXing values from all pillars with seasonal adjustment.
@@ -149,38 +153,77 @@ class WuXingCalculator:
         Args:
             bazi: The BaZi chart
             wang_xiang: Seasonal strength mapping
+            interactions: 合会冲克刑 interactions for position-specific modifiers
 
         Returns:
             Dictionary mapping each WuXing to its accumulated value.
         """
+        from .ganzhi_interaction import PillarPosition
+
         result: Dict[WuXing, float] = {element: 0.0 for element in WuXing}
 
-        for pillar in bazi.pillars:
+        # Map pillars to positions
+        pillar_positions = [
+            (bazi.year_pillar, PillarPosition.YEAR),
+            (bazi.month_pillar, PillarPosition.MONTH),
+            (bazi.day_pillar, PillarPosition.DAY),
+            (bazi.hour_pillar, PillarPosition.HOUR),
+        ]
+
+        for pillar, position in pillar_positions:
             stem_value, branch_value = self.get_pillar_values(pillar)
 
-            # Stem contribution
-            stem_multiplier = self.calculate_wang_xiang_multiplier(pillar.stem_wuxing, wang_xiang)
-            result[pillar.stem_wuxing] += stem_value * stem_multiplier
+            # Get position-specific reductions
+            stem_reduction = 0.0
+            hidden_reduction = 0.0
+            if interactions:
+                stem_reduction = interactions.get_stem_reduction(position)
+                hidden_reduction = interactions.get_hidden_stem_reduction(position)
 
-            # Hidden stems contribution
+            # Stem contribution (with reduction if involved in 合/冲)
+            stem_multiplier = self.calculate_wang_xiang_multiplier(pillar.stem_wuxing, wang_xiang)
+            effective_stem_value = stem_value * (1 - stem_reduction)
+            result[pillar.stem_wuxing] += effective_stem_value * stem_multiplier
+
+            # Hidden stems contribution (with reduction if involved in 合/冲/刑/害)
             for hidden_stem, ratio in pillar.hidden_stems.items():
                 hidden_element = hidden_stem.wuxing
                 hidden_multiplier = self.calculate_wang_xiang_multiplier(hidden_element, wang_xiang)
-                result[hidden_element] += branch_value * ratio * hidden_multiplier
+                effective_hidden_value = branch_value * ratio * (1 - hidden_reduction)
+                result[hidden_element] += effective_hidden_value * hidden_multiplier
 
         return result
+
+    def accumulate_wuxing_values(
+        self,
+        bazi: BaZi,
+        wang_xiang: Dict[WuXing, WangXiang],
+    ) -> Dict[WuXing, float]:
+        """
+        Public wrapper for backward compatibility.
+
+        Accumulates WuXing values without interaction modifiers.
+        """
+        return self._accumulate_pillar_values(bazi, wang_xiang, None)
 
     def calculate_strength(
         self,
         bazi: BaZi,
-        is_earth_dominant: bool = False
+        is_earth_dominant: bool = False,
+        include_interactions: bool = True,
     ) -> WuXingStrength:
         """
         Calculate the complete WuXing strength analysis for a BaZi chart.
 
+        考虑合会冲克刑对五行力量的影响:
+        - 天干合/地支合: 被合的天干/藏干力量减少
+        - 地支冲/刑/害: 被冲刑害的藏干力量减少
+        - 合局成功: 化神五行获得额外力量
+
         Args:
             bazi: The BaZi chart to analyze
             is_earth_dominant: Whether we're in earth-dominant period
+            include_interactions: Whether to include 合会冲克刑 modifiers
 
         Returns:
             WuXingStrength with raw and adjusted values
@@ -190,11 +233,32 @@ class WuXingCalculator:
         # Neutral wang_xiang for raw values (all XIU = 1.0 multiplier)
         neutral_wang_xiang: Dict[WuXing, WangXiang] = {e: WangXiang.XIU for e in WuXing}
 
-        raw_values = self._accumulate_pillar_values(bazi, neutral_wang_xiang)
-        adjusted_values = self._accumulate_pillar_values(bazi, wang_xiang_map)
+        # Analyze interactions first
+        interactions: Optional["GanZhiInteractions"] = None
+        if include_interactions:
+            from .ganzhi_interaction import GanZhiInteractionService
+            interaction_service = GanZhiInteractionService()
+            interactions = interaction_service.analyze(bazi)
+
+        # Calculate raw values (without interactions, without wang_xiang)
+        raw_values = self._accumulate_pillar_values(bazi, neutral_wang_xiang, None)
+
+        # Calculate adjusted values (with interactions, with wang_xiang)
+        adjusted_values = self._accumulate_pillar_values(bazi, wang_xiang_map, interactions)
+
+        # Add bonus from successful combinations (三会/三合/六合)
+        if interactions:
+            for element, bonus in interactions.wuxing_bonus.items():
+                adjusted_values[element] += bonus
+
+            # Ensure no negative values
+            for element in adjusted_values:
+                if adjusted_values[element] < 0:
+                    adjusted_values[element] = 0.0
 
         return WuXingStrength(
             raw_values=raw_values,
             wang_xiang=wang_xiang_map,
             adjusted_values=adjusted_values,
+            interactions=interactions,
         )

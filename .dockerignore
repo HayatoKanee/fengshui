@@ -1,0 +1,59 @@
+# =============================================================================
+# Docker ignore - prevent sensitive/unnecessary files from being copied
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Python
+__pycache__
+*.py[cod]
+*.so
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Node
+node_modules/
+frontend/node_modules/
+docs/node_modules/
+npm-debug.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local development
+db.sqlite3
+*.sqlite3
+data/
+.claude/
+.serena/
+.playwright-mcp/
+
+# Build artifacts (we build fresh in Docker)
+static/
+frontend/dist/
+docs/dist/
+docs/.astro/
+
+# Documentation & misc
+*.md
+!README.md
+LICENSE
+references/

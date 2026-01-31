@@ -258,6 +258,112 @@ class GanZhiRelations:
         (DiZhi.SI, DiZhi.HAI),    # 巳亥冲
     })
 
+    # 地支相刑 (Punishments)
+    # 无恩之刑：寅刑巳、巳刑申、申刑寅
+    # 恃势之刑：丑刑戌、戌刑未、未刑丑
+    # 无礼之刑：子刑卯、卯刑子
+    # 自刑：辰辰、午午、酉酉、亥亥
+    XING_WU_EN: FrozenSet[FrozenSet[DiZhi]] = frozenset({
+        frozenset({DiZhi.YIN, DiZhi.SI, DiZhi.SHEN}),  # 寅巳申 无恩之刑
+    })
+    XING_CHI_SHI: FrozenSet[FrozenSet[DiZhi]] = frozenset({
+        frozenset({DiZhi.CHOU, DiZhi.XU, DiZhi.WEI}),  # 丑戌未 恃势之刑
+    })
+    XING_WU_LI: FrozenSet[Tuple[DiZhi, DiZhi]] = frozenset({
+        (DiZhi.ZI, DiZhi.MAO),  # 子卯 无礼之刑
+    })
+    XING_ZI: FrozenSet[DiZhi] = frozenset({
+        DiZhi.CHEN, DiZhi.WU, DiZhi.YOU, DiZhi.HAI,  # 辰午酉亥 自刑
+    })
+
+    # 地支相害 (Harms)
+    # 六害：子未害、丑午害、寅巳害、卯辰害、申亥害、酉戌害
+    ZHI_HAI: FrozenSet[Tuple[DiZhi, DiZhi]] = frozenset({
+        (DiZhi.ZI, DiZhi.WEI),    # 子未害
+        (DiZhi.CHOU, DiZhi.WU),   # 丑午害
+        (DiZhi.YIN, DiZhi.SI),    # 寅巳害
+        (DiZhi.MAO, DiZhi.CHEN),  # 卯辰害
+        (DiZhi.SHEN, DiZhi.HAI),  # 申亥害
+        (DiZhi.YOU, DiZhi.XU),    # 酉戌害
+    })
+
+    # 地支相破 (Breaks)
+    # 子酉破、午卯破、寅亥破、巳申破、辰丑破、戌未破
+    ZHI_PO: FrozenSet[Tuple[DiZhi, DiZhi]] = frozenset({
+        (DiZhi.ZI, DiZhi.YOU),    # 子酉破
+        (DiZhi.WU, DiZhi.MAO),    # 午卯破
+        (DiZhi.YIN, DiZhi.HAI),   # 寅亥破
+        (DiZhi.SI, DiZhi.SHEN),   # 巳申破
+        (DiZhi.CHEN, DiZhi.CHOU), # 辰丑破
+        (DiZhi.XU, DiZhi.WEI),    # 戌未破
+    })
+
+    # =========================================================================
+    # 以下为 Dict 类型常量，使用 property 避免 dataclass 默认值问题
+    # =========================================================================
+
+    @property
+    def SAN_HE(self) -> Dict[WuXing, FrozenSet[DiZhi]]:
+        """地支三合局"""
+        return _SAN_HE
+
+    @property
+    def SAN_HUI(self) -> Dict[WuXing, FrozenSet[DiZhi]]:
+        """地支三会方"""
+        return _SAN_HUI
+
+    @property
+    def WU_HE_HUA(self) -> Dict[Tuple[TianGan, TianGan], WuXing]:
+        """天干五合化神"""
+        return _WU_HE_HUA
+
+    @property
+    def LIU_HE_HUA(self) -> Dict[Tuple[DiZhi, DiZhi], WuXing]:
+        """地支六合化神"""
+        return _LIU_HE_HUA
+
+
+# =============================================================================
+# Dict 类型常量 (模块级别，避免 dataclass 默认值问题)
+# =============================================================================
+
+# 地支三合局 (Triangular Combinations)
+# 申子辰合水局、亥卯未合木局、寅午戌合火局、巳酉丑合金局
+_SAN_HE: Dict[WuXing, FrozenSet[DiZhi]] = {
+    WuXing.WATER: frozenset({DiZhi.SHEN, DiZhi.ZI, DiZhi.CHEN}),   # 申子辰 水局
+    WuXing.WOOD: frozenset({DiZhi.HAI, DiZhi.MAO, DiZhi.WEI}),     # 亥卯未 木局
+    WuXing.FIRE: frozenset({DiZhi.YIN, DiZhi.WU, DiZhi.XU}),       # 寅午戌 火局
+    WuXing.METAL: frozenset({DiZhi.SI, DiZhi.YOU, DiZhi.CHOU}),    # 巳酉丑 金局
+}
+
+# 地支三会方 (Directional Combinations)
+# 寅卯辰会东方木、巳午未会南方火、申酉戌会西方金、亥子丑会北方水
+_SAN_HUI: Dict[WuXing, FrozenSet[DiZhi]] = {
+    WuXing.WOOD: frozenset({DiZhi.YIN, DiZhi.MAO, DiZhi.CHEN}),    # 寅卯辰 东方木
+    WuXing.FIRE: frozenset({DiZhi.SI, DiZhi.WU, DiZhi.WEI}),       # 巳午未 南方火
+    WuXing.METAL: frozenset({DiZhi.SHEN, DiZhi.YOU, DiZhi.XU}),    # 申酉戌 西方金
+    WuXing.WATER: frozenset({DiZhi.HAI, DiZhi.ZI, DiZhi.CHOU}),    # 亥子丑 北方水
+}
+
+# 天干五合化神 (Stem Combination Transformations)
+_WU_HE_HUA: Dict[Tuple[TianGan, TianGan], WuXing] = {
+    (TianGan.JIA, TianGan.JI): WuXing.EARTH,    # 甲己合化土
+    (TianGan.YI, TianGan.GENG): WuXing.METAL,   # 乙庚合化金
+    (TianGan.BING, TianGan.XIN): WuXing.WATER,  # 丙辛合化水
+    (TianGan.DING, TianGan.REN): WuXing.WOOD,   # 丁壬合化木
+    (TianGan.WU, TianGan.GUI): WuXing.FIRE,     # 戊癸合化火
+}
+
+# 地支六合化神 (Branch Six Combination Transformations)
+_LIU_HE_HUA: Dict[Tuple[DiZhi, DiZhi], WuXing] = {
+    (DiZhi.ZI, DiZhi.CHOU): WuXing.EARTH,     # 子丑合化土
+    (DiZhi.YIN, DiZhi.HAI): WuXing.WOOD,      # 寅亥合化木
+    (DiZhi.MAO, DiZhi.XU): WuXing.FIRE,       # 卯戌合化火
+    (DiZhi.CHEN, DiZhi.YOU): WuXing.METAL,   # 辰酉合化金
+    (DiZhi.SI, DiZhi.SHEN): WuXing.WATER,    # 巳申合化水
+    (DiZhi.WU, DiZhi.WEI): WuXing.FIRE,      # 午未合化火/土 (主火)
+}
+
 
 # 关系单例
 RELATIONS = GanZhiRelations()

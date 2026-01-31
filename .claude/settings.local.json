@@ -4,7 +4,17 @@
       "Bash(python:*)",
       "Bash(source venv/bin/activate)",
       "WebSearch",
-      "WebFetch(domain:medium.com)"
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(find:*)",
+      "mcp__plugin_serena_serena__read_file",
+      "mcp__plugin_serena_serena__activate_project",
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__search_for_pattern",
+      "mcp__plugin_serena_serena__get_symbols_overview",
+      "WebFetch(domain:www.cafe-astrology.com)",
+      "WebFetch(domain:www.astro.com)"
     ],
     "deny": [],
     "ask": []

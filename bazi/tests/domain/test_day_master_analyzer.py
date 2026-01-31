@@ -8,7 +8,7 @@ import pytest
 from bazi.domain.models.elements import WuXing
 from bazi.domain.models.bazi import BaZi
 from bazi.domain.models.analysis import DayMasterStrength, FavorableElements
-from bazi.domain.services.day_master_analyzer import DayMasterAnalyzer
+from bazi.domain.services.day_master_analyzer import DayMasterAnalyzer, calculate_shenghao
 from bazi.domain.services.wuxing_calculator import WuXingCalculator
 
 
@@ -30,7 +30,7 @@ class TestCalculateShenghao:
             WuXing.WATER: 10.0,
         }
 
-        beneficial, harmful = analyzer.calculate_shenghao(
+        beneficial, harmful = calculate_shenghao(
             wuxing_values, WuXing.WOOD
         )
 
@@ -50,7 +50,7 @@ class TestCalculateShenghao:
             WuXing.WATER: 10.0,
         }
 
-        beneficial, harmful = analyzer.calculate_shenghao(
+        beneficial, harmful = calculate_shenghao(
             wuxing_values, WuXing.FIRE
         )
 
@@ -63,7 +63,7 @@ class TestCalculateShenghao:
         """Test with empty/zero wuxing values."""
         wuxing_values = {element: 0.0 for element in WuXing}
 
-        beneficial, harmful = analyzer.calculate_shenghao(
+        beneficial, harmful = calculate_shenghao(
             wuxing_values, WuXing.WOOD
         )
 
@@ -78,7 +78,7 @@ class TestCalculateShenghao:
             WuXing.FIRE: 15.0,
         }
 
-        beneficial, harmful = analyzer.calculate_shenghao(
+        beneficial, harmful = calculate_shenghao(
             wuxing_values, WuXing.WOOD
         )
 
