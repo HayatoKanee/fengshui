@@ -7,11 +7,12 @@
 # -----------------------------------------------------------------------------
 FROM node:22-alpine AS frontend-builder
 
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
+WORKDIR /app
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm ci
+COPY frontend/ ./frontend/
+RUN cd frontend && npm run build
+# Output: /app/static/dist/
 
 # -----------------------------------------------------------------------------
 # Stage 2: Build documentation (Astro/Starlight)
@@ -49,10 +50,10 @@ COPY manage.py ./
 COPY fengshui/ ./fengshui/
 COPY bazi/ ./bazi/
 COPY locale/ ./locale/
-COPY theme/ ./theme/ 2>/dev/null || true
+COPY theme/ ./theme/
 
-# Copy built frontend assets
-COPY --from=frontend-builder /app/static ./static
+# Copy built frontend assets (Vite outputs to static/dist/)
+COPY --from=frontend-builder /app/static/dist ./static/dist
 
 # Copy built docs to serve as static files (optional)
 COPY --from=docs-builder /app/docs/dist ./static/docs
