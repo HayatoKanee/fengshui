@@ -11,6 +11,9 @@ WORKDIR /app
 COPY frontend/package*.json ./frontend/
 RUN cd frontend && npm ci
 COPY frontend/ ./frontend/
+# Copy templates so Tailwind can scan them for CSS classes
+# (styles.css uses @source "../../bazi/templates/**/*.html")
+COPY bazi/templates/ ./bazi/templates/
 RUN cd frontend && npm run build
 # Output: /app/static/dist/
 
