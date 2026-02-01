@@ -22,10 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-only-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Auto-detect: DEBUG=True locally, DEBUG=False on Heroku (DYNO env var is set by Heroku)
-DEBUG = 'DYNO' not in os.environ
+# Set DEBUG=False explicitly in production, or use DJANGO_DEBUG env var
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['.herokuapp.com', 'localhost', '127.0.0.1', "www.myfate.org", "myfate.org"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'myfate.org']
+
+# CSRF trusted origins (required for POST requests via HTTPS)
+CSRF_TRUSTED_ORIGINS = ['https://myfate.org']
 
 # Production Security Settings
 if not DEBUG:
