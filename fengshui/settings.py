@@ -32,9 +32,10 @@ CSRF_TRUSTED_ORIGINS = ['https://myfate.org']
 
 # Production Security Settings
 if not DEBUG:
-    # HTTPS/SSL
+    # HTTPS/SSL (Traefik handles SSL termination)
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_REDIRECT_EXEMPT = [r'^health/$']  # Exempt health check from SSL redirect
 
     # HSTS - tell browsers to only use HTTPS
     SECURE_HSTS_SECONDS = 31536000  # 1 year
