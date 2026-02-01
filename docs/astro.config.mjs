@@ -5,7 +5,7 @@ export default defineConfig({
   site: 'https://docs.myfate.org',
   integrations: [
     starlight({
-      title: '八字命理文档',
+      title: 'MyFate',
       description: '八字四柱命理参考文档',
       defaultLocale: 'root',
       locales: {
