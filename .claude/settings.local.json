@@ -14,7 +14,9 @@
       "mcp__plugin_serena_serena__search_for_pattern",
       "mcp__plugin_serena_serena__get_symbols_overview",
       "WebFetch(domain:www.cafe-astrology.com)",
-      "WebFetch(domain:www.astro.com)"
+      "WebFetch(domain:www.astro.com)",
+      "Bash(ssh root@77.42.68.163 \"docker exec web-eow0sckgc8w804g4wkc0kggk-153813015987 python -c \"\"\nimport os\nos.environ[''DJANGO_SETTINGS_MODULE'']=''fengshui.settings''\nfrom django.conf import settings\nprint\\(''VITE_DEV_MODE:'', settings.DJANGO_VITE[''default''][''dev_mode'']\\)\nprint\\(''manifest_path:'', settings.DJANGO_VITE[''default''][''manifest_path'']\\)\nimport os.path\nprint\\(''manifest exists:'', os.path.exists\\(settings.DJANGO_VITE[''default''][''manifest_path'']\\)\\)\n\"\"\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@77.42.68.163 'docker exec $\\(docker ps -q -f name=web-eow0sckgc8w804g4wkc0kggk\\) cat /app/static/dist/manifest.json 2>&1')"
     ],
     "deny": [],
     "ask": []

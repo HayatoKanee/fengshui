@@ -16,8 +16,14 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import include, path
 from django.views.generic import RedirectView
+
+
+def health_check(request):
+    """Simple health check endpoint for container orchestration."""
+    return HttpResponse("ok", content_type="text/plain")
 
 # Import from presentation layer (Clean Architecture)
 from bazi.presentation import (
@@ -47,6 +53,7 @@ from bazi.presentation import (
 )
 
 urlpatterns = [
+    path('health/', health_check, name='health'),  # Container health check
     path('admin/', admin.site.urls),
     path('', RedirectView.as_view(pattern_name='bazi', permanent=False), name='home'),
 
